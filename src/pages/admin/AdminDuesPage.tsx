@@ -29,6 +29,7 @@ export const AdminDuesPage: React.FC = () => {
   // Modals
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingDue, setEditingDue] = useState<any | null>(null);
+  const [deletingDue, setDeletingDue] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -154,15 +155,17 @@ export const AdminDuesPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (due: any) => {
-    const confirmMsg = `Are you sure you want to delete due record #${due.id} of ₹${Number(due.amount).toFixed(2)} for ${due.student_name}?`;
-    if (!window.confirm(confirmMsg)) return;
-
+  const confirmDeleteDue = async () => {
+    if (!deletingDue) return;
     try {
-      await api.delete(`/due-records/${due.id}`);
+      setSubmitting(true);
+      await api.delete(`/due-records/${deletingDue.id}`);
+      setDeletingDue(null);
       await fetchData();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to delete due record');
+      setError(err.response?.data?.detail || 'Failed to delete due record');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -317,7 +320,7 @@ export const AdminDuesPage: React.FC = () => {
                           <Edit2 className="w-3.5 h-3.5 text-slate-600" />
                         </button>
                         <button
-                          onClick={() => handleDelete(due)}
+                          onClick={() => setDeletingDue(due)}
                           className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors inline-flex items-center"
                           title="Delete Due"
                         >
@@ -550,6 +553,50 @@ export const AdminDuesPage: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingDue && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Delete Due Record</h4>
+                  <p className="text-[11px] text-slate-400">Record #{deletingDue.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeletingDue(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+              Are you sure you want to permanently delete due record <span className="font-bold text-slate-900">#{deletingDue.id}</span> of{' '}
+              <span className="font-bold text-slate-900">₹{Number(deletingDue.amount).toFixed(2)}</span> for{' '}
+              <span className="font-bold text-slate-900">{deletingDue.student_name}</span>? This will permanently update student clearance eligibility.
+            </p>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setDeletingDue(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteDue}
+                disabled={submitting}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
+              >
+                {submitting ? 'Deleting...' : 'Delete Due'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -1,0 +1,1433 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "email": "ramyacse23@sasurie.com",
+      "password_hash": "cf379b4b9ce24f3a75d3e6e55cef4a6639c51591c096e64d41f01984a9a2c775",
+      "role": "ADMIN",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 2,
+      "email": "ramya@sasurie.edu",
+      "password_hash": "cf379b4b9ce24f3a75d3e6e55cef4a6639c51591c096e64d41f01984a9a2c775",
+      "role": "ADMIN",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 3,
+      "email": "admin@college.edu",
+      "password_hash": "1c7bed777acf358fadf12c8e371c1816a05044d6168c9efb1a0444c7645537ac",
+      "role": "ADMIN",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 4,
+      "email": "staff.library@college.edu",
+      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "role": "STAFF",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 5,
+      "email": "staff.cse@college.edu",
+      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "role": "STAFF",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 6,
+      "email": "staff.accounts@college.edu",
+      "password_hash": "f5805f10d6c89f440b2a926fd76c71a59f97215eb1c99fadcde6814bfe16b570",
+      "role": "STAFF",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 7,
+      "email": "staff.hostel@college.edu",
+      "password_hash": "f5805f10d6c89f440b2a926fd76c71a59f97215eb1c99fadcde6814bfe16b570",
+      "role": "STAFF",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 8,
+      "email": "staff.lab@college.edu",
+      "password_hash": "f5805f10d6c89f440b2a926fd76c71a59f97215eb1c99fadcde6814bfe16b570",
+      "role": "STAFF",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 9,
+      "email": "ramyacse2327@sasurie.com",
+      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "role": "STUDENT",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-09T12:03:59.627Z"
+    },
+    {
+      "id": 10,
+      "email": "aravindh@sasurie.edu",
+      "password_hash": "a0fc66a9500245e9f0a114d9319135401c1f5213a0fd0c42d788c100fc6369ce",
+      "role": "STUDENT",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-09T12:04:39.245Z"
+    },
+    {
+      "id": 11,
+      "email": "ramyaselva048@gmail.com",
+      "password_hash": "cf379b4b9ce24f3a75d3e6e55cef4a6639c51591c096e64d41f01984a9a2c775",
+      "role": "ADMIN",
+      "is_active": true,
+      "created_at": "2026-09-09T12:23:58.381Z"
+    }
+  ],
+  "departments": [
+    {
+      "id": 1,
+      "name": "Central Library",
+      "code": "LIB",
+      "description": "Library book returns, journal access, and fine clearance.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 2,
+      "name": "Accounts & Finance",
+      "code": "ACC",
+      "description": "Tuition, examination fees, library deposits, and scholarship audits.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 3,
+      "name": "Computer Science Laboratory",
+      "code": "CSL",
+      "description": "Lab equipment, computer hardware, robotics kits, and apparatus check.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 4,
+      "name": "Department of Computer Science & Engineering",
+      "code": "CSE",
+      "description": "Departmental project clearances, symposium dues, and seminar records.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 5,
+      "name": "Department of Information Technology",
+      "code": "IT",
+      "description": "IT departmental laboratory, project submissions, and symposium clearances.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 6,
+      "name": "Department of Artificial Intelligence & Data Science",
+      "code": "AIDS",
+      "description": "AI & Data Science lab components, projects, and departmental records.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 7,
+      "name": "Department of Electronics & Communication Engineering",
+      "code": "ECE",
+      "description": "ECE microelectronics, signal lab, and project approvals.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 8,
+      "name": "Department of Electrical & Electronics Engineering",
+      "code": "EEE",
+      "description": "EEE machines lab, power electronics hardware, and project clearances.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 9,
+      "name": "Department of Mechanical Engineering",
+      "code": "MECH",
+      "description": "Workshop, CAD lab, manufacturing tools, and machinery clearances.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 10,
+      "name": "Department of Civil Engineering",
+      "code": "CIVIL",
+      "description": "Surveying lab, structural testing equipment, and civil project returns.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 11,
+      "name": "Department of Biomedical Engineering",
+      "code": "BME",
+      "description": "Biomedical instrumentation, sensor kits, and lab clearance.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 12,
+      "name": "Department of Mechatronics Engineering",
+      "code": "MTE",
+      "description": "Robotics automation, hydraulics, pneumatics, and embedded kits.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 13,
+      "name": "Department of Automobile Engineering",
+      "code": "AUTO",
+      "description": "Automotive chassis lab, engine testing equipment, and fabrication dues.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 14,
+      "name": "Department of Chemical Engineering",
+      "code": "CHEM",
+      "description": "Chemical reaction engineering lab, process instrumentation, and glassware dues.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 15,
+      "name": "Department of Biotechnology",
+      "code": "BIO",
+      "description": "Bioprocess lab, molecular biology kits, and culture room clearances.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 16,
+      "name": "Department of Science & Humanities",
+      "code": "S&H",
+      "description": "Physics, Chemistry, and English communication language lab clearances.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 17,
+      "name": "Department of Management Studies",
+      "code": "MBA",
+      "description": "MBA case study library, corporate projects, and departmental dues.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 18,
+      "name": "Department of Computer Applications",
+      "code": "MCA",
+      "description": "MCA software project repositories, lab stations, and seminar dues.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 19,
+      "name": "Hostel & Student Housing",
+      "code": "HST",
+      "description": "Room inventory, mess bill dues, electricity meters, and caution return.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 20,
+      "name": "Transport Services",
+      "code": "TRN",
+      "description": "College bus pass, parking tags, and transport clearance.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 21,
+      "name": "Sports & Physical Education",
+      "code": "SPT",
+      "description": "Sports kit, tournament gear, gym membership, and athletics return.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 22,
+      "name": "Training & Placement Cell",
+      "code": "TPO",
+      "description": "Placement training fee, company drive clearance, and offer verification.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 23,
+      "name": "Office of Controller of Examinations",
+      "code": "COE",
+      "description": "Grade sheet dues, exam hall clearance, and graduation approvals.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 24,
+      "name": "NSS, Red Cross & Student Welfare",
+      "code": "NSS",
+      "description": "Student club inventory, community project dues, and welfare approvals.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    }
+  ],
+  "courses": [
+    {
+      "id": 1,
+      "name": "B.E. Computer Science and Engineering",
+      "code": "BE_CSE",
+      "department_id": 4,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 2,
+      "name": "B.Tech Artificial Intelligence and Data Science",
+      "code": "BTECH_AIDS",
+      "department_id": 6,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 3,
+      "name": "B.Tech Information Technology",
+      "code": "BTECH_IT",
+      "department_id": 5,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 4,
+      "name": "B.Tech Artificial Intelligence and Machine Learning",
+      "code": "BTECH_AIML",
+      "department_id": 6,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 5,
+      "name": "B.Tech Cyber Security",
+      "code": "BTECH_CS",
+      "department_id": 4,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 6,
+      "name": "B.Tech Computer Science and Business Systems",
+      "code": "BTECH_CSBS",
+      "department_id": 4,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 7,
+      "name": "B.E. Electronics and Communication Engineering",
+      "code": "BE_ECE",
+      "department_id": 7,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 8,
+      "name": "B.E. Electrical and Electronics Engineering",
+      "code": "BE_EEE",
+      "department_id": 8,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 9,
+      "name": "B.E. Mechanical Engineering",
+      "code": "BE_MECH",
+      "department_id": 9,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 10,
+      "name": "B.E. Civil Engineering",
+      "code": "BE_CIVIL",
+      "department_id": 10,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 11,
+      "name": "B.E. Mechatronics Engineering",
+      "code": "BE_MTE",
+      "department_id": 9,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 12,
+      "name": "B.E. Biomedical Engineering",
+      "code": "BE_BME",
+      "department_id": 11,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 13,
+      "name": "B.E. Automobile Engineering",
+      "code": "BE_AUTO",
+      "department_id": 9,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 14,
+      "name": "B.Tech Chemical Engineering",
+      "code": "BTECH_CHEM",
+      "department_id": 4,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 15,
+      "name": "B.Tech Biotechnology",
+      "code": "BTECH_BIO",
+      "department_id": 11,
+      "duration": 4,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 16,
+      "name": "M.E. Computer Science and Engineering",
+      "code": "ME_CSE",
+      "department_id": 4,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 17,
+      "name": "M.E. VLSI Design",
+      "code": "ME_VLSI",
+      "department_id": 7,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 18,
+      "name": "M.E. Embedded System Technologies",
+      "code": "ME_EST",
+      "department_id": 7,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 19,
+      "name": "M.E. Power Electronics and Drives",
+      "code": "ME_PED",
+      "department_id": 8,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 20,
+      "name": "M.E. Structural Engineering",
+      "code": "ME_STR",
+      "department_id": 10,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 21,
+      "name": "M.E. CAD / CAM",
+      "code": "ME_CAD",
+      "department_id": 9,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 22,
+      "name": "M.Tech Data Science",
+      "code": "MTECH_DS",
+      "department_id": 6,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 23,
+      "name": "Master of Business Administration (MBA)",
+      "code": "MBA",
+      "department_id": 17,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 24,
+      "name": "Master of Computer Applications (MCA)",
+      "code": "MCA",
+      "department_id": 18,
+      "duration": 2,
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    }
+  ],
+  "dueCategories": [
+    {
+      "id": 1,
+      "name": "Library Book Overdue Fine",
+      "code": "LIB_BOOK",
+      "description": "Late book return fine per library regulations.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 2,
+      "name": "Tuition & Term Fee",
+      "code": "FEE_TUITION",
+      "description": "Pending semester tuition or registration fee.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 3,
+      "name": "Laboratory Equipment Replacement",
+      "code": "LAB_EQUIP",
+      "description": "Damaged or unreturned lab components.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 4,
+      "name": "Hostel Mess Dues",
+      "code": "HST_MESS",
+      "description": "Unpaid monthly mess bill balance.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 5,
+      "name": "Transport Pass Renewal",
+      "code": "TRN_PASS",
+      "description": "Bus pass semester balance.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 6,
+      "name": "Sports Uniform & Gear",
+      "code": "SPT_GEAR",
+      "description": "College sports jersey or gear unreturned.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 7,
+      "name": "Department Association Dues",
+      "code": "DEPT_ASSOC",
+      "description": "Student symposium or technical chapter dues.",
+      "is_active": true,
+      "created_at": "2026-09-09T07:40:13.344Z"
+    }
+  ],
+  "students": [
+    {
+      "id": 1,
+      "user_id": 9,
+      "register_number": "732423104036",
+      "full_name": "Ramya S",
+      "email": "ramyacse2327@sasurie.com",
+      "phone": "+918825641424",
+      "department_id": 1,
+      "course_id": 1,
+      "year": 1,
+      "section": "A",
+      "admission_year": 2026,
+      "created_at": "2026-09-09T12:03:59.627Z"
+    },
+    {
+      "id": 2,
+      "user_id": 10,
+      "register_number": "732921104001",
+      "full_name": "Aravindhan R",
+      "email": "aravindh@sasurie.edu",
+      "phone": "+91 98450 11223",
+      "department_id": 1,
+      "course_id": 1,
+      "year": 4,
+      "section": "A",
+      "admission_year": 2021,
+      "created_at": "2026-09-09T12:04:39.245Z"
+    }
+  ],
+  "staff": [
+    {
+      "id": 1,
+      "user_id": 4,
+      "employee_id": "EMP-LIB-101",
+      "full_name": "Prof. Rajesh Kumar",
+      "email": "staff.library@college.edu",
+      "phone": "+91 98765 43210",
+      "department_id": 1,
+      "designation": "Chief Librarian & Clearance Officer",
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 2,
+      "user_id": 5,
+      "employee_id": "EMP-CSE-201",
+      "full_name": "Dr. Ananya Sundaram",
+      "email": "staff.cse@college.edu",
+      "phone": "+91 98401 22334",
+      "department_id": 4,
+      "designation": "HOD & Departmental Clearance Incharge",
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 3,
+      "user_id": 6,
+      "employee_id": "EMP-ACC-301",
+      "full_name": "Mr. K. Murugesan",
+      "email": "staff.accounts@college.edu",
+      "phone": "+91 94432 55667",
+      "department_id": 2,
+      "designation": "Senior Accounts Superintendent",
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 4,
+      "user_id": 7,
+      "employee_id": "EMP-HST-401",
+      "full_name": "Prof. Vigneshwaran",
+      "email": "staff.hostel@college.edu",
+      "phone": "+91 97890 11223",
+      "department_id": 19,
+      "designation": "Chief Hostel Warden",
+      "created_at": "2026-09-09T07:40:13.344Z"
+    },
+    {
+      "id": 5,
+      "user_id": 8,
+      "employee_id": "EMP-CSL-501",
+      "full_name": "Er. S. Prakash",
+      "email": "staff.lab@college.edu",
+      "phone": "+91 99420 33445",
+      "department_id": 3,
+      "designation": "Central Computing Systems Administrator",
+      "created_at": "2026-09-09T07:40:13.344Z"
+    }
+  ],
+  "dueRecords": [],
+  "duePayments": [],
+  "noDueRequests": [
+    {
+      "id": 1,
+      "student_id": 1,
+      "status": "under_review",
+      "submitted_at": "2026-09-09T12:20:09.747Z",
+      "remarks": "Semester End Clearance -",
+      "created_at": "2026-09-09T12:20:09.747Z"
+    }
+  ],
+  "noDueApprovals": [
+    {
+      "id": 25,
+      "request_id": 2,
+      "department_id": 1,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 26,
+      "request_id": 2,
+      "department_id": 2,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 27,
+      "request_id": 2,
+      "department_id": 3,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 28,
+      "request_id": 2,
+      "department_id": 4,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 29,
+      "request_id": 2,
+      "department_id": 5,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 30,
+      "request_id": 2,
+      "department_id": 6,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 31,
+      "request_id": 2,
+      "department_id": 7,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 32,
+      "request_id": 2,
+      "department_id": 8,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 33,
+      "request_id": 2,
+      "department_id": 9,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 34,
+      "request_id": 2,
+      "department_id": 10,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 35,
+      "request_id": 2,
+      "department_id": 11,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 36,
+      "request_id": 2,
+      "department_id": 12,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 37,
+      "request_id": 2,
+      "department_id": 13,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 38,
+      "request_id": 2,
+      "department_id": 14,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 39,
+      "request_id": 2,
+      "department_id": 15,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 40,
+      "request_id": 2,
+      "department_id": 16,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 41,
+      "request_id": 2,
+      "department_id": 17,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 42,
+      "request_id": 2,
+      "department_id": 18,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 43,
+      "request_id": 2,
+      "department_id": 19,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 44,
+      "request_id": 2,
+      "department_id": 20,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 45,
+      "request_id": 2,
+      "department_id": 21,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 46,
+      "request_id": 2,
+      "department_id": 22,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 47,
+      "request_id": 2,
+      "department_id": 23,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    },
+    {
+      "id": 48,
+      "request_id": 2,
+      "department_id": 24,
+      "status": "pending",
+      "created_at": "2026-09-09T12:28:48.069Z"
+    }
+  ],
+  "certificates": [],
+  "notifications": [
+    {
+      "id": 2,
+      "user_id": 12,
+      "title": "No Due Request Submitted",
+      "message": "Your No Due Clearance request has been initiated and routed to all departments for verification.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-09T12:28:48.071Z"
+    },
+    {
+      "id": 1,
+      "user_id": 9,
+      "title": "No Due Request Submitted",
+      "message": "Your No Due Clearance request has been initiated and routed to all departments for verification.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-09T12:20:09.748Z"
+    }
+  ],
+  "auditLogs": [
+    {
+      "id": 51,
+      "user_id": 12,
+      "user_email": "testpersists@gmail.com",
+      "action": "NO_DUE_REQUEST_CREATED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 2,
+      "new_values": "{\"departments_count\":24}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:28:48.070Z"
+    },
+    {
+      "id": 50,
+      "user_id": 12,
+      "user_email": "testpersists@gmail.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 12,
+      "new_values": "{\"identifier\":\"TEST2026001\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:28:48.064Z"
+    },
+    {
+      "id": 49,
+      "user_id": 11,
+      "user_email": "ramyaselva048@gmail.com",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 3,
+      "new_values": "{\"register_number\":\"TEST2026001\",\"full_name\":\"Test Student Persistence\",\"email\":\"testpersists@gmail.com\",\"phone\":\"9876543210\",\"department_id\":1,\"course_id\":1,\"year\":4,\"semester\":8,\"section\":\"A\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:28:47.770Z"
+    },
+    {
+      "id": 48,
+      "user_id": 11,
+      "user_email": "ramyaselva048@gmail.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 11,
+      "new_values": "{\"identifier\":\"ramyaselva048@gmail.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:28:47.720Z"
+    },
+    {
+      "id": 47,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 2,
+      "new_values": "{\"employee_id\":\"EMP-CSE-201\",\"full_name\":\"Dr. Ananya Sundaram\",\"email\":\"staff.cse@college.edu\",\"password\":\"Sasurie@123\",\"phone\":\"+91 98401 22334\",\"department_id\":4,\"designation\":\"HOD & Departmental Clearance Incharge\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:26:19.634Z"
+    },
+    {
+      "id": 46,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 1,
+      "new_values": "{\"employee_id\":\"EMP-LIB-101\",\"full_name\":\"Prof. Rajesh Kumar\",\"email\":\"staff.library@college.edu\",\"password\":\"Sasurie@123\",\"phone\":\"+91 98765 43210\",\"department_id\":1,\"designation\":\"Chief Librarian & Clearance Officer\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:26:06.215Z"
+    },
+    {
+      "id": 45,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"732423104036\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:23:59.899Z"
+    },
+    {
+      "id": 44,
+      "user_id": 11,
+      "user_email": "ramyaselva048@gmail.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 11,
+      "new_values": "{\"identifier\":\"ramyaselva048@gmail.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:23:59.847Z"
+    },
+    {
+      "id": 43,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"732423104036\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:23:50.803Z"
+    },
+    {
+      "id": 42,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 2,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:23:23.396Z"
+    },
+    {
+      "id": 41,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"email\":\"ramyacse2327@sasurie.com\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:22:14.228Z"
+    },
+    {
+      "id": 40,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"732423104036\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:20:21.721Z"
+    },
+    {
+      "id": 39,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "NO_DUE_REQUEST_CREATED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 1,
+      "new_values": "{\"departments_count\":24}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:20:09.748Z"
+    },
+    {
+      "id": 38,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"732423104036\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:19:08.950Z"
+    },
+    {
+      "id": 37,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"staff.library@college.edu\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:19:08.904Z"
+    },
+    {
+      "id": 36,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:19:08.857Z"
+    },
+    {
+      "id": 35,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"ramyacse2327@sasurie.com\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:19:00.812Z"
+    },
+    {
+      "id": 34,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:18:53.758Z"
+    },
+    {
+      "id": 33,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 2,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:18:52.107Z"
+    },
+    {
+      "id": 32,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"732423104036\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:18:19.080Z"
+    },
+    {
+      "id": 31,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"staff.library@college.edu\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:18:19.017Z"
+    },
+    {
+      "id": 30,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:18:18.913Z"
+    },
+    {
+      "id": 29,
+      "user_id": 9,
+      "user_email": "ramyacse2327@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 9,
+      "new_values": "{\"identifier\":\"732423104036\",\"role\":\"STUDENT\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:09:55.776Z"
+    },
+    {
+      "id": 28,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:09:30.406Z"
+    },
+    {
+      "id": 27,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_STATUS_TOGGLE",
+      "entity_type": "STUDENT",
+      "entity_id": 2,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:07:12.628Z"
+    },
+    {
+      "id": 26,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_STATUS_TOGGLE",
+      "entity_type": "STUDENT",
+      "entity_id": 1,
+      "new_values": "{\"is_active\":true}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:07:01.692Z"
+    },
+    {
+      "id": 25,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_STATUS_TOGGLE",
+      "entity_type": "STUDENT",
+      "entity_id": 1,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:06:48.346Z"
+    },
+    {
+      "id": 24,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:04:49.729Z"
+    },
+    {
+      "id": 23,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 2,
+      "new_values": "{\"register_number\":\"732921104001\",\"full_name\":\"Aravindhan R\",\"email\":\"aravindh@sasurie.edu\",\"phone\":\"+91 98450 11223\",\"department_id\":1,\"course_id\":1,\"year\":4,\"section\":\"A\",\"admission_year\":2021}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:04:39.288Z"
+    },
+    {
+      "id": 22,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T12:04:39.230Z"
+    },
+    {
+      "id": 21,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 1,
+      "new_values": "{\"full_name\":\"Ramya S\",\"register_number\":\"732423104036\",\"email\":\"ramyacse2327@sasurie.com\",\"password\":\"Sasurie@123\",\"phone\":\"+918825641424\",\"department_id\":1,\"course_id\":1,\"year\":1,\"section\":\"A\",\"admission_year\":2026}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:03:59.684Z"
+    },
+    {
+      "id": 20,
+      "user_id": 2,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 2,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:2059:6724:d45b:1e20:1aa6:ca4d",
+      "created_at": "2026-09-09T12:00:36.952Z"
+    },
+    {
+      "id": 19,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "STUDENT_DELETED",
+      "entity_type": "STUDENT",
+      "entity_id": 1,
+      "new_values": "{\"student\":\"Kavitha S\",\"reg_no\":\"732921104015\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:57.204Z"
+    },
+    {
+      "id": 18,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:57.189Z"
+    },
+    {
+      "id": 17,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"EMP-LIB-101\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:48.840Z"
+    },
+    {
+      "id": 16,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "DUE_DELETED",
+      "entity_type": "DUE_RECORD",
+      "entity_id": 1,
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:42.282Z"
+    },
+    {
+      "id": 15,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"EMP-LIB-101\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:42.269Z"
+    },
+    {
+      "id": 14,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"EMP-LIB-101\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:40.026Z"
+    },
+    {
+      "id": 13,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "DUE_UPDATED",
+      "entity_type": "DUE_RECORD",
+      "entity_id": 1,
+      "new_values": "{\"amount\":400,\"description\":\"Updated: Overdue Library Book Fine - AI Handbook (Late 14 days)\",\"remarks\":\"Counter 2 clearance\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:30.698Z"
+    },
+    {
+      "id": 12,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"EMP-LIB-101\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:30.684Z"
+    },
+    {
+      "id": 11,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"EMP-LIB-101\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:23.887Z"
+    },
+    {
+      "id": 10,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "DUE_CREATED",
+      "entity_type": "DUE_RECORD",
+      "entity_id": 1,
+      "new_values": "{\"id\":1,\"student_id\":1,\"department_id\":1,\"category_id\":1,\"amount\":350,\"status\":\"pending\",\"description\":\"Overdue Library Book Fine - AI Handbook\",\"remarks\":\"Return to counter 2\",\"created_by\":4,\"updated_by\":4,\"created_at\":\"2026-09-09T07:41:13.990Z\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:13.990Z"
+    },
+    {
+      "id": 9,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"EMP-LIB-101\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:13.975Z"
+    },
+    {
+      "id": 8,
+      "user_id": 4,
+      "user_email": "staff.library@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 4,
+      "new_values": "{\"identifier\":\"staff.library@college.edu\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:41:10.447Z"
+    },
+    {
+      "id": 7,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:34.684Z"
+    },
+    {
+      "id": 6,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 1,
+      "new_values": "{\"full_name\":\"Kavitha S\",\"register_number\":\"732921104015\",\"email\":\"kavitha@sasurie.edu\",\"phone\":\"9876543210\",\"department_id\":1,\"course_id\":1,\"year\":4,\"section\":\"A\",\"password\":\"StudentPass@123\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:32.137Z"
+    },
+    {
+      "id": 5,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:32.080Z"
+    },
+    {
+      "id": 4,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:29.555Z"
+    },
+    {
+      "id": 3,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:26.152Z"
+    },
+    {
+      "id": 2,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:20.301Z"
+    },
+    {
+      "id": 1,
+      "user_id": 1,
+      "user_email": "ramyacse23@sasurie.com",
+      "action": "SYSTEM_INITIALIZED",
+      "entity_type": "SYSTEM",
+      "entity_id": 1,
+      "new_values": {
+        "message": "College No Due System initialized with clean institutional datasets"
+      },
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-09T07:40:13.344Z"
+    }
+  ],
+  "nextId": {
+    "users": 12,
+    "departments": 25,
+    "courses": 25,
+    "dueCategories": 8,
+    "students": 3,
+    "staff": 6,
+    "dueRecords": 1,
+    "duePayments": 1,
+    "noDueRequests": 2,
+    "noDueApprovals": 25,
+    "certificates": 1,
+    "notifications": 3,
+    "auditLogs": 52
+  }
+}

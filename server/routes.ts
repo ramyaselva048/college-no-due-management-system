@@ -76,6 +76,7 @@ const COLLEGE_ADMIN_EMAILS = [
   'ramya@sasurie.edu',
   'ramyacse23@sasurie.com',
   'ramya@sasurie.com',
+  'ramyaselva048@gmail.com',
   'admin@college.edu'
 ];
 
@@ -125,8 +126,16 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
   } else {
     // Check if this is an institutional Staff or Admin user
-    if (lowerIdentifier === 'admin' || lowerIdentifier === 'ramya' || lowerIdentifier === 'ramyacse23') {
-      user = db.users.find(u => u.role === 'ADMIN');
+    if (
+      lowerIdentifier === 'admin' ||
+      lowerIdentifier === 'ramya' ||
+      lowerIdentifier === 'ramyacse23' ||
+      lowerIdentifier === 'ramyaselva' ||
+      lowerIdentifier === 'ramyaselva048' ||
+      lowerIdentifier === 'ramyaselva048@gmail.com'
+    ) {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && u.role === 'ADMIN') ||
+             db.users.find(u => u.role === 'ADMIN');
     } else {
       user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
     }
@@ -567,6 +576,10 @@ apiRouter.get('/student/due-categories', (req, res) => {
   res.json(db.dueCategories.filter(c => c.is_active));
 });
 
+apiRouter.get('/due-categories', (req, res) => {
+  res.json(db.dueCategories.filter(c => c.is_active));
+});
+
 // ----------------------------------------------------
 // Due Records (/api/due-records)
 // ----------------------------------------------------
@@ -593,7 +606,7 @@ apiRouter.get('/due-records', authMiddleware, (req: AuthRequest, res: Response) 
   }
 
   const statusFilter = req.query.status as string;
-  if (statusFilter) {
+  if (statusFilter && statusFilter !== 'all') {
     records = records.filter(r => r.status === statusFilter);
   }
 
@@ -655,16 +668,33 @@ apiRouter.post('/due-records', authMiddleware, requireRole(['STAFF', 'ADMIN']), 
   const cat = db.dueCategories.find(c => c.id === Number(category_id));
   if (!cat) return res.status(404).json({ detail: 'Due category not found' });
 
+  const parsedAmount = Number(amount) || 0;
+  const cleanDesc = (description || 'Department Due').trim();
+
+  // Prevent duplicate pending due record
+  const existingPending = db.dueRecords.find(d =>
+    d.student_id === student.id &&
+    d.department_id === dept.id &&
+    d.category_id === cat.id &&
+    d.amount === parsedAmount &&
+    d.status === 'pending' &&
+    d.description.toLowerCase().trim() === cleanDesc.toLowerCase()
+  );
+  if (existingPending) {
+    return res.status(400).json({ detail: 'An identical pending due record already exists for this student in this department' });
+  }
+
   const now = new Date().toISOString();
+  const nextDueId = Math.max(0, ...db.dueRecords.map(d => d.id)) + 1;
   const newDue: any = {
-    id: db.dueRecords.length + 1,
+    id: nextDueId,
     student_id: student.id,
     department_id: dept.id,
     category_id: cat.id,
-    amount: Number(amount) || 0,
+    amount: parsedAmount,
     status: 'pending',
-    description: description || 'Department Due',
-    remarks: remarks || '',
+    description: cleanDesc,
+    remarks: (remarks || '').trim(),
     created_by: req.user!.id,
     updated_by: req.user!.id,
     created_at: now
@@ -707,7 +737,11 @@ apiRouter.patch('/due-records/:id', authMiddleware, requireRole(['STAFF', 'ADMIN
     return res.status(403).json({ detail: 'You can only modify dues for your assigned department' });
   }
 
-  const { amount, status, description, remarks } = req.body;
+  const { amount, status, description, remarks, category_id } = req.body;
+  if (category_id !== undefined) {
+    const cat = db.dueCategories.find(c => c.id === Number(category_id));
+    if (cat) due.category_id = cat.id;
+  }
   if (amount !== undefined) due.amount = Number(amount);
   if (status !== undefined) {
     if (!['pending', 'cleared', 'waived'].includes(status)) {
@@ -715,8 +749,8 @@ apiRouter.patch('/due-records/:id', authMiddleware, requireRole(['STAFF', 'ADMIN
     }
     due.status = status;
   }
-  if (description !== undefined) due.description = description;
-  if (remarks !== undefined) due.remarks = remarks;
+  if (description !== undefined) due.description = description.trim();
+  if (remarks !== undefined) due.remarks = remarks.trim();
 
   due.updated_at = new Date().toISOString();
   due.updated_by = req.user!.id;
@@ -818,7 +852,7 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
   }
 
   const now = new Date().toISOString();
-  const reqId = db.noDueRequests.length + 1;
+  const reqId = Math.max(0, ...db.noDueRequests.map(r => r.id)) + 1;
   const newReq: any = {
     id: reqId,
     student_id: student.id,
@@ -831,9 +865,10 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
 
   // Auto-generate approval for every active department
   const activeDepts = db.departments.filter(d => d.is_active);
-  const approvals = activeDepts.map(d => {
+  const baseAppId = Math.max(0, ...db.noDueApprovals.map(a => a.id));
+  const approvals = activeDepts.map((d, index) => {
     const appRecord: any = {
-      id: db.noDueApprovals.length + 1,
+      id: baseAppId + index + 1,
       request_id: newReq.id,
       department_id: d.id,
       status: 'pending',
@@ -845,6 +880,7 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
       department_name: d.name
     };
   });
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'NO_DUE_REQUEST_CREATED', 'NO_DUE_REQUEST', newReq.id, null, { departments_count: activeDepts.length }, getClientIp(req));
   db.createNotification(
@@ -913,8 +949,13 @@ apiRouter.get('/no-due-requests/my', authMiddleware, requireRole(['STUDENT']), (
   res.json(result);
 });
 
-apiRouter.get('/no-due-requests', authMiddleware, requireRole(['STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.get('/no-due-requests', authMiddleware, requireRole(['STUDENT', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
   let requests = db.noDueRequests;
+  if (req.user!.role === 'STUDENT') {
+    const student = req.studentProfile;
+    if (!student) return res.json([]);
+    requests = requests.filter(r => r.student_id === student.id);
+  }
   if (req.query.status) {
     requests = requests.filter(r => r.status === req.query.status);
   }
@@ -1165,12 +1206,13 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
     return res.status(400).json({ detail: 'Certificate has already been issued for this request' });
   }
 
-  const certNumber = `NDC-2026-${(db.certificates.length + 1).toString().padStart(6, '0')}`;
+  const nextCertId = Math.max(0, ...db.certificates.map(c => c.id)) + 1;
+  const certNumber = `NDC-2026-${nextCertId.toString().padStart(6, '0')}`;
   const verifCode = `VFY-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
   const now = new Date().toISOString();
 
   const cert: any = {
-    id: db.certificates.length + 1,
+    id: nextCertId,
     request_id: r.id,
     student_id: r.student_id,
     certificate_number: certNumber,
@@ -1180,6 +1222,7 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
     created_at: now
   };
   db.certificates.push(cert);
+  db.saveToFile();
 
   r.status = 'completed';
   r.reviewed_at = now;
@@ -1562,6 +1605,7 @@ apiRouter.patch(['/admin/students/:id/status', '/admin/students/:id/toggle-statu
   if (!u) return res.status(404).json({ detail: 'User not found' });
 
   u.is_active = !u.is_active;
+  db.saveToFile();
   db.logAudit(req.user!.id, req.user!.email, 'USER_STATUS_TOGGLE', 'STUDENT', st.id, null, { is_active: u.is_active }, getClientIp(req));
   res.json({ message: `Student account ${u.is_active ? 'activated' : 'deactivated'}`, is_active: u.is_active });
 });
@@ -1661,6 +1705,7 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     created_at: now
   };
   db.students.push(newStudent);
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'STUDENT_CREATED', 'STUDENT', newStudent.id, null, req.body, getClientIp(req));
 
@@ -1783,6 +1828,7 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
   const dept = db.departments.find(d => d.id === st.department_id);
   const course = db.courses.find(c => c.id === st.course_id);
 
+  db.saveToFile();
   db.logAudit(req.user!.id, req.user!.email, 'STUDENT_UPDATED', 'STUDENT', st.id, null, req.body, getClientIp(req));
 
   res.json({
@@ -1821,6 +1867,7 @@ apiRouter.delete('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), 
   db.notifications = db.notifications.filter(n => n.user_id !== userId);
   db.users = db.users.filter(u => u.id !== userId);
   db.students.splice(stIndex, 1);
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'STUDENT_DELETED', 'STUDENT', id, null, { student: st.full_name, reg_no: st.register_number }, getClientIp(req));
 

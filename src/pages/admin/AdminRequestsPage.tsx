@@ -12,7 +12,8 @@ import {
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Trash2
+  Trash2,
+  X
 } from 'lucide-react';
 import api from '../../services/api';
 import { NoDueRequest } from '../../types';
@@ -25,6 +26,15 @@ export const AdminRequestsPage: React.FC = () => {
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [actionLoading, setActionLoading] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Modals replacing browser window.prompt and window.confirm
+  const [issuingCertReq, setIssuingCertReq] = useState<NoDueRequest | null>(null);
+  const [approvingReq, setApprovingReq] = useState<NoDueRequest | null>(null);
+  const [approveRemarks, setApproveRemarks] = useState('Approved by Institutional Administration');
+  const [rejectingReq, setRejectingReq] = useState<NoDueRequest | null>(null);
+  const [rejectRemarks, setRejectRemarks] = useState('Requirement unfulfilled or pending administrative verification');
+  const [deletingReq, setDeletingReq] = useState<NoDueRequest | null>(null);
 
   const fetchRequests = async () => {
     try {
@@ -46,70 +56,67 @@ export const AdminRequestsPage: React.FC = () => {
     fetchRequests();
   }, []);
 
-  const handleIssueCertificate = async (requestId: number) => {
-    if (!window.confirm('Are you sure you want to issue the official No Due Certificate for this student?')) {
-      return;
-    }
-
+  const confirmIssueCertificate = async () => {
+    if (!issuingCertReq) return;
     try {
-      setActionLoading(requestId);
-      await api.post(`/certificates/issue/${requestId}`);
-      alert('Certificate successfully generated and cryptographically minted!');
+      setActionLoading(issuingCertReq.id);
+      await api.post(`/certificates/issue/${issuingCertReq.id}`);
+      setSuccessMsg(`Certificate successfully generated and issued for ${issuingCertReq.student_name}!`);
+      setIssuingCertReq(null);
       await fetchRequests();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to issue certificate');
+      setError(err.response?.data?.detail || 'Failed to issue certificate');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleAdminApprove = async (requestId: number) => {
-    const remarks = window.prompt('Administrative approval remarks:', 'Approved by Institutional Administration');
-    if (remarks === null) return;
-
+  const confirmAdminApprove = async () => {
+    if (!approvingReq) return;
     try {
-      setActionLoading(requestId);
-      await api.patch(`/no-due-requests/${requestId}`, {
+      setActionLoading(approvingReq.id);
+      await api.patch(`/no-due-requests/${approvingReq.id}`, {
         status: 'approved',
-        remarks: remarks || undefined
+        remarks: approveRemarks || undefined
       });
+      setSuccessMsg(`Clearance request #${approvingReq.id} approved!`);
+      setApprovingReq(null);
       await fetchRequests();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to approve request');
+      setError(err.response?.data?.detail || 'Failed to approve request');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleAdminReject = async (requestId: number) => {
-    const remarks = window.prompt('Enter reason for administrative rejection:');
-    if (!remarks || !remarks.trim()) return;
-
+  const confirmAdminReject = async () => {
+    if (!rejectingReq || !rejectRemarks.trim()) return;
     try {
-      setActionLoading(requestId);
-      await api.patch(`/no-due-requests/${requestId}`, {
+      setActionLoading(rejectingReq.id);
+      await api.patch(`/no-due-requests/${rejectingReq.id}`, {
         status: 'rejected',
-        remarks: remarks.trim()
+        remarks: rejectRemarks.trim()
       });
+      setSuccessMsg(`Clearance request #${rejectingReq.id} rejected.`);
+      setRejectingReq(null);
       await fetchRequests();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to reject request');
+      setError(err.response?.data?.detail || 'Failed to reject request');
     } finally {
       setActionLoading(null);
     }
   };
 
-  const handleDeleteRequest = async (requestId: number, studentName: string) => {
-    if (!window.confirm(`Are you sure you want to delete clearance application #${requestId} for "${studentName}"?`)) {
-      return;
-    }
-
+  const confirmDeleteRequest = async () => {
+    if (!deletingReq) return;
     try {
-      setActionLoading(requestId);
-      await api.delete(`/no-due-requests/${requestId}`);
+      setActionLoading(deletingReq.id);
+      await api.delete(`/no-due-requests/${deletingReq.id}`);
+      setSuccessMsg(`Clearance request #${deletingReq.id} deleted.`);
+      setDeletingReq(null);
       await fetchRequests();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to delete clearance application');
+      setError(err.response?.data?.detail || 'Failed to delete clearance application');
     } finally {
       setActionLoading(null);
     }
@@ -152,9 +159,26 @@ export const AdminRequestsPage: React.FC = () => {
       </div>
 
       {error && (
-        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
-          <AlertCircle className="w-4 h-4 shrink-0" />
-          <span>{error}</span>
+        <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 shrink-0" />
+            <span>{error}</span>
+          </div>
+          <button onClick={() => setError(null)} className="text-rose-500 hover:text-rose-700">
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      {successMsg && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-500 hover:text-emerald-700">
+            <X className="w-4 h-4" />
+          </button>
         </div>
       )}
 
@@ -254,7 +278,10 @@ export const AdminRequestsPage: React.FC = () => {
 
                     {req.status !== 'completed' && req.status !== 'rejected' && (
                       <button
-                        onClick={() => handleAdminApprove(req.id)}
+                        onClick={() => {
+                          setApprovingReq(req);
+                          setApproveRemarks('Approved by Institutional Administration');
+                        }}
                         disabled={actionLoading === req.id}
                         className="px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-200 transition-colors disabled:opacity-50"
                       >
@@ -264,7 +291,7 @@ export const AdminRequestsPage: React.FC = () => {
 
                     {(req.status === 'approved' || allApproved) && req.status !== 'completed' && (
                       <button
-                        onClick={() => handleIssueCertificate(req.id)}
+                        onClick={() => setIssuingCertReq(req)}
                         disabled={actionLoading === req.id}
                         className="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 disabled:opacity-50"
                       >
@@ -274,7 +301,10 @@ export const AdminRequestsPage: React.FC = () => {
 
                     {req.status !== 'rejected' && req.status !== 'completed' && (
                       <button
-                        onClick={() => handleAdminReject(req.id)}
+                        onClick={() => {
+                          setRejectingReq(req);
+                          setRejectRemarks('Requirement unfulfilled or pending administrative verification');
+                        }}
                         disabled={actionLoading === req.id}
                         className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
                       >
@@ -283,7 +313,7 @@ export const AdminRequestsPage: React.FC = () => {
                     )}
 
                     <button
-                      onClick={() => handleDeleteRequest(req.id, req.student_name)}
+                      onClick={() => setDeletingReq(req)}
                       disabled={actionLoading === req.id}
                       className="p-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors inline-flex items-center"
                       title="Delete Application"
@@ -344,6 +374,204 @@ export const AdminRequestsPage: React.FC = () => {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {/* Approve Modal */}
+      {approvingReq && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Approve Clearance Request</h4>
+                  <p className="text-[11px] text-slate-400">Application #{approvingReq.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setApprovingReq(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-4">
+              Granting administrative clearance for student{' '}
+              <span className="font-bold text-slate-900">{approvingReq.student_name}</span> ({approvingReq.register_number}).
+            </p>
+
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Administrative Approval Remarks
+              </label>
+              <textarea
+                rows={3}
+                value={approveRemarks}
+                onChange={(e) => setApproveRemarks(e.target.value)}
+                className="w-full text-xs p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-emerald-500 text-slate-800"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setApprovingReq(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAdminApprove}
+                disabled={actionLoading === approvingReq.id}
+                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl disabled:opacity-50"
+              >
+                {actionLoading === approvingReq.id ? 'Approving...' : 'Confirm Approval'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Reject Modal */}
+      {rejectingReq && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <XCircle className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Reject Clearance Request</h4>
+                  <p className="text-[11px] text-slate-400">Application #{rejectingReq.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setRejectingReq(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-4">
+              Reject clearance for student{' '}
+              <span className="font-bold text-slate-900">{rejectingReq.student_name}</span> ({rejectingReq.register_number}).
+            </p>
+
+            <div className="mb-5">
+              <label className="block text-xs font-bold text-slate-700 mb-1.5">
+                Reason for Administrative Rejection <span className="text-rose-500">*</span>
+              </label>
+              <textarea
+                rows={3}
+                value={rejectRemarks}
+                onChange={(e) => setRejectRemarks(e.target.value)}
+                placeholder="Enter justification..."
+                className="w-full text-xs p-3 border border-slate-200 rounded-xl focus:outline-none focus:ring-1 focus:ring-rose-500 text-slate-800"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setRejectingReq(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmAdminReject}
+                disabled={actionLoading === rejectingReq.id || !rejectRemarks.trim()}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
+              >
+                {actionLoading === rejectingReq.id ? 'Rejecting...' : 'Confirm Rejection'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Issue Certificate Modal */}
+      {issuingCertReq && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Award className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Issue No Due Certificate</h4>
+                  <p className="text-[11px] text-slate-400">Student: {issuingCertReq.student_name}</p>
+                </div>
+              </div>
+              <button onClick={() => setIssuingCertReq(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+              This will generate an official, cryptographically verifiable institutional certificate for student{' '}
+              <span className="font-bold text-slate-900">{issuingCertReq.student_name}</span> ({issuingCertReq.register_number}). The student will immediately be able to view and download their verified certificate.
+            </p>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setIssuingCertReq(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmIssueCertificate}
+                disabled={actionLoading === issuingCertReq.id}
+                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl disabled:opacity-50"
+              >
+                {actionLoading === issuingCertReq.id ? 'Issuing...' : 'Issue Certificate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Request Modal */}
+      {deletingReq && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-xl border border-slate-100">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <Trash2 className="w-5 h-5" />
+                </div>
+                <div>
+                  <h4 className="font-bold text-slate-900 text-sm">Delete Clearance Application</h4>
+                  <p className="text-[11px] text-slate-400">Application #{deletingReq.id}</p>
+                </div>
+              </div>
+              <button onClick={() => setDeletingReq(null)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+              Are you sure you want to permanently delete clearance application{' '}
+              <span className="font-bold text-slate-900">#{deletingReq.id}</span> for{' '}
+              <span className="font-bold text-slate-900">{deletingReq.student_name}</span> ({deletingReq.register_number})? All departmental approval ledger entries for this request will also be removed.
+            </p>
+
+            <div className="flex items-center justify-end gap-2">
+              <button
+                onClick={() => setDeletingReq(null)}
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteRequest}
+                disabled={actionLoading === deletingReq.id}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
+              >
+                {actionLoading === deletingReq.id ? 'Deleting...' : 'Delete Application'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

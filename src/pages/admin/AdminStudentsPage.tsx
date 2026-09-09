@@ -13,7 +13,8 @@ import {
   AlertCircle,
   Layers,
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  RotateCw
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, Course } from '../../types';
@@ -83,17 +84,20 @@ export const AdminStudentsPage: React.FC = () => {
     }
   };
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const fetchStudents = async () => {
     try {
       setLoading(true);
+      setLoadError(null);
       const res = await api.get('/admin/students');
       const list = Array.isArray(res.data)
         ? res.data
         : (Array.isArray(res.data?.students) ? res.data.students : []);
       setStudents(list);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to load students', err);
-      setStudents([]);
+      setLoadError(err.response?.data?.detail || 'Failed to refresh students list from server.');
     } finally {
       setLoading(false);
     }
@@ -326,6 +330,15 @@ export const AdminStudentsPage: React.FC = () => {
           </div>
 
           <button
+            onClick={() => fetchStudents()}
+            disabled={loading}
+            className="p-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-2xs"
+            title="Refresh student records"
+          >
+            <RotateCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+          </button>
+
+          <button
             onClick={openCreateModal}
             className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5"
           >
@@ -333,6 +346,21 @@ export const AdminStudentsPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {loadError && (
+        <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>{loadError}</span>
+          </div>
+          <button
+            onClick={() => fetchStudents()}
+            className="px-2.5 py-1 text-xs font-semibold bg-white border border-amber-300 rounded-lg text-amber-900 hover:bg-amber-100"
+          >
+            Retry
+          </button>
+        </div>
+      )}
 
       {/* Students Table */}
       {loading ? (

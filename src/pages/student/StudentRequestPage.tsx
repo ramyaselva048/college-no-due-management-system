@@ -27,9 +27,10 @@ export const StudentRequestPage: React.FC = () => {
   const loadData = async () => {
     try {
       setLoading(true);
+      setError(null);
       const [sumRes, reqRes] = await Promise.all([
         api.get('/student/summary'),
-        api.get('/no-due-requests')
+        api.get('/no-due-requests').catch(() => api.get('/no-due-requests/my'))
       ]);
       setSummary(sumRes.data);
       const reqList = Array.isArray(reqRes.data)

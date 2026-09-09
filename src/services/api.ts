@@ -24,10 +24,10 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request Interceptor: Attach Access Token (sessionStorage prioritized for admin, then localStorage)
+// Request Interceptor: Attach Access Token (localStorage, fallback to sessionStorage)
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
+    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -90,16 +90,11 @@ api.interceptors.response.use(
         const newAccessToken = res.data.access_token;
         const newRefreshToken = res.data.refresh_token;
 
-        if (sessionStorage.getItem('refreshToken')) {
-          sessionStorage.setItem('token', newAccessToken);
-          if (newRefreshToken) {
-            sessionStorage.setItem('refreshToken', newRefreshToken);
-          }
-        } else {
-          localStorage.setItem('token', newAccessToken);
-          if (newRefreshToken) {
-            localStorage.setItem('refreshToken', newRefreshToken);
-          }
+        localStorage.setItem('token', newAccessToken);
+        sessionStorage.setItem('token', newAccessToken);
+        if (newRefreshToken) {
+          localStorage.setItem('refreshToken', newRefreshToken);
+          sessionStorage.setItem('refreshToken', newRefreshToken);
         }
 
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
