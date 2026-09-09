@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "college-no-due-management-system",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -17,8 +17,6 @@
     "@vitejs/plugin-react": "^5.0.4",
     "axios": "^1.20.0",
     "dotenv": "^17.2.3",
-    "drizzle-kit": "^0.31.10",
-    "drizzle-orm": "^0.45.2",
     "express": "^4.21.2",
     "firebase": "^12.18.0",
     "firebase-admin": "^14.3.0",

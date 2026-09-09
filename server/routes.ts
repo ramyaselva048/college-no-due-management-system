@@ -64,9 +64,13 @@ function requireRole(roles: Array<'STUDENT' | 'STAFF' | 'ADMIN'>) {
 apiRouter.get('/health', async (req, res) => {
   let pgStatus = 'disconnected';
   try {
-    const pgRes = await pgQuery('SELECT NOW() as now');
-    if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
-      pgStatus = 'connected (PostgreSQL - Neon Cloud SQL)';
+    if (db.isPgConnected) {
+      const pgRes = await pgQuery('SELECT NOW() as now');
+      if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
+        pgStatus = 'connected (PostgreSQL - Neon Cloud SQL)';
+      }
+    } else {
+      pgStatus = 'local-storage (file/in-memory database active)';
     }
   } catch (err: any) {
     pgStatus = 'error: ' + (err?.message || 'unknown');
@@ -93,7 +97,9 @@ apiRouter.get('/health', async (req, res) => {
 // Authentication Routes (/api/auth)
 // ----------------------------------------------------
 const COLLEGE_ADMIN_EMAILS = [
-  'ramya@sasurie.edu'
+  'ramya@sasurie.edu',
+  'ramyacse23@sasurie.com',
+  'admin@sasurie.edu'
 ];
 
 // Verification endpoint: Informs client that self-registration is permanently disabled
@@ -126,7 +132,9 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
 
   // Find student by register number or email in the Admin Portal's registry (db.students)
   let student = db.students.find(
-    s => s.register_number.toUpperCase() === upperIdentifier || s.email.toLowerCase() === lowerIdentifier
+    s => s.register_number.toUpperCase() === upperIdentifier ||
+         s.email.toLowerCase() === lowerIdentifier ||
+         (lowerIdentifier === 'ramyacse23@sasurie.com' && s.email.toLowerCase() === 'ramyacse2327@sasurie.com')
   );
 
   // Find staff by employee ID or email in the Admin Portal's registry (db.staff)
@@ -136,15 +144,34 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
 
   let user: UserRecord | undefined;
 
-  if (student) {
-    // If student is found in Admin registry, find their linked user account
-    user = db.users.find(u => u.id === student!.user_id || u.email.toLowerCase() === student!.email.toLowerCase());
-  } else if (staff) {
-    // If staff is found in Admin registry, find their linked user account
-    user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
+  if (requestedRole === 'ADMIN') {
+    user = db.users.find(u => u.role === 'ADMIN' && (
+      u.email.toLowerCase() === lowerIdentifier ||
+      (COLLEGE_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(lowerIdentifier) && COLLEGE_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(u.email.toLowerCase()))
+    ));
+    if (!user) {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
+    }
+  } else if (requestedRole === 'STAFF') {
+    if (staff) {
+      user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
+    } else {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && u.role === 'STAFF');
+    }
+  } else if (requestedRole === 'STUDENT') {
+    if (student) {
+      user = db.users.find(u => u.id === student!.user_id || u.email.toLowerCase() === student!.email.toLowerCase());
+    } else {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && u.role === 'STUDENT');
+    }
   } else {
-    // User login via email
-    user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
+    if (student) {
+      user = db.users.find(u => u.id === student!.user_id || u.email.toLowerCase() === student!.email.toLowerCase());
+    } else if (staff) {
+      user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
+    } else {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
+    }
   }
 
   // If user does not exist or password does not match
@@ -155,8 +182,6 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
   }
 
   // STRICT ROLE SEPARATION:
-  // "student login only students staffs login only staffs"
-  // "oru admin mattum than athu ramya@sasurie.edu password : RamyaSasurie@123"
   if (requestedRole === 'STUDENT') {
     if (user.role !== 'STUDENT') {
       return res.status(403).json({
@@ -170,7 +195,7 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
       });
     }
   } else if (requestedRole === 'ADMIN') {
-    if (user.role !== 'ADMIN' || user.email.toLowerCase() !== 'ramya@sasurie.edu') {
+    if (user.role !== 'ADMIN' || !COLLEGE_ADMIN_EMAILS.some(e => e.toLowerCase() === user!.email.toLowerCase())) {
       return res.status(403).json({
         detail: 'Access denied: Only the institutional administrator is authorized to log in through the Admin Portal.'
       });
@@ -179,7 +204,7 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
 
   // Administrator strict validation
   if (user.role === 'ADMIN') {
-    if (user.email.toLowerCase() !== 'ramya@sasurie.edu') {
+    if (!COLLEGE_ADMIN_EMAILS.some(e => e.toLowerCase() === user!.email.toLowerCase())) {
       return res.status(403).json({
         detail: 'Access denied: Unauthorized administrator account.'
       });
@@ -594,11 +619,11 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
   });
 });
 
-apiRouter.get('/student/departments', (req, res) => {
+apiRouter.get(['/departments', '/student/departments'], (req, res) => {
   res.json(db.departments.filter(d => d.is_active));
 });
 
-apiRouter.get('/student/courses', (req, res) => {
+apiRouter.get(['/courses', '/student/courses'], (req, res) => {
   const list = db.courses.filter(c => c.is_active).map(c => {
     const dept = db.departments.find(d => d.id === c.department_id);
     return {
@@ -992,7 +1017,7 @@ apiRouter.get('/no-due-requests/my', authMiddleware, requireRole(['STUDENT']), (
   res.json(result);
 });
 
-apiRouter.get('/no-due-requests', authMiddleware, requireRole(['STUDENT', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.get(['/no-due-requests', '/no-due-requests/all', '/no-due-requests/my'], authMiddleware, requireRole(['STUDENT', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
   let requests = db.noDueRequests;
   if (req.user!.role === 'STUDENT') {
     const student = req.studentProfile;

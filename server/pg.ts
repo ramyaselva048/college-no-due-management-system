@@ -1,38 +1,92 @@
+import 'dotenv/config';
 import { Pool, QueryResult } from 'pg';
-import crypto from 'crypto';
 
-export const pgPool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-  max: 10,
-  idleTimeoutMillis: 30000,
-  connectionTimeoutMillis: 10000,
-});
+let realPool: Pool | null = null;
 
-pgPool.on('error', (err) => {
-  console.error('Unexpected error on idle PostgreSQL client in Neon:', err);
+export function getPool(): Pool | null {
+  const connStr = process.env.DATABASE_URL?.trim();
+  if (!connStr) return null;
+
+  if (!realPool) {
+    try {
+      realPool = new Pool({
+        connectionString: connStr,
+        ssl: { rejectUnauthorized: false },
+        max: 10,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 8000,
+      });
+
+      realPool.on('error', (err) => {
+        console.warn('[PostgreSQL] Idle client warning:', err.message);
+      });
+    } catch (err) {
+      console.warn('[PostgreSQL] Could not initialize pool — using fallback:', err);
+      realPool = null;
+    }
+  }
+  return realPool;
+}
+
+// Mock interface for offline/fallback environment
+const mockPool = {
+  query: async <T = any>(_text: string, _params?: any[]): Promise<QueryResult<T>> => {
+    return { rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult<T>;
+  },
+  connect: async () => ({
+    query: async <T = any>(_text: string, _params?: any[]): Promise<QueryResult<T>> => {
+      return { rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult<T>;
+    },
+    release: () => {},
+  }),
+  on: () => {},
+};
+
+export const pgPool = new Proxy({} as Pool, {
+  get(_target, prop) {
+    const active = getPool();
+    if (active) {
+      const val = (active as any)[prop];
+      return typeof val === 'function' ? val.bind(active) : val;
+    }
+    const fallback = mockPool as any;
+    return typeof fallback[prop] === 'function' ? fallback[prop].bind(mockPool) : fallback[prop];
+  }
 });
 
 export async function pgQuery<T = any>(text: string, params?: any[]): Promise<QueryResult<T>> {
-  return await pgPool.query<T>(text, params);
+  const pool = getPool();
+  if (!pool) {
+    return { rows: [], command: '', rowCount: 0, oid: 0, fields: [] } as QueryResult<T>;
+  }
+  return await pool.query<T>(text, params);
 }
 
 export async function testPgConnection(): Promise<boolean> {
+  const pool = getPool();
+  if (!pool) {
+    return false;
+  }
   try {
-    const res = await pgPool.query('SELECT NOW() AS server_time');
-    console.log('[PostgreSQL] Connected to Neon DB successfully at:', res.rows[0]?.server_time);
+    const res = await Promise.race([
+      pool.query('SELECT NOW() AS server_time'),
+      new Promise<never>((_, reject) => setTimeout(() => reject(new Error('Connection timeout')), 6000)),
+    ]);
+    console.log('[PostgreSQL] Connected to Neon DB successfully at:', (res as any).rows[0]?.server_time);
     return true;
-  } catch (err) {
-    console.error('[PostgreSQL] Connection failed:', err);
+  } catch (err: any) {
+    console.warn('[PostgreSQL] Connection check failed:', err.message || err);
     return false;
   }
 }
 
 // Utility to safely insert or update PostgreSQL records
 export async function syncTableToPostgres(tableName: string, records: any[]): Promise<void> {
-  if (!records || records.length === 0) return;
-  const client = await pgPool.connect();
+  const pool = getPool();
+  if (!pool || !records || records.length === 0) return;
+  let client;
   try {
+    client = await pool.connect();
     await client.query('BEGIN');
     for (const record of records) {
       const keys = Object.keys(record);
@@ -68,16 +122,21 @@ export async function syncTableToPostgres(tableName: string, records: any[]): Pr
       await client.query(sql, values);
     }
     await client.query('COMMIT');
-  } catch (err) {
-    await client.query('ROLLBACK');
-    console.error(`[PostgreSQL] Failed syncing table ${tableName}:`, err);
+  } catch (err: any) {
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch {}
+    }
+    console.warn(`[PostgreSQL] Failed syncing table ${tableName}:`, err?.message || err);
   } finally {
-    client.release();
+    if (client) {
+      client.release();
+    }
   }
 }
 
 export async function syncSingleRecordToPostgres(tableName: string, record: any): Promise<void> {
-  if (!record || typeof record !== 'object') return;
+  const pool = getPool();
+  if (!pool || !record || typeof record !== 'object') return;
   try {
     const keys = Object.keys(record);
     if (keys.length === 0) return;
@@ -109,16 +168,18 @@ export async function syncSingleRecordToPostgres(tableName: string, record: any)
       sql += ` ON CONFLICT ("id") DO NOTHING`;
     }
 
-    await pgPool.query(sql, values);
-  } catch (err) {
-    console.error(`[PostgreSQL] Failed upserting single record to ${tableName}:`, err);
+    await pool.query(sql, values);
+  } catch (err: any) {
+    console.warn(`[PostgreSQL] Failed upserting single record to ${tableName}:`, err?.message || err);
   }
 }
 
 export async function deleteRecordFromPostgres(tableName: string, id: number): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
   try {
-    await pgPool.query(`DELETE FROM "${tableName}" WHERE "id" = $1`, [id]);
-  } catch (err) {
-    console.error(`[PostgreSQL] Failed deleting record ${id} from ${tableName}:`, err);
+    await pool.query(`DELETE FROM "${tableName}" WHERE "id" = $1`, [id]);
+  } catch (err: any) {
+    console.warn(`[PostgreSQL] Failed deleting record ${id} from ${tableName}:`, err?.message || err);
   }
 }

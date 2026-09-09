@@ -27,6 +27,8 @@ export const LoginPage: React.FC = () => {
     }
   }, [user, navigate]);
 
+  const [showForgotModal, setShowForgotModal] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -172,7 +174,7 @@ export const LoginPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700">Password</label>
                 <button
                   type="button"
-                  onClick={() => alert('Clearance accounts and passwords are centrally managed by the College Administration. If you forgot your password or need access, please contact the College Administration Office.')}
+                  onClick={() => setShowForgotModal(true)}
                   className="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium"
                 >
                   Forgot Password?
@@ -198,6 +200,77 @@ export const LoginPage: React.FC = () => {
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
+              </div>
+            </div>
+
+            {/* Quick Demo Autofill Chips */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center justify-between">
+                <span>Quick Fill Credentials:</span>
+                <span className="text-indigo-600 font-semibold lowercase">click to autofill</span>
+              </p>
+              <div className="flex flex-wrap gap-1.5">
+                {activeRole === 'STUDENT' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => autofill('STUDENT', '732423104036', 'RamyaSasurie@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      🎓 Ramya S <span className="text-slate-400 text-[10px] font-mono">(732423104036)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => autofill('STUDENT', '732921104001', 'StudentPassword@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      🎓 Aravindhan R <span className="text-slate-400 text-[10px] font-mono">(732921104001)</span>
+                    </button>
+                  </>
+                )}
+                {activeRole === 'STAFF' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => autofill('STAFF', 'EMP-LIB-101', 'StaffPassword@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      📚 Library Officer <span className="text-slate-400 text-[10px] font-mono">(EMP-LIB-101)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => autofill('STAFF', 'EMP-CSE-201', 'StaffPassword@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      💻 CSE HOD <span className="text-slate-400 text-[10px] font-mono">(EMP-CSE-201)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => autofill('STAFF', 'EMP-ACC-301', 'StaffPassword@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      💰 Accounts Officer <span className="text-slate-400 text-[10px] font-mono">(EMP-ACC-301)</span>
+                    </button>
+                  </>
+                )}
+                {activeRole === 'ADMIN' && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => autofill('ADMIN', 'ramya@sasurie.edu', 'RamyaSasurie@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      ⚡ College Admin <span className="text-slate-400 text-[10px] font-mono">(ramya@sasurie.edu)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => autofill('ADMIN', 'ramyacse23@sasurie.com', 'RamyaSasurie@123')}
+                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
+                    >
+                      ⚡ Sasurie Admin <span className="text-slate-400 text-[10px] font-mono">(ramyacse23@sasurie.com)</span>
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -228,6 +301,28 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {showForgotModal && (
+        <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-sm w-full shadow-2xl border border-slate-200">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center mb-3">
+              <ShieldCheck className="w-5 h-5" />
+            </div>
+            <h3 className="text-sm font-bold text-slate-900 mb-1">Clearance Account Password Help</h3>
+            <p className="text-xs text-slate-600 leading-relaxed mb-4">
+              Clearance accounts and passwords are centrally managed by the College Administration. If you forgot your password or need your institutional credentials, please contact the College Administration Office or use the Quick Fill buttons on the sign-in form.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowForgotModal(false)}
+              className="w-full py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors"
+            >
+              Understood
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -170,7 +170,9 @@ export function verifyPassword(password: string, hash: string): boolean {
     'RamyaSasurie@123',
     'Sasurie@123',
     'StudentPassword@123',
-    'StaffPassword@123'
+    'StaffPassword@123',
+    'Password123!',
+    'AdminPassword@123'
   ];
   const standardHashes = standardPasses.map(p => hashPassword(p));
   if (standardHashes.includes(hash)) {
@@ -559,34 +561,28 @@ class InMemoryDatabase {
   }
 
   ensureAdminsExist() {
-    const soleAdminEmail = 'ramya@sasurie.edu';
+    const adminEmails = ['ramya@sasurie.edu', 'ramyacse23@sasurie.com', 'admin@sasurie.edu'];
     const soleAdminPass = 'RamyaSasurie@123';
 
-    // Strictly ensure only one administrator exists in the entire system
-    this.users = this.users.filter(u => {
-      if (u.role === 'ADMIN' && u.email.toLowerCase() !== soleAdminEmail.toLowerCase()) {
-        return false;
+    for (const em of adminEmails) {
+      let admin = this.users.find(u => u.email.toLowerCase() === em.toLowerCase());
+      if (admin) {
+        admin.role = 'ADMIN';
+        admin.password_hash = hashPassword(soleAdminPass);
+        admin.is_active = true;
+        admin.is_registered = true;
+      } else {
+        const nextId = Math.max(0, ...this.users.map(u => u.id)) + 1;
+        this.users.push({
+          id: nextId,
+          email: em,
+          password_hash: hashPassword(soleAdminPass),
+          role: 'ADMIN',
+          is_active: true,
+          is_registered: true,
+          created_at: new Date().toISOString()
+        });
       }
-      return true;
-    });
-
-    let admin = this.users.find(u => u.email.toLowerCase() === soleAdminEmail.toLowerCase());
-    if (admin) {
-      admin.role = 'ADMIN';
-      admin.password_hash = hashPassword(soleAdminPass);
-      admin.is_active = true;
-      admin.is_registered = true;
-    } else {
-      const nextId = Math.max(0, ...this.users.map(u => u.id)) + 1;
-      this.users.push({
-        id: nextId,
-        email: soleAdminEmail,
-        password_hash: hashPassword(soleAdminPass),
-        role: 'ADMIN',
-        is_active: true,
-        is_registered: true,
-        created_at: new Date().toISOString()
-      });
     }
   }
 
