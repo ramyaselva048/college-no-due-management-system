@@ -32,9 +32,13 @@ export const StudentRequestPage: React.FC = () => {
         api.get('/no-due-requests')
       ]);
       setSummary(sumRes.data);
-      setRequests(reqRes.data);
+      const reqList = Array.isArray(reqRes.data)
+        ? reqRes.data
+        : (Array.isArray(reqRes.data?.requests) ? reqRes.data.requests : []);
+      setRequests(reqList);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load request status');
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -64,7 +68,8 @@ export const StudentRequestPage: React.FC = () => {
     return <div className="py-20 text-center text-xs text-slate-400">Loading clearance workflow...</div>;
   }
 
-  const activeRequest = requests.find((r) => r.status !== 'rejected') || requests[0];
+  const safeRequests = Array.isArray(requests) ? requests : [];
+  const activeRequest = safeRequests.find((r) => r.status !== 'rejected') || safeRequests[0];
   const hasPendingDues = (summary?.pending_due_amount || 0) > 0;
 
   return (

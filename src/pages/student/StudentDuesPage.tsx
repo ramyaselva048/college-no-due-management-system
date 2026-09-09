@@ -24,9 +24,13 @@ export const StudentDuesPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/due-records');
-      setDues(res.data);
+      const data = Array.isArray(res.data)
+        ? res.data
+        : (Array.isArray(res.data?.records) ? res.data.records : []);
+      setDues(data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load dues records');
+      setDues([]);
     } finally {
       setLoading(false);
     }
@@ -36,12 +40,14 @@ export const StudentDuesPage: React.FC = () => {
     fetchDues();
   }, []);
 
-  const filteredDues = dues.filter((d) => {
+  const safeDues = Array.isArray(dues) ? dues : [];
+
+  const filteredDues = safeDues.filter((d) => {
     if (filter === 'all') return true;
     return d.status === filter;
   });
 
-  const totalPending = dues
+  const totalPending = safeDues
     .filter((d) => d.status === 'pending')
     .reduce((sum, d) => sum + d.amount, 0);
 

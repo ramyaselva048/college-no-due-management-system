@@ -22,9 +22,13 @@ export const AdminAuditLogsPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/admin/audit-logs');
-      setLogs(res.data);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : (Array.isArray(res.data?.logs) ? res.data.logs : []);
+      setLogs(list);
     } catch (err) {
       console.error(err);
+      setLogs([]);
     } finally {
       setLoading(false);
     }
@@ -34,7 +38,9 @@ export const AdminAuditLogsPage: React.FC = () => {
     fetchLogs();
   }, []);
 
-  const filteredLogs = logs.filter((l) => {
+  const safeLogs = Array.isArray(logs) ? logs : [];
+
+  const filteredLogs = safeLogs.filter((l) => {
     const matchesSearch =
       search === '' ||
       l.action?.toLowerCase().includes(search.toLowerCase()) ||
@@ -44,7 +50,7 @@ export const AdminAuditLogsPage: React.FC = () => {
     return matchesSearch && matchesEntity;
   });
 
-  const uniqueEntities = Array.from(new Set(logs.map((l) => l.entity_type).filter(Boolean)));
+  const uniqueEntities = Array.from(new Set(safeLogs.map((l) => l.entity_type).filter(Boolean)));
 
   return (
     <div className="space-y-6">

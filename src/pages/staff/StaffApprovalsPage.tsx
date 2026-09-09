@@ -25,9 +25,10 @@ export const StaffApprovalsPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/no-due-approvals');
-      setApprovals(res.data);
+      setApprovals(Array.isArray(res.data) ? res.data : []);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load department clearance inbox');
+      setApprovals([]);
     } finally {
       setLoading(false);
     }
@@ -37,7 +38,9 @@ export const StaffApprovalsPage: React.FC = () => {
     fetchApprovals();
   }, []);
 
-  const filteredApprovals = approvals.filter((a) => {
+  const safeApprovals = Array.isArray(approvals) ? approvals : [];
+
+  const filteredApprovals = safeApprovals.filter((a) => {
     const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
     const matchesSearch =
       searchQuery === '' ||
@@ -91,7 +94,7 @@ export const StaffApprovalsPage: React.FC = () => {
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          Pending Review ({approvals.filter((a) => a.status === 'pending').length})
+          Pending Review ({safeApprovals.filter((a) => a.status === 'pending').length})
         </button>
         <button
           onClick={() => setStatusFilter('approved')}
@@ -101,7 +104,7 @@ export const StaffApprovalsPage: React.FC = () => {
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          Approved ({approvals.filter((a) => a.status === 'approved').length})
+          Approved ({safeApprovals.filter((a) => a.status === 'approved').length})
         </button>
         <button
           onClick={() => setStatusFilter('rejected')}
@@ -111,7 +114,7 @@ export const StaffApprovalsPage: React.FC = () => {
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          Rejected ({approvals.filter((a) => a.status === 'rejected').length})
+          Rejected ({safeApprovals.filter((a) => a.status === 'rejected').length})
         </button>
         <button
           onClick={() => setStatusFilter('all')}
@@ -121,7 +124,7 @@ export const StaffApprovalsPage: React.FC = () => {
               : 'text-slate-600 hover:bg-slate-100'
           }`}
         >
-          All Requests ({approvals.length})
+          All Requests ({safeApprovals.length})
         </button>
       </div>
 

@@ -28,9 +28,13 @@ export const StaffDuesPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/due-records');
-      setDues(res.data);
+      const data = Array.isArray(res.data)
+        ? res.data
+        : (Array.isArray(res.data?.records) ? res.data.records : []);
+      setDues(data);
     } catch (err) {
       console.error('Failed to load dues', err);
+      setDues([]);
     } finally {
       setLoading(false);
     }
@@ -39,8 +43,11 @@ export const StaffDuesPage: React.FC = () => {
   useEffect(() => {
     fetchDues();
     api.get('/staff/students').then((res) => {
-      setStudents(res.data);
-      if (res.data.length > 0) setSelectedStudentId(res.data[0].id);
+      const studentList = Array.isArray(res.data)
+        ? res.data
+        : (Array.isArray(res.data?.students) ? res.data.students : []);
+      setStudents(studentList);
+      if (studentList.length > 0) setSelectedStudentId(studentList[0].id);
     });
   }, []);
 
@@ -73,7 +80,10 @@ export const StaffDuesPage: React.FC = () => {
     }
   };
 
-  const filteredDues = dues.filter((d) => {
+  const safeDues = Array.isArray(dues) ? dues : [];
+  const safeStudents = Array.isArray(students) ? students : [];
+
+  const filteredDues = safeDues.filter((d) => {
     const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
     const matchesSearch =
       search === '' ||
@@ -83,7 +93,7 @@ export const StaffDuesPage: React.FC = () => {
     return matchesStatus && matchesSearch;
   });
 
-  const selectedStudent = students.find((s) => s.id === selectedStudentId);
+  const selectedStudent = safeStudents.find((s) => s.id === selectedStudentId);
 
   return (
     <div className="space-y-6">

@@ -1,38 +1,19 @@
 import express from 'express';
 import path from 'path';
-import { spawn } from 'child_process';
-import { createProxyMiddleware } from 'http-proxy-middleware';
 import { createServer as createViteServer } from 'vite';
+import { apiRouter } from './server/routes';
 
 const PORT = 3000;
-const PYTHON_PORT = 8001;
 
 async function startServer() {
   const app = express();
 
-  // Ensure Python FastAPI is running with reload support
-  const pyProcess = spawn('python3', ['-m', 'uvicorn', 'backend.app.main:app', '--host', '0.0.0.0', '--port', String(PYTHON_PORT), '--reload'], {
-    stdio: 'inherit',
-    env: { ...process.env }
-  });
+  // Basic middleware
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
-  pyProcess.on('error', (err) => {
-    console.error('Failed to start Python backend:', err);
-  });
-
-  process.on('exit', () => {
-    pyProcess.kill();
-  });
-
-  // Proxy /api requests to Python FastAPI
-  app.use(
-    '/api',
-    createProxyMiddleware({
-      target: `http://127.0.0.1:${PYTHON_PORT}`,
-      changeOrigin: true,
-      ws: true,
-    })
-  );
+  // API Routes mounted before Vite middleware
+  app.use('/api', apiRouter);
 
   // Vite middleware in dev or static files in production
   if (process.env.NODE_ENV !== 'production') {
@@ -50,7 +31,7 @@ async function startServer() {
   }
 
   app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server unified gateway running on http://localhost:${PORT}`);
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 }
 

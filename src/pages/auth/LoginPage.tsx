@@ -75,8 +75,11 @@ export const LoginPage: React.FC = () => {
           <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl mb-6">
             <button
               type="button"
+              id="tab-role-student"
               onClick={() => {
                 setActiveRole('STUDENT');
+                setEmail('');
+                setPassword('');
                 setError(null);
               }}
               className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
@@ -90,8 +93,11 @@ export const LoginPage: React.FC = () => {
             </button>
             <button
               type="button"
+              id="tab-role-staff"
               onClick={() => {
                 setActiveRole('STAFF');
+                setEmail('');
+                setPassword('');
                 setError(null);
               }}
               className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
@@ -105,8 +111,11 @@ export const LoginPage: React.FC = () => {
             </button>
             <button
               type="button"
+              id="tab-role-admin"
               onClick={() => {
                 setActiveRole('ADMIN');
+                setEmail('');
+                setPassword('');
                 setError(null);
               }}
               className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
@@ -120,15 +129,6 @@ export const LoginPage: React.FC = () => {
             </button>
           </div>
 
-          {activeRole === 'ADMIN' && (
-            <div className="mb-4 p-3 bg-purple-50 border border-purple-200 rounded-xl text-purple-800 text-xs flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 shrink-0 text-purple-600" />
-              <span>
-                <strong>College Admin Access:</strong> Restricted to authorized administrator (<code className="font-semibold text-purple-900">ramya@sasurie.edu</code>).
-              </span>
-            </div>
-          )}
-
           {error && (
             <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
               <AlertCircle className="w-4 h-4 shrink-0" />
@@ -139,7 +139,9 @@ export const LoginPage: React.FC = () => {
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Institutional Email Address
+                {activeRole === 'STUDENT'
+                  ? 'Register Number or College Email'
+                  : 'Institutional Email Address'}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -147,11 +149,11 @@ export const LoginPage: React.FC = () => {
                 </div>
                 <input
                   id="input-email"
-                  type="email"
+                  type="text"
                   required
                   placeholder={
                     activeRole === 'STUDENT'
-                      ? 'student@college.edu'
+                      ? 'e.g. 2022BCSE042 or student@college.edu'
                       : activeRole === 'STAFF'
                       ? 'staff.library@college.edu'
                       : 'ramya@sasurie.edu'
@@ -212,41 +214,35 @@ export const LoginPage: React.FC = () => {
             </button>
           </form>
 
-          {/* Quick Demo Autofill Panel */}
-          <div className="mt-6 pt-6 border-t border-slate-100">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 text-center">
-              Quick Test Accounts (1-Click Fill)
-            </p>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => autofill('STUDENT', 'student@college.edu', 'StudentPassword@123')}
-                className="p-2 border border-slate-200 rounded-lg text-left hover:border-blue-300 hover:bg-blue-50/50 transition-all"
-              >
-                <p className="text-[11px] font-bold text-blue-700">Student</p>
-                <p className="text-[10px] text-slate-500 truncate">Aditya Sharma</p>
-              </button>
+          {/* Quick Demo Autofill Panel (Student & Staff only; Admin is strictly manual & confidential) */}
+          {activeRole !== 'ADMIN' && (
+            <div className="mt-6 pt-6 border-t border-slate-100">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 text-center">
+                Quick Test Accounts (1-Click Fill)
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  id="btn-autofill-student"
+                  onClick={() => autofill('STUDENT', 'student@college.edu', 'StudentPassword@123')}
+                  className="p-2 border border-slate-200 rounded-lg text-left hover:border-blue-300 hover:bg-blue-50/50 transition-all"
+                >
+                  <p className="text-[11px] font-bold text-blue-700">Student</p>
+                  <p className="text-[10px] text-slate-500 truncate">Aditya Sharma</p>
+                </button>
 
-              <button
-                type="button"
-                onClick={() => autofill('STAFF', 'staff.library@college.edu', 'StaffPassword@123')}
-                className="p-2 border border-slate-200 rounded-lg text-left hover:border-emerald-300 hover:bg-emerald-50/50 transition-all"
-              >
-                <p className="text-[11px] font-bold text-emerald-700">Staff</p>
-                <p className="text-[10px] text-slate-500 truncate">Library Officer</p>
-              </button>
-
-              <button
-                type="button"
-                id="btn-autofill-admin"
-                onClick={() => autofill('ADMIN', 'ramya@sasurie.edu', 'RamyaSasurie@123')}
-                className="p-2 border border-slate-200 rounded-lg text-left hover:border-purple-300 hover:bg-purple-50/50 transition-all"
-              >
-                <p className="text-[11px] font-bold text-purple-700">Admin</p>
-                <p className="text-[10px] text-slate-500 truncate">Ramya (Principal)</p>
-              </button>
+                <button
+                  type="button"
+                  id="btn-autofill-staff"
+                  onClick={() => autofill('STAFF', 'staff.library@college.edu', 'StaffPassword@123')}
+                  className="p-2 border border-slate-200 rounded-lg text-left hover:border-emerald-300 hover:bg-emerald-50/50 transition-all"
+                >
+                  <p className="text-[11px] font-bold text-emerald-700">Staff</p>
+                  <p className="text-[10px] text-slate-500 truncate">Library Officer</p>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="mt-6 text-center pt-4 border-t border-slate-100">
             <p className="text-xs text-slate-500">

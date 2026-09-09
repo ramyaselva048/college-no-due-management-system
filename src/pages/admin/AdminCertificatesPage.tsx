@@ -8,7 +8,8 @@ import {
   ShieldCheck,
   Ban,
   CheckCircle2,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import { Certificate } from '../../types';
@@ -23,9 +24,13 @@ export const AdminCertificatesPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/certificates/all');
-      setCertificates(res.data);
+      const list = Array.isArray(res.data)
+        ? res.data
+        : (Array.isArray(res.data?.certificates) ? res.data.certificates : []);
+      setCertificates(list);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load certificate ledger');
+      setCertificates([]);
     } finally {
       setLoading(false);
     }
@@ -48,7 +53,21 @@ export const AdminCertificatesPage: React.FC = () => {
     }
   };
 
-  const filteredCerts = certificates.filter(
+  const handleDelete = async (cert: Certificate) => {
+    const confirmMsg = `Are you sure you want to permanently delete certificate #${cert.certificate_number} for student "${cert.student_name}"?`;
+    if (!window.confirm(confirmMsg)) return;
+
+    try {
+      await api.delete(`/certificates/${cert.id}`);
+      fetchCerts();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to delete certificate');
+    }
+  };
+
+  const safeCerts = Array.isArray(certificates) ? certificates : [];
+
+  const filteredCerts = safeCerts.filter(
     (c) =>
       c.certificate_number?.toLowerCase().includes(search.toLowerCase()) ||
       c.verification_code?.toLowerCase().includes(search.toLowerCase()) ||
@@ -153,14 +172,24 @@ export const AdminCertificatesPage: React.FC = () => {
                     </td>
 
                     <td className="py-3.5 px-4 text-right">
-                      {cert.is_valid && (
+                      <div className="flex items-center justify-end gap-1.5">
+                        {cert.is_valid && (
+                          <button
+                            onClick={() => handleRevoke(cert.id)}
+                            className="px-2 py-1 text-[11px] font-bold text-amber-700 bg-amber-50 hover:bg-amber-100 rounded-lg transition-colors border border-amber-200"
+                            title="Revoke Certificate"
+                          >
+                            Revoke
+                          </button>
+                        )}
                         <button
-                          onClick={() => handleRevoke(cert.id)}
-                          className="px-2.5 py-1 text-[11px] font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors border border-rose-200"
+                          onClick={() => handleDelete(cert)}
+                          className="p-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors inline-flex items-center"
+                          title="Delete Certificate"
                         >
-                          Revoke
+                          <Trash2 className="w-3.5 h-3.5" />
                         </button>
-                      )}
+                      </div>
                     </td>
                   </tr>
                 ))}

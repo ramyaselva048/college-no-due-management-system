@@ -11,7 +11,8 @@ import {
   ShieldCheck,
   ChevronDown,
   ChevronUp,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from 'lucide-react';
 import api from '../../services/api';
 import { NoDueRequest } from '../../types';
@@ -29,9 +30,13 @@ export const AdminRequestsPage: React.FC = () => {
     try {
       setLoading(true);
       const res = await api.get('/no-due-requests');
-      setRequests(res.data);
+      const data = Array.isArray(res.data)
+        ? res.data
+        : (Array.isArray(res.data?.requests) ? res.data.requests : []);
+      setRequests(data);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load clearance requests');
+      setRequests([]);
     } finally {
       setLoading(false);
     }
@@ -94,7 +99,25 @@ export const AdminRequestsPage: React.FC = () => {
     }
   };
 
-  const filteredRequests = requests.filter((r) => {
+  const handleDeleteRequest = async (requestId: number, studentName: string) => {
+    if (!window.confirm(`Are you sure you want to delete clearance application #${requestId} for "${studentName}"?`)) {
+      return;
+    }
+
+    try {
+      setActionLoading(requestId);
+      await api.delete(`/no-due-requests/${requestId}`);
+      await fetchRequests();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to delete clearance application');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const safeRequests = Array.isArray(requests) ? requests : [];
+
+  const filteredRequests = safeRequests.filter((r) => {
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
     const matchesSearch =
       search === '' ||
@@ -148,7 +171,7 @@ export const AdminRequestsPage: React.FC = () => {
             }`}
           >
             {st.replace('_', ' ')} (
-            {st === 'all' ? requests.length : requests.filter((r) => r.status === st).length}
+            {st === 'all' ? safeRequests.length : safeRequests.filter((r) => r.status === st).length}
             )
           </button>
         ))}
@@ -258,6 +281,15 @@ export const AdminRequestsPage: React.FC = () => {
                         Reject
                       </button>
                     )}
+
+                    <button
+                      onClick={() => handleDeleteRequest(req.id, req.student_name)}
+                      disabled={actionLoading === req.id}
+                      className="p-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors inline-flex items-center"
+                      title="Delete Application"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
 
