@@ -46,13 +46,6 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const autofill = (r: UserRole, em: string, pw: string) => {
-    setActiveRole(r);
-    setEmail(em);
-    setPassword(pw);
-    setError(null);
-  };
-
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 selection:bg-indigo-500 selection:text-white">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
@@ -203,77 +196,6 @@ export const LoginPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Quick Demo Autofill Chips */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5">
-              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5 flex items-center justify-between">
-                <span>Quick Fill Credentials:</span>
-                <span className="text-indigo-600 font-semibold lowercase">click to autofill</span>
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {activeRole === 'STUDENT' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => autofill('STUDENT', '732423104036', 'RamyaSasurie@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      🎓 Ramya S <span className="text-slate-400 text-[10px] font-mono">(732423104036)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => autofill('STUDENT', '732921104001', 'StudentPassword@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      🎓 Aravindhan R <span className="text-slate-400 text-[10px] font-mono">(732921104001)</span>
-                    </button>
-                  </>
-                )}
-                {activeRole === 'STAFF' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => autofill('STAFF', 'EMP-LIB-101', 'StaffPassword@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      📚 Library Officer <span className="text-slate-400 text-[10px] font-mono">(EMP-LIB-101)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => autofill('STAFF', 'EMP-CSE-201', 'StaffPassword@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      💻 CSE HOD <span className="text-slate-400 text-[10px] font-mono">(EMP-CSE-201)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => autofill('STAFF', 'EMP-ACC-301', 'StaffPassword@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      💰 Accounts Officer <span className="text-slate-400 text-[10px] font-mono">(EMP-ACC-301)</span>
-                    </button>
-                  </>
-                )}
-                {activeRole === 'ADMIN' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => autofill('ADMIN', 'ramya@sasurie.edu', 'RamyaSasurie@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      ⚡ College Admin <span className="text-slate-400 text-[10px] font-mono">(ramya@sasurie.edu)</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => autofill('ADMIN', 'ramyacse23@sasurie.com', 'RamyaSasurie@123')}
-                      className="px-2 py-1 text-[11px] font-semibold bg-white hover:bg-indigo-50 hover:text-indigo-700 hover:border-indigo-300 border border-slate-200 rounded-lg text-slate-700 transition-all text-left shadow-2xs"
-                    >
-                      ⚡ Sasurie Admin <span className="text-slate-400 text-[10px] font-mono">(ramyacse23@sasurie.com)</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            </div>
-
             <button
               id="btn-login-submit"
               type="submit"
@@ -311,7 +233,7 @@ export const LoginPage: React.FC = () => {
             </div>
             <h3 className="text-sm font-bold text-slate-900 mb-1">Clearance Account Password Help</h3>
             <p className="text-xs text-slate-600 leading-relaxed mb-4">
-              Clearance accounts and passwords are centrally managed by the College Administration. If you forgot your password or need your institutional credentials, please contact the College Administration Office or use the Quick Fill buttons on the sign-in form.
+              Clearance accounts and passwords are centrally managed by the College Administration. If you forgot your password or need your institutional credentials, please contact the College Administration Office.
             </p>
             <button
               type="button"
