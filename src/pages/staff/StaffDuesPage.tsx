@@ -221,7 +221,7 @@ export const StaffDuesPage: React.FC = () => {
 
                     <td className="py-3.5 px-4">
                       <span className="font-display font-bold text-slate-900">
-                        ₹{due.amount.toFixed(2)}
+                        ₹{Number(due.amount || 0).toFixed(2)}
                       </span>
                     </td>
 

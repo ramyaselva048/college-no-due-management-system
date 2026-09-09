@@ -72,7 +72,7 @@ export const PayDueModal: React.FC<PayDueModalProps> = ({ due, isOpen, onClose, 
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-slate-200">
               <span className="text-xs font-bold text-slate-700">Total Outstanding:</span>
-              <span className="font-display font-extrabold text-lg text-indigo-600">₹{due.amount.toFixed(2)}</span>
+              <span className="font-display font-extrabold text-lg text-indigo-600">₹{Number(due.amount || 0).toFixed(2)}</span>
             </div>
           </div>
 
@@ -151,7 +151,7 @@ export const PayDueModal: React.FC<PayDueModalProps> = ({ due, isOpen, onClose, 
               ) : (
                 <>
                   <CheckCircle className="w-4 h-4" />
-                  Confirm & Clear ₹{due.amount.toFixed(2)}
+                  Confirm & Clear ₹{Number(due.amount || 0).toFixed(2)}
                 </>
               )}
             </button>

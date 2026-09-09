@@ -64,6 +64,7 @@ export interface StaffProfile {
   department_id: number;
   department_name?: string;
   designation?: string;
+  is_active?: boolean;
   created_at?: string;
 }
 

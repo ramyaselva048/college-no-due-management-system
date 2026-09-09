@@ -141,7 +141,9 @@ export const LoginPage: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 {activeRole === 'STUDENT'
                   ? 'Register Number or College Email'
-                  : 'Institutional Email Address'}
+                  : activeRole === 'STAFF'
+                  ? 'Employee ID or College Email'
+                  : 'Institutional Admin Email'}
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -155,8 +157,8 @@ export const LoginPage: React.FC = () => {
                     activeRole === 'STUDENT'
                       ? 'e.g. 2022BCSE042 or student@college.edu'
                       : activeRole === 'STAFF'
-                      ? 'staff.library@college.edu'
-                      : 'ramya@sasurie.edu'
+                      ? 'e.g. EMP-LIB-101 or staff.library@college.edu'
+                      : 'ramyacse23@sasurie.com or ramya@sasurie.edu'
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -168,12 +170,13 @@ export const LoginPage: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-1">
                 <label className="block text-xs font-semibold text-slate-700">Password</label>
-                <Link
-                  to="/forgot-password"
+                <button
+                  type="button"
+                  onClick={() => alert('Student accounts and passwords are centrally managed by the College Administration. If you forgot your password or need access, please contact the Admin Office (ramya@sasurie.edu).')}
                   className="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium"
                 >
                   Forgot Password?
-                </Link>
+                </button>
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
@@ -220,36 +223,83 @@ export const LoginPage: React.FC = () => {
               <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2.5 text-center">
                 Quick Test Accounts (1-Click Fill)
               </p>
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  id="btn-autofill-student"
-                  onClick={() => autofill('STUDENT', 'student@college.edu', 'StudentPassword@123')}
-                  className="p-2 border border-slate-200 rounded-lg text-left hover:border-blue-300 hover:bg-blue-50/50 transition-all"
-                >
-                  <p className="text-[11px] font-bold text-blue-700">Student</p>
-                  <p className="text-[10px] text-slate-500 truncate">Aditya Sharma</p>
-                </button>
+              {activeRole === 'STUDENT' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    id="btn-autofill-student-reg"
+                    onClick={() => autofill('STUDENT', '2022BCSE042', 'StudentPassword@123')}
+                    className="p-2 border border-slate-200 rounded-lg text-left hover:border-indigo-300 hover:bg-indigo-50/50 transition-all"
+                  >
+                    <p className="text-[11px] font-bold text-indigo-700">Login with Reg No</p>
+                    <p className="text-[10px] text-slate-500 font-mono">2022BCSE042</p>
+                  </button>
 
-                <button
-                  type="button"
-                  id="btn-autofill-staff"
-                  onClick={() => autofill('STAFF', 'staff.library@college.edu', 'StaffPassword@123')}
-                  className="p-2 border border-slate-200 rounded-lg text-left hover:border-emerald-300 hover:bg-emerald-50/50 transition-all"
-                >
-                  <p className="text-[11px] font-bold text-emerald-700">Staff</p>
-                  <p className="text-[10px] text-slate-500 truncate">Library Officer</p>
-                </button>
-              </div>
+                  <button
+                    type="button"
+                    id="btn-autofill-student-email"
+                    onClick={() => autofill('STUDENT', 'student@college.edu', 'StudentPassword@123')}
+                    className="p-2 border border-slate-200 rounded-lg text-left hover:border-blue-300 hover:bg-blue-50/50 transition-all"
+                  >
+                    <p className="text-[11px] font-bold text-blue-700">Login with Email</p>
+                    <p className="text-[10px] text-slate-500 truncate">student@college.edu</p>
+                  </button>
+                </div>
+              ) : activeRole === 'STAFF' ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    id="btn-autofill-staff-emp-id"
+                    onClick={() => autofill('STAFF', 'EMP-LIB-101', 'StaffPassword@123')}
+                    className="p-2 border border-slate-200 rounded-lg text-left hover:border-emerald-300 hover:bg-emerald-50/50 transition-all"
+                  >
+                    <p className="text-[11px] font-bold text-emerald-700">Login with Emp ID</p>
+                    <p className="text-[10px] text-slate-500 font-mono">EMP-LIB-101</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-autofill-staff-email"
+                    onClick={() => autofill('STAFF', 'staff.cse@college.edu', 'StaffPassword@123')}
+                    className="p-2 border border-slate-200 rounded-lg text-left hover:border-teal-300 hover:bg-teal-50/50 transition-all"
+                  >
+                    <p className="text-[11px] font-bold text-teal-700">Login with Email</p>
+                    <p className="text-[10px] text-slate-500 truncate">staff.cse@college.edu</p>
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    id="btn-autofill-admin-primary"
+                    onClick={() => autofill('ADMIN', 'ramyacse23@sasurie.com', 'RamyaSasurie@123')}
+                    className="p-2 border border-purple-200 rounded-lg text-left hover:border-purple-300 hover:bg-purple-50/50 transition-all"
+                  >
+                    <p className="text-[11px] font-bold text-purple-700">Admin (Ramya)</p>
+                    <p className="text-[10px] text-slate-500 truncate">ramyacse23@sasurie.com</p>
+                  </button>
+
+                  <button
+                    type="button"
+                    id="btn-autofill-admin-office"
+                    onClick={() => autofill('ADMIN', 'ramya@sasurie.edu', 'RamyaSasurie@123')}
+                    className="p-2 border border-slate-200 rounded-lg text-left hover:border-purple-300 hover:bg-purple-50/50 transition-all"
+                  >
+                    <p className="text-[11px] font-bold text-purple-700">Admin Office</p>
+                    <p className="text-[10px] text-slate-500 truncate">ramya@sasurie.edu</p>
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
           <div className="mt-6 text-center pt-4 border-t border-slate-100">
-            <p className="text-xs text-slate-500">
-              New student without an account?{' '}
-              <Link to="/register" id="link-student-register" className="text-indigo-600 font-bold hover:underline">
-                Register here
-              </Link>
+            <div className="flex items-center justify-center gap-1 text-[11px] font-semibold text-slate-600">
+              <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+              <span>Admin Enrolled Accounts Only</span>
+            </div>
+            <p className="text-[10px] text-slate-400 mt-1">
+              Student accounts are registered directly in the Admin Portal. Self-registration is disabled.
             </p>
           </div>
         </div>

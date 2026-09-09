@@ -50,8 +50,10 @@ export const AdminReportsPage: React.FC = () => {
   }
 
   const { stats, department_breakdown } = data;
-  const totalAmount = stats.pending_dues_amount + stats.cleared_dues_amount;
-  const recoveryRate = totalAmount > 0 ? (stats.cleared_dues_amount / totalAmount) * 100 : 100;
+  const clearedAmt = Number(stats?.cleared_dues_amount || 0);
+  const pendingAmt = Number(stats?.pending_dues_amount || 0);
+  const totalAmount = pendingAmt + clearedAmt;
+  const recoveryRate = totalAmount > 0 ? (clearedAmt / totalAmount) * 100 : 100;
 
   return (
     <div className="space-y-6">
@@ -95,7 +97,7 @@ export const AdminReportsPage: React.FC = () => {
             ></div>
           </div>
           <p className="text-[11px] text-slate-400 mt-2">
-            ₹{stats.cleared_dues_amount.toFixed(2)} collected of ₹{totalAmount.toFixed(2)}
+            ₹{clearedAmt.toFixed(2)} collected of ₹{totalAmount.toFixed(2)}
           </p>
         </div>
 
@@ -166,7 +168,7 @@ export const AdminReportsPage: React.FC = () => {
                     <td className="py-3.5 px-4 font-mono font-bold text-slate-700">{d.department_code}</td>
                     <td className="py-3.5 px-4 text-slate-600 font-semibold">{d.pending_count} students</td>
                     <td className="py-3.5 px-4 font-display font-bold text-slate-900">
-                      ₹{d.pending_amount.toFixed(2)}
+                      ₹{Number(d.pending_amount || 0).toFixed(2)}
                     </td>
                     <td className="py-3.5 px-4 text-right">
                       <span

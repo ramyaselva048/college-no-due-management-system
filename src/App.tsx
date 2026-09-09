@@ -8,7 +8,6 @@ import { AppLayout } from './components/layout/AppLayout';
 // Public Pages
 import { LandingPage } from './pages/public/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
-import { SignupPage } from './pages/auth/SignupPage';
 import { VerifyCertificatePage } from './pages/public/VerifyCertificatePage';
 
 // Student Pages
@@ -44,8 +43,8 @@ export default function App() {
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<SignupPage />} />
-            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/register" element={<Navigate to="/login" replace />} />
+            <Route path="/signup" element={<Navigate to="/login" replace />} />
             <Route path="/verify" element={<VerifyCertificatePage />} />
             <Route path="/verify/:code" element={<VerifyCertificatePage />} />
 

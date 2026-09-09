@@ -72,14 +72,14 @@ export const StudentDuesPage: React.FC = () => {
           <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
             <span className="text-[11px] text-slate-400 font-semibold block">Outstanding Balance</span>
             <span className={`font-display font-bold text-base ${totalPending > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-              ₹{totalPending.toFixed(2)}
+              ₹{Number(totalPending || 0).toFixed(2)}
             </span>
           </div>
 
           <div className="bg-white px-4 py-2 rounded-xl border border-slate-200 shadow-2xs">
             <span className="text-[11px] text-slate-400 font-semibold block">Settled Amount</span>
             <span className="font-display font-bold text-base text-slate-900">
-              ₹{totalCleared.toFixed(2)}
+              ₹{Number(totalCleared || 0).toFixed(2)}
             </span>
           </div>
         </div>
@@ -198,7 +198,7 @@ export const StudentDuesPage: React.FC = () => {
                 <div className="text-left sm:text-right">
                   <span className="text-[10px] text-slate-400 font-semibold block">Fee Amount</span>
                   <span className={`font-display font-extrabold text-lg ${due.status === 'pending' ? 'text-rose-600' : 'text-slate-800'}`}>
-                    ₹{due.amount.toFixed(2)}
+                    ₹{Number(due.amount || 0).toFixed(2)}
                   </span>
                 </div>
 

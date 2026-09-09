@@ -70,7 +70,8 @@ export const StudentRequestPage: React.FC = () => {
 
   const safeRequests = Array.isArray(requests) ? requests : [];
   const activeRequest = safeRequests.find((r) => r.status !== 'rejected') || safeRequests[0];
-  const hasPendingDues = (summary?.pending_due_amount || 0) > 0;
+  const pendingDueAmount = Number(summary?.pending_due_amount ?? (summary as any)?.pending_dues_amount ?? 0);
+  const hasPendingDues = pendingDueAmount > 0;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
@@ -228,7 +229,7 @@ export const StudentRequestPage: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-rose-800">Clearance Application Blocked</h4>
                   <p className="text-xs text-rose-700 mt-1">
-                    You have ₹{summary?.pending_due_amount.toFixed(2)} in outstanding dues across one or more departments. You must settle all dues before your application can be dispatched.
+                    You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues across one or more departments. You must settle all dues before your application can be dispatched.
                   </p>
                   <div className="mt-3">
                     <Link

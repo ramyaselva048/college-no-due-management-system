@@ -123,7 +123,7 @@ export const StaffStudentsPage: React.FC = () => {
                         {hasDues ? (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-[10px]">
                             <AlertTriangle className="w-3 h-3" />
-                            ₹{student.department_dues_pending.toFixed(2)} Due
+                            ₹{Number(student.department_dues_pending || 0).toFixed(2)} Due
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[10px]">

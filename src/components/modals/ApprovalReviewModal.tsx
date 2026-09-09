@@ -96,7 +96,7 @@ export const ApprovalReviewModal: React.FC<ApprovalReviewModalProps> = ({
               <div>
                 <p className="text-xs font-bold text-rose-800">Uncleared Department Dues</p>
                 <p className="text-[11px] text-rose-700 mt-0.5">
-                  Student has ₹{approval.pending_dues_amount?.toFixed(2)} in outstanding dues in this department. Institutional regulations prohibit approving clearance until fully settled.
+                  Student has ₹{Number(approval.pending_dues_amount || 0).toFixed(2)} in outstanding dues in this department. Institutional regulations prohibit approving clearance until fully settled.
                 </p>
               </div>
             </div>

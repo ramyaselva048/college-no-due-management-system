@@ -30,7 +30,10 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
     return res.status(401).json({ detail: 'Token is invalid or expired' });
   }
 
-  const user = db.users.find(u => u.id === payload.sub);
+  let user = db.users.find(u => u.id === payload.sub);
+  if (!user && (payload as any).email) {
+    user = db.users.find(u => u.email.toLowerCase() === (payload as any).email.toLowerCase());
+  }
   if (!user || !user.is_active) {
     return res.status(401).json({ detail: 'User account not active or not found' });
   }
@@ -69,183 +72,110 @@ apiRouter.get('/health', (req, res) => {
 // ----------------------------------------------------
 // Authentication Routes (/api/auth)
 // ----------------------------------------------------
-const COLLEGE_ADMIN_EMAIL = 'ramya@sasurie.edu';
+const COLLEGE_ADMIN_EMAILS = [
+  'ramya@sasurie.edu',
+  'ramyacse23@sasurie.com',
+  'ramya@sasurie.com',
+  'admin@college.edu'
+];
 
-// Real-time verification of student institutional enrollment against Admin portal database
+// Verification endpoint: Informs client that self-registration is permanently disabled
 apiRouter.post('/auth/verify-student', (req: Request, res: Response) => {
-  const { register_number, email } = req.body;
-  const cleanReg = (register_number || '').toUpperCase().trim();
-  const cleanEmail = (email || '').toLowerCase().trim();
-
-  if (!cleanReg) {
-    return res.status(400).json({ detail: 'Register Number is required' });
-  }
-
-  const student = db.students.find(s => s.register_number.toUpperCase() === cleanReg);
-  if (!student) {
-    return res.status(404).json({
-      verified: false,
-      detail: `Register Number '${cleanReg}' was not found in the institutional database. Only students enrolled by the college administration in the Admin Portal can create an account.`
-    });
-  }
-
-  if (cleanEmail && student.email.toLowerCase().trim() !== cleanEmail) {
-    return res.status(400).json({
-      verified: false,
-      detail: `The email provided does not match the official college email on record for Register Number '${cleanReg}'.`
-    });
-  }
-
-  const dept = db.departments.find(d => d.id === student.department_id);
-  const course = db.courses.find(c => c.id === student.course_id);
-
-  const existingUser = db.users.find(u => u.id === student.user_id || u.email.toLowerCase() === student.email.toLowerCase());
-
-  res.json({
-    verified: true,
-    student: {
-      id: student.id,
-      full_name: student.full_name,
-      register_number: student.register_number,
-      email: student.email,
-      department_name: dept ? dept.name : '',
-      course_name: course ? course.name : '',
-      year: student.year,
-      section: student.section,
-      admission_year: student.admission_year,
-      is_already_registered: existingUser ? !!existingUser.is_registered : false
-    }
+  return res.status(403).json({
+    verified: false,
+    detail: 'Student self-registration has been disabled by College Administration. Only students enrolled in the Admin Portal can log in.'
   });
 });
 
-// Student Self-Registration: Strictly allowed only if Register Number and College Email exist in Admin Portal
+// Student Self-Registration: Permanently disabled as per institution policy
 apiRouter.post(['/auth/signup', '/auth/register'], (req: Request, res: Response) => {
-  const {
-    register_number,
-    email,
-    password
-  } = req.body;
-
-  const upperReg = (register_number || '').toUpperCase().trim();
-  const lowerEmail = (email || '').toLowerCase().trim();
-
-  if (!upperReg || !lowerEmail || !password) {
-    return res.status(400).json({ detail: 'Register Number, College Email, and Password are required.' });
-  }
-
-  if (password.length < 8) {
-    return res.status(400).json({ detail: 'Password must be at least 8 characters long.' });
-  }
-
-  // 1. Check if student is enrolled in Admin database
-  const student = db.students.find(s => s.register_number.toUpperCase() === upperReg);
-  if (!student) {
-    return res.status(403).json({
-      detail: `Registration Denied: Register Number '${upperReg}' is not enrolled in the college database. Only students added by the college administration in the Admin Portal can create an account. Please contact the Admin.`
-    });
-  }
-
-  // 2. Check if the college email matches the student record
-  if (student.email.toLowerCase().trim() !== lowerEmail) {
-    return res.status(403).json({
-      detail: `Verification Error: The email '${lowerEmail}' does not match the official institutional email registered for Register Number '${upperReg}'. Please use your official college email.`
-    });
-  }
-
-  const now = new Date().toISOString();
-
-  // 3. Find or create user account linked to this enrolled student
-  let user = db.users.find(u => u.id === student.user_id || u.email.toLowerCase() === lowerEmail);
-  if (user) {
-    // Set student's own chosen password and activate
-    user.email = lowerEmail;
-    user.password_hash = hashPassword(password);
-    user.is_active = true;
-    user.is_registered = true;
-    user.updated_at = now;
-  } else {
-    const nextUserId = Math.max(...db.users.map(u => u.id), 0) + 1;
-    user = {
-      id: nextUserId,
-      email: lowerEmail,
-      password_hash: hashPassword(password),
-      role: 'STUDENT',
-      is_active: true,
-      is_registered: true,
-      created_at: now
-    };
-    db.users.push(user);
-  }
-
-  student.user_id = user.id;
-
-  db.logAudit(user.id, user.email, 'STUDENT_ACCOUNT_REGISTERED', 'STUDENT', student.id, null, { email: lowerEmail, reg_no: upperReg }, getClientIp(req));
-
-  const dept = db.departments.find(d => d.id === student.department_id);
-  const course = db.courses.find(c => c.id === student.course_id);
-
-  const access_token = createToken({ sub: user.id, role: user.role, type: 'access' }, 1);
-  const refresh_token = createToken({ sub: user.id, role: user.role, type: 'refresh' }, 7);
-
-  res.json({
-    access_token,
-    refresh_token,
-    token_type: 'bearer',
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role,
-      full_name: student.full_name,
-      register_number: student.register_number,
-      department_id: student.department_id,
-      department_name: dept ? dept.name : '',
-      course_id: student.course_id,
-      course_name: course ? course.name : '',
-      year: student.year,
-      section: student.section
-    }
+  return res.status(403).json({
+    detail: 'Student self-registration is disabled. All student clearance accounts are provisioned exclusively by the College Administration in the Admin Portal. Please sign in with your Register Number or College Email and password.'
   });
 });
 
 apiRouter.post('/auth/login', (req: Request, res: Response) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ detail: 'Email or Register Number and password are required' });
+  const identifierField = (req.body.email || req.body.identifier || req.body.username || req.body.register_number || '').trim();
+  const password = req.body.password;
+  if (!identifierField || !password) {
+    return res.status(400).json({ detail: 'Register Number or College Email and password are required' });
   }
 
-  const rawIdentifier = email.trim();
+  const rawIdentifier = identifierField;
   const lowerIdentifier = rawIdentifier.toLowerCase();
   const upperIdentifier = rawIdentifier.toUpperCase();
 
-  // Find user by email or by student register number
-  let user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
-  let student = db.students.find(s => s.user_id === user?.id);
+  // Find student by register number or email in the Admin Portal's registry (db.students)
+  let student = db.students.find(
+    s => s.register_number.toUpperCase() === upperIdentifier || s.email.toLowerCase() === lowerIdentifier
+  );
 
-  if (!user) {
-    // Check if entered identifier is a student register number
-    student = db.students.find(s => s.register_number.toUpperCase() === upperIdentifier);
-    if (student) {
-      user = db.users.find(u => u.id === student!.user_id || u.email.toLowerCase() === student!.email.toLowerCase());
+  // Find staff by employee ID or email in the Admin Portal's registry (db.staff)
+  let staff = db.staff.find(
+    s => s.employee_id.toUpperCase() === upperIdentifier || s.email.toLowerCase() === lowerIdentifier
+  );
+
+  let user: UserRecord | undefined;
+
+  if (student) {
+    // If student is found in Admin registry, find their linked user account
+    user = db.users.find(u => u.id === student!.user_id || u.email.toLowerCase() === student!.email.toLowerCase());
+  } else if (staff) {
+    // If staff is found in Admin registry, find their linked user account
+    user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
+  } else {
+    // Check if this is an institutional Staff or Admin user
+    if (lowerIdentifier === 'admin' || lowerIdentifier === 'ramya' || lowerIdentifier === 'ramyacse23') {
+      user = db.users.find(u => u.role === 'ADMIN');
+    } else {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
     }
   }
 
+  // If user does not exist or password does not match
   if (!user || !verifyPassword(password, user.password_hash)) {
-    return res.status(401).json({ detail: 'Invalid Register Number / Email or Password' });
+    return res.status(401).json({
+      detail: 'Invalid Employee ID, Register Number, Email or Password. Please check your credentials.'
+    });
+  }
+
+  // STRICT REQUIREMENT FOR STUDENTS:
+  // If the user account has role 'STUDENT', it MUST be present in the Admin Portal's enrolled students list
+  if (user.role === 'STUDENT') {
+    const enrolledStudent = student || db.students.find(s => s.user_id === user!.id || s.email.toLowerCase() === user!.email.toLowerCase());
+    if (!enrolledStudent) {
+      return res.status(403).json({
+        detail: 'Access Denied: This student is not registered in the Admin Portal. Only students registered by the college administrator can log in.'
+      });
+    }
+    student = enrolledStudent;
+  }
+
+  // STRICT REQUIREMENT FOR STAFF:
+  // Only clearance officers enrolled in the Admin Portal can log in
+  if (user.role === 'STAFF') {
+    const enrolledStaff = staff || db.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === user!.email.toLowerCase());
+    if (!enrolledStaff) {
+      return res.status(403).json({
+        detail: 'Access Denied: This officer account is not registered in the Admin Portal. Only departmental officers enrolled by the administrator can log in.'
+      });
+    }
+    staff = enrolledStaff;
   }
 
   if (!user.is_active) {
-    return res.status(403).json({ detail: 'Account is deactivated. Please contact administration.' });
+    return res.status(403).json({ detail: 'This account has been deactivated. Please contact the college administration.' });
   }
 
-  // Sole admin check - strictly only authorized admin account permitted
-  if (user.role === 'ADMIN' && user.email.toLowerCase() !== COLLEGE_ADMIN_EMAIL.toLowerCase()) {
+  // Admin check - strictly authorized admin accounts permitted
+  if (user.role === 'ADMIN' && !COLLEGE_ADMIN_EMAILS.some(e => e.toLowerCase() === user!.email.toLowerCase())) {
     return res.status(401).json({
       detail: 'Invalid email or password'
     });
   }
 
-  const access_token = createToken({ sub: user.id, role: user.role, type: 'access' }, 1);
-  const refresh_token = createToken({ sub: user.id, role: user.role, type: 'refresh' }, 7);
+  const access_token = createToken({ sub: user.id, email: user.email, role: user.role, type: 'access' }, 1);
+  const refresh_token = createToken({ sub: user.id, email: user.email, role: user.role, type: 'refresh' }, 7);
 
   db.logAudit(user.id, user.email, 'USER_LOGIN', 'USER', user.id, null, { identifier: rawIdentifier, role: user.role }, getClientIp(req));
 
@@ -256,7 +186,7 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
   };
 
   if (user.role === 'STUDENT') {
-    const st = student || db.students.find(s => s.user_id === user.id);
+    const st = student || db.students.find(s => s.user_id === user!.id);
     if (st) {
       const dept = db.departments.find(d => d.id === st.department_id);
       const course = db.courses.find(c => c.id === st.course_id);
@@ -301,13 +231,16 @@ apiRouter.post('/auth/refresh', (req: Request, res: Response) => {
     return res.status(401).json({ detail: 'Invalid or expired refresh token' });
   }
 
-  const user = db.users.find(u => u.id === payload.sub);
+  let user = db.users.find(u => u.id === payload.sub);
+  if (!user && (payload as any).email) {
+    user = db.users.find(u => u.email.toLowerCase() === (payload as any).email.toLowerCase());
+  }
   if (!user || !user.is_active) {
     return res.status(401).json({ detail: 'User account not active' });
   }
 
-  const new_access_token = createToken({ sub: user.id, role: user.role, type: 'access' }, 1);
-  const new_refresh_token = createToken({ sub: user.id, role: user.role, type: 'refresh' }, 7);
+  const new_access_token = createToken({ sub: user.id, email: user.email, role: user.role, type: 'access' }, 1);
+  const new_refresh_token = createToken({ sub: user.id, email: user.email, role: user.role, type: 'refresh' }, 7);
 
   const userInfo: any = {
     id: user.id,
@@ -487,7 +420,10 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
   const departmentStatuses = activeDepartments.map(dept => {
     const deptDues = studentDues.filter(d => d.department_id === dept.id);
     const deptPendingDues = deptDues.filter(d => d.status === 'pending');
+    const deptClearedDues = deptDues.filter(d => d.status === 'cleared');
     const deptPendingAmt = deptPendingDues.reduce((sum, d) => sum + d.amount, 0);
+    const deptClearedAmt = deptClearedDues.reduce((sum, d) => sum + d.amount, 0);
+    const deptTotalAmt = deptDues.reduce((sum, d) => sum + d.amount, 0);
     const isCleared = deptPendingAmt === 0;
     if (isCleared) clearedDeptsCount++;
 
@@ -496,10 +432,14 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
       department_id: dept.id,
       department_name: dept.name,
       department_code: dept.code,
+      has_dues: !isCleared,
+      total_dues_amount: deptTotalAmt,
+      pending_dues_amount: deptPendingAmt,
+      cleared_dues_amount: deptClearedAmt,
       pending_amount: deptPendingAmt,
       total_dues_count: deptDues.length,
       pending_dues_count: deptPendingDues.length,
-      status: isCleared ? 'cleared' : 'pending',
+      status: isCleared ? 'CLEAR' : 'PENDING',
       approval_status: appInfo ? appInfo.status : undefined,
       remarks: appInfo ? appInfo.remarks : undefined
     };
@@ -586,6 +526,10 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
     pending_dues_amount: pendingAmount,
     cleared_dues_amount: clearedAmount,
     waived_dues_amount: waivedAmount,
+    total_due_amount: totalAmount,
+    pending_due_amount: pendingAmount,
+    cleared_due_amount: clearedAmount,
+    waived_due_amount: waivedAmount,
     total_departments: totalDepts,
     cleared_departments_count: clearedDeptsCount,
     pending_departments_count: totalDepts - clearedDeptsCount,
@@ -593,7 +537,8 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
     can_request_no_due: canRequestNoDue,
     active_request: activeReqOut,
     issued_certificate: certOut,
-    department_statuses: departmentStatuses
+    department_statuses: departmentStatuses,
+    departments_summary: departmentStatuses
   });
 });
 
@@ -1630,6 +1575,9 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     phone,
     department_id,
     course_id,
+    custom_course_name,
+    custom_course_code,
+    custom_course_duration,
     year,
     section,
     admission_year
@@ -1647,13 +1595,44 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     return res.status(400).json({ detail: 'An account with this email already exists' });
   }
 
-  const dept = db.departments.find(d => d.id === Number(department_id));
-  if (!dept) return res.status(404).json({ detail: 'Department not found' });
-
-  const course = db.courses.find(c => c.id === Number(course_id));
-  if (!course) return res.status(404).json({ detail: 'Degree course not found' });
+  let dept = db.departments.find(d => d.id === Number(department_id));
+  if (!dept) {
+    dept = db.departments.find(d => d.code === 'CSE') || db.departments[0];
+  }
 
   const now = new Date().toISOString();
+  let course = db.courses.find(c => c.id === Number(course_id));
+
+  // If custom course is supplied by the admin, resolve or create it
+  if (custom_course_name && custom_course_name.trim()) {
+    const trimmed = custom_course_name.trim();
+    const existing = db.courses.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      course = existing;
+    } else {
+      let code = (custom_course_code || trimmed.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15)).toUpperCase();
+      if (db.courses.some(c => c.code === code)) {
+        code = `${code}_${Date.now().toString().slice(-4)}`;
+      }
+      const newCourseId = Math.max(...db.courses.map(c => c.id), 0) + 1;
+      const newCourse: CourseRecord = {
+        id: newCourseId,
+        name: trimmed,
+        code,
+        department_id: dept ? dept.id : 1,
+        duration: Number(custom_course_duration) || 4,
+        is_active: true,
+        created_at: now
+      };
+      db.courses.push(newCourse);
+      course = newCourse;
+    }
+  }
+
+  if (!course) {
+    course = db.courses[0];
+  }
+
   const nextUserId = Math.max(...db.users.map(u => u.id), 0) + 1;
   const newUser: UserRecord = {
     id: nextUserId,
@@ -1661,6 +1640,7 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     password_hash: hashPassword(password || 'StudentPassword@123'),
     role: 'STUDENT',
     is_active: true,
+    is_registered: true,
     created_at: now
   };
   db.users.push(newUser);
@@ -1673,7 +1653,7 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     full_name: (full_name || '').trim(),
     email: lowerEmail,
     phone: phone || '',
-    department_id: dept.id,
+    department_id: dept ? dept.id : 1,
     course_id: course.id,
     year: Number(year) || 1,
     section: (section || 'A').toUpperCase().trim(),
@@ -1692,7 +1672,7 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     email: newStudent.email,
     phone: newStudent.phone,
     department_id: newStudent.department_id,
-    department_name: dept.name,
+    department_name: dept ? dept.name : '',
     course_id: newStudent.course_id,
     course_name: course.name,
     year: newStudent.year,
@@ -1718,6 +1698,9 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
     phone,
     department_id,
     course_id,
+    custom_course_name,
+    custom_course_code,
+    custom_course_duration,
     year,
     section,
     admission_year,
@@ -1741,14 +1724,57 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
     if (u) u.email = lowerEmail;
   }
 
-  if (password && u) {
-    u.password_hash = hashPassword(password);
+  if (password) {
+    if (u) {
+      u.password_hash = hashPassword(password);
+    } else {
+      const nextUserId = Math.max(...db.users.map(user => user.id), 0) + 1;
+      const newUser: UserRecord = {
+        id: nextUserId,
+        email: st.email,
+        password_hash: hashPassword(password),
+        role: 'STUDENT',
+        is_active: true,
+        is_registered: true,
+        created_at: new Date().toISOString()
+      };
+      db.users.push(newUser);
+      st.user_id = newUser.id;
+    }
   }
 
   if (full_name !== undefined) st.full_name = full_name.trim();
   if (phone !== undefined) st.phone = phone.trim();
   if (department_id !== undefined) st.department_id = Number(department_id);
-  if (course_id !== undefined) st.course_id = Number(course_id);
+
+  // If custom course name is provided during edit
+  if (custom_course_name && custom_course_name.trim()) {
+    const trimmed = custom_course_name.trim();
+    const existing = db.courses.find(c => c.name.toLowerCase() === trimmed.toLowerCase());
+    if (existing) {
+      st.course_id = existing.id;
+    } else {
+      let code = (custom_course_code || trimmed.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15)).toUpperCase();
+      if (db.courses.some(c => c.code === code)) {
+        code = `${code}_${Date.now().toString().slice(-4)}`;
+      }
+      const newCourseId = Math.max(...db.courses.map(c => c.id), 0) + 1;
+      const newCourse: CourseRecord = {
+        id: newCourseId,
+        name: trimmed,
+        code,
+        department_id: st.department_id || 1,
+        duration: Number(custom_course_duration) || 4,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      db.courses.push(newCourse);
+      st.course_id = newCourse.id;
+    }
+  } else if (course_id !== undefined) {
+    st.course_id = Number(course_id);
+  }
+
   if (year !== undefined) st.year = Number(year);
   if (section !== undefined) st.section = section.toUpperCase().trim();
   if (admission_year !== undefined) st.admission_year = Number(admission_year);
@@ -1787,6 +1813,8 @@ apiRouter.delete('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), 
   const userId = st.user_id;
 
   // Cascade cleanup
+  const studentReqIds = db.noDueRequests.filter(r => r.student_id === id).map(r => r.id);
+  db.noDueApprovals = db.noDueApprovals.filter(a => !studentReqIds.includes(a.request_id));
   db.dueRecords = db.dueRecords.filter(d => d.student_id !== id);
   db.noDueRequests = db.noDueRequests.filter(r => r.student_id !== id);
   db.certificates = db.certificates.filter(c => c.student_id !== id);
@@ -1796,7 +1824,7 @@ apiRouter.delete('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), 
 
   db.logAudit(req.user!.id, req.user!.email, 'STUDENT_DELETED', 'STUDENT', id, null, { student: st.full_name, reg_no: st.register_number }, getClientIp(req));
 
-  res.json({ message: 'Student and related records deleted successfully', id });
+  res.json({ message: 'Student and all related records deleted successfully', id });
 });
 
 apiRouter.get('/admin/staff', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
@@ -1840,23 +1868,69 @@ apiRouter.get('/admin/staff', authMiddleware, requireRole(['ADMIN']), (req: Auth
 });
 
 apiRouter.post('/admin/staff', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
-  const { employee_id, email, password, full_name, phone, department_id, designation } = req.body;
+  const {
+    employee_id,
+    email,
+    password,
+    full_name,
+    phone,
+    department_id,
+    custom_department_name,
+    custom_department_code,
+    designation
+  } = req.body;
   const upperEmp = (employee_id || '').toUpperCase().trim();
-  if (db.staff.some(s => s.employee_id === upperEmp)) {
+  if (!upperEmp) {
+    return res.status(400).json({ detail: 'Employee ID is required' });
+  }
+  if (db.staff.some(s => s.employee_id.toUpperCase() === upperEmp)) {
     return res.status(400).json({ detail: 'Employee ID already exists' });
   }
 
   const lowerEmail = (email || '').toLowerCase().trim();
-  if (db.users.some(u => u.email === lowerEmail)) {
+  if (!lowerEmail) {
+    return res.status(400).json({ detail: 'Officer email is required' });
+  }
+  if (db.users.some(u => u.email.toLowerCase() === lowerEmail)) {
     return res.status(400).json({ detail: 'An account with this email already exists' });
   }
 
-  const dept = db.departments.find(d => d.id === Number(department_id));
-  if (!dept) return res.status(404).json({ detail: 'Department not found' });
+  let finalDeptId = Number(department_id);
+
+  // If custom department name is provided
+  if (custom_department_name && custom_department_name.trim()) {
+    const trimmedDeptName = custom_department_name.trim();
+    const existingDept = db.departments.find(d => d.name.toLowerCase() === trimmedDeptName.toLowerCase());
+    if (existingDept) {
+      finalDeptId = existingDept.id;
+    } else {
+      let deptCode = (custom_department_code || trimmedDeptName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 10)).toUpperCase();
+      if (db.departments.some(d => d.code === deptCode)) {
+        deptCode = `${deptCode}_${Date.now().toString().slice(-4)}`;
+      }
+      const newDept: DepartmentRecord = {
+        id: Math.max(...db.departments.map(d => d.id), 0) + 1,
+        name: trimmedDeptName,
+        code: deptCode,
+        description: `Clearance department for ${trimmedDeptName}`,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      db.departments.push(newDept);
+      finalDeptId = newDept.id;
+    }
+  }
+
+  let dept = db.departments.find(d => d.id === finalDeptId);
+  if (!dept) {
+    dept = db.departments[0];
+    finalDeptId = dept.id;
+  }
 
   const now = new Date().toISOString();
+  const nextUserId = Math.max(...db.users.map(u => u.id), 0) + 1;
   const newUser: UserRecord = {
-    id: db.users.length + 1,
+    id: nextUserId,
     email: lowerEmail,
     password_hash: hashPassword(password || 'StaffPassword@123'),
     role: 'STAFF',
@@ -1865,8 +1939,9 @@ apiRouter.post('/admin/staff', authMiddleware, requireRole(['ADMIN']), (req: Aut
   };
   db.users.push(newUser);
 
+  const nextStaffId = Math.max(...db.staff.map(s => s.id), 0) + 1;
   const newStaff: StaffRecord = {
-    id: db.staff.length + 1,
+    id: nextStaffId,
     user_id: newUser.id,
     employee_id: upperEmp,
     full_name: (full_name || '').trim(),
@@ -1901,7 +1976,18 @@ apiRouter.patch('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (req
   if (!st) return res.status(404).json({ detail: 'Clearance officer not found' });
 
   const u = db.users.find(user => user.id === st.user_id);
-  const { employee_id, full_name, email, password, phone, department_id, designation, is_active } = req.body;
+  const {
+    employee_id,
+    full_name,
+    email,
+    password,
+    phone,
+    department_id,
+    custom_department_name,
+    custom_department_code,
+    designation,
+    is_active
+  } = req.body;
 
   if (employee_id) {
     const upperEmp = employee_id.toUpperCase().trim();
@@ -1913,7 +1999,7 @@ apiRouter.patch('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (req
 
   if (email) {
     const lowerEmail = email.toLowerCase().trim();
-    if (db.users.some(user => user.id !== st.user_id && user.email === lowerEmail)) {
+    if (db.users.some(user => user.id !== st.user_id && user.email.toLowerCase() === lowerEmail)) {
       return res.status(400).json({ detail: 'Email already in use by another user' });
     }
     st.email = lowerEmail;
@@ -1926,7 +2012,32 @@ apiRouter.patch('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (req
 
   if (full_name !== undefined) st.full_name = full_name.trim();
   if (phone !== undefined) st.phone = phone.trim();
-  if (department_id !== undefined) st.department_id = Number(department_id);
+
+  if (custom_department_name && custom_department_name.trim()) {
+    const trimmedDeptName = custom_department_name.trim();
+    const existingDept = db.departments.find(d => d.name.toLowerCase() === trimmedDeptName.toLowerCase());
+    if (existingDept) {
+      st.department_id = existingDept.id;
+    } else {
+      let deptCode = (custom_department_code || trimmedDeptName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 10)).toUpperCase();
+      if (db.departments.some(d => d.code === deptCode)) {
+        deptCode = `${deptCode}_${Date.now().toString().slice(-4)}`;
+      }
+      const newDept: DepartmentRecord = {
+        id: Math.max(...db.departments.map(d => d.id), 0) + 1,
+        name: trimmedDeptName,
+        code: deptCode,
+        description: `Clearance department for ${trimmedDeptName}`,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      db.departments.push(newDept);
+      st.department_id = newDept.id;
+    }
+  } else if (department_id !== undefined) {
+    st.department_id = Number(department_id);
+  }
+
   if (designation !== undefined) st.designation = designation.trim();
   if (is_active !== undefined && u) u.is_active = is_active;
 
@@ -1946,6 +2057,24 @@ apiRouter.patch('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (req
     designation: st.designation,
     is_active: u ? u.is_active : true,
     created_at: st.created_at
+  });
+});
+
+apiRouter.patch('/admin/staff/:id/status', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const st = db.staff.find(s => s.id === id);
+  if (!st) return res.status(404).json({ detail: 'Clearance officer not found' });
+
+  const u = db.users.find(user => user.id === st.user_id);
+  if (!u) return res.status(404).json({ detail: 'User account not found' });
+
+  u.is_active = req.body.is_active !== undefined ? req.body.is_active : !u.is_active;
+
+  db.logAudit(req.user!.id, req.user!.email, 'STAFF_STATUS_TOGGLED', 'STAFF', st.id, null, { is_active: u.is_active }, getClientIp(req));
+  res.json({
+    id: st.id,
+    is_active: u.is_active,
+    message: `Clearance officer account ${u.is_active ? 'activated' : 'deactivated'} successfully`
   });
 });
 
@@ -1971,14 +2100,23 @@ apiRouter.get('/admin/departments', authMiddleware, requireRole(['ADMIN']), (req
 
 apiRouter.post('/admin/departments', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
   const { name, code, description, is_active } = req.body;
-  const upperCode = (code || '').toUpperCase().trim();
+  const trimmedName = (name || '').trim();
+  if (!trimmedName) {
+    return res.status(400).json({ detail: 'Department name is required' });
+  }
+
+  let upperCode = (code || '').toUpperCase().trim();
+  if (!upperCode) {
+    upperCode = trimmedName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 8).toUpperCase();
+  }
+
   if (db.departments.some(d => d.code === upperCode)) {
-    return res.status(400).json({ detail: 'Department with this code already exists' });
+    return res.status(400).json({ detail: `Department code "${upperCode}" already exists` });
   }
 
   const newDept: DepartmentRecord = {
-    id: db.departments.length + 1,
-    name: (name || '').trim(),
+    id: Math.max(...db.departments.map(d => d.id), 0) + 1,
+    name: trimmedName,
     code: upperCode,
     description: description || '',
     is_active: is_active !== undefined ? is_active : true,
@@ -1996,12 +2134,32 @@ apiRouter.patch('/admin/departments/:id', authMiddleware, requireRole(['ADMIN'])
 
   const { name, code, description, is_active } = req.body;
   if (name !== undefined) dept.name = name.trim();
-  if (code !== undefined) dept.code = code.toUpperCase().trim();
+  if (code !== undefined) {
+    const upperCode = code.toUpperCase().trim();
+    if (db.departments.some(d => d.id !== id && d.code === upperCode)) {
+      return res.status(400).json({ detail: `Department code "${upperCode}" is already in use` });
+    }
+    dept.code = upperCode;
+  }
   if (description !== undefined) dept.description = description;
   if (is_active !== undefined) dept.is_active = is_active;
 
   db.logAudit(req.user!.id, req.user!.email, 'DEPARTMENT_UPDATED', 'DEPARTMENT', dept.id, null, req.body, getClientIp(req));
   res.json(dept);
+});
+
+apiRouter.patch('/admin/departments/:id/status', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const dept = db.departments.find(d => d.id === id);
+  if (!dept) return res.status(404).json({ detail: 'Department not found' });
+
+  dept.is_active = req.body.is_active !== undefined ? req.body.is_active : !dept.is_active;
+  db.logAudit(req.user!.id, req.user!.email, 'DEPARTMENT_STATUS_TOGGLED', 'DEPARTMENT', dept.id, null, { is_active: dept.is_active }, getClientIp(req));
+  res.json({
+    id: dept.id,
+    is_active: dept.is_active,
+    message: `Department ${dept.is_active ? 'activated' : 'deactivated'} successfully`
+  });
 });
 
 apiRouter.delete('/admin/departments/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
@@ -2035,17 +2193,30 @@ apiRouter.get('/admin/courses', authMiddleware, requireRole(['ADMIN']), (req: Au
 
 apiRouter.post('/admin/courses', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
   const { name, code, department_id, duration, is_active } = req.body;
-  const upperCode = (code || '').toUpperCase().trim();
-  if (db.courses.some(c => c.code === upperCode)) {
-    return res.status(400).json({ detail: 'Course with this code already exists' });
+  const trimmedName = (name || '').trim();
+  if (!trimmedName) {
+    return res.status(400).json({ detail: 'Course title is required' });
   }
 
-  const dept = db.departments.find(d => d.id === Number(department_id));
+  let upperCode = (code || '').toUpperCase().trim();
+  if (!upperCode) {
+    upperCode = trimmedName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15).toUpperCase();
+  }
+  if (db.courses.some(c => c.code === upperCode)) {
+    upperCode = `${upperCode}_${Date.now().toString().slice(-4)}`;
+  }
+
+  let dept = db.departments.find(d => d.id === Number(department_id));
+  if (!dept) {
+    dept = db.departments.find(d => d.code === 'CSE') || db.departments[0];
+  }
+
+  const nextCourseId = Math.max(...db.courses.map(c => c.id), 0) + 1;
   const newCourse: CourseRecord = {
-    id: db.courses.length + 1,
-    name: (name || '').trim(),
+    id: nextCourseId,
+    name: trimmedName,
     code: upperCode,
-    department_id: Number(department_id),
+    department_id: dept ? dept.id : 1,
     duration: Number(duration) || 4,
     is_active: is_active !== undefined ? is_active : true,
     created_at: new Date().toISOString()

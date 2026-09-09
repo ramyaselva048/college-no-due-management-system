@@ -112,7 +112,7 @@ export const StaffDashboard: React.FC = () => {
             </div>
           </div>
           <p className="font-display font-extrabold text-2xl text-rose-600 mt-2">
-            ₹{data.pending_dues_amount.toFixed(2)}
+            ₹{Number(data.pending_dues_amount || 0).toFixed(2)}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">{data.pending_dues_count} unsettled due records</p>
         </div>
@@ -181,7 +181,7 @@ export const StaffDashboard: React.FC = () => {
           </div>
           <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">
             <span className="text-xs font-semibold text-slate-600">
-              ₹{data.pending_dues_amount.toFixed(2)} active dues
+              ₹{Number(data.pending_dues_amount || 0).toFixed(2)} active dues
             </span>
             <Link
               to="/staff/dues"

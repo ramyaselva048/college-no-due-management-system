@@ -25,7 +25,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchCurrentUser = async () => {
-    const token = localStorage.getItem('token');
+    // Check sessionStorage first (session-bound for admin), then localStorage
+    let token = sessionStorage.getItem('token');
+    let isSessionToken = Boolean(token);
+    if (!token) {
+      token = localStorage.getItem('token');
+    }
+
     if (!token) {
       setUser(null);
       setStudentProfile(null);
@@ -34,16 +40,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    // Security rule: Admin must authenticate fresh every time the browser/tab is closed and reopened.
+    // If token only exists in localStorage, check if the previously saved user was an ADMIN.
+    if (!isSessionToken) {
+      const localUserStr = localStorage.getItem('user');
+      if (localUserStr) {
+        try {
+          const parsed = JSON.parse(localUserStr);
+          if (parsed?.role === 'ADMIN') {
+            // Do not auto-login admin across closed browser sessions
+            localStorage.removeItem('token');
+            localStorage.removeItem('refreshToken');
+            localStorage.removeItem('user');
+            setUser(null);
+            setStudentProfile(null);
+            setStaffProfile(null);
+            setLoading(false);
+            return;
+          }
+        } catch {}
+      }
+    }
+
     try {
       const res = await api.get('/auth/me');
       const data = res.data;
       const userObj: User = data.user || data;
+
+      // If user is ADMIN, they must only persist within an active sessionStorage.
+      // If they arrived from a persistent localStorage across a closed browser session, reject auto-login!
+      if (userObj.role === 'ADMIN' && !isSessionToken) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('user');
+        setUser(null);
+        setStudentProfile(null);
+        setStaffProfile(null);
+        setLoading(false);
+        return;
+      }
+
       setUser(userObj);
       setStudentProfile(data.student_profile || (userObj.role === 'STUDENT' ? (data as any) : null));
       setStaffProfile(data.staff_profile || (userObj.role === 'STAFF' ? (data as any) : null));
-      localStorage.setItem('user', JSON.stringify(userObj));
-    } catch (err) {
-      console.error('Failed to load current user session:', err);
+
+      if (userObj.role === 'ADMIN') {
+        sessionStorage.setItem('user', JSON.stringify(userObj));
+        // Remove any admin traces in localStorage so closing the window/tab resets session
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      } else {
+        localStorage.setItem('user', JSON.stringify(userObj));
+      }
+    } catch (err: any) {
+      if (err?.response?.status !== 401) {
+        console.warn('Unable to load current user session:', err?.message || err);
+      }
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
@@ -63,9 +122,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await api.post('/auth/login', { email, password });
     const { access_token, refresh_token, user: loggedUser } = res.data;
 
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('refreshToken', refresh_token);
-    localStorage.setItem('user', JSON.stringify(loggedUser));
+    if (loggedUser.role === 'ADMIN') {
+      // Admin session is stored strictly in sessionStorage so closing the tab/window requires fresh login
+      sessionStorage.setItem('token', access_token);
+      sessionStorage.setItem('refreshToken', refresh_token);
+      sessionStorage.setItem('user', JSON.stringify(loggedUser));
+      // Clear any persistent storage
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+    } else {
+      localStorage.setItem('token', access_token);
+      localStorage.setItem('refreshToken', refresh_token);
+      localStorage.setItem('user', JSON.stringify(loggedUser));
+    }
 
     setUser(loggedUser);
     await fetchCurrentUser();
@@ -86,7 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    const refreshToken = localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
     try {
       if (refreshToken) {
         await api.post('/auth/logout', { refresh_token: refreshToken });
@@ -94,6 +164,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (e) {
       console.warn('Logout API cleanup error', e);
     } finally {
+      sessionStorage.removeItem('token');
+      sessionStorage.removeItem('refreshToken');
+      sessionStorage.removeItem('user');
       localStorage.removeItem('token');
       localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');

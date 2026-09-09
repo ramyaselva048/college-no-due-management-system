@@ -5,14 +5,15 @@ import {
   CheckCircle2,
   AlertTriangle,
   GraduationCap,
-  ShieldAlert,
   Power,
   PlusCircle,
   Edit2,
   Trash2,
   X,
   AlertCircle,
-  KeyRound
+  Layers,
+  Sparkles,
+  ShieldCheck
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, Course } from '../../types';
@@ -28,8 +29,17 @@ export const AdminStudentsPage: React.FC = () => {
   // Modals state
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<any | null>(null);
+  const [deletingStudent, setDeletingStudent] = useState<any | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [successToast, setSuccessToast] = useState<string | null>(null);
+
+  // Custom Course Mode states (for both add & edit)
+  const [isCustomCourse, setIsCustomCourse] = useState(false);
+  const [customDegreePrefix, setCustomDegreePrefix] = useState('B.E.');
+  const [customCourseTitle, setCustomCourseTitle] = useState('');
+  const [customCourseCode, setCustomCourseCode] = useState('');
+  const [customCourseDuration, setCustomCourseDuration] = useState(4);
 
   const initialForm = {
     full_name: '',
@@ -46,6 +56,11 @@ export const AdminStudentsPage: React.FC = () => {
 
   const [formData, setFormData] = useState(initialForm);
 
+  const showToast = (msg: string) => {
+    setSuccessToast(msg);
+    setTimeout(() => setSuccessToast(null), 3500);
+  };
+
   const fetchDependencies = async () => {
     try {
       const [deptRes, courseRes] = await Promise.all([
@@ -59,8 +74,8 @@ export const AdminStudentsPage: React.FC = () => {
       if (depts.length > 0 && crss.length > 0) {
         setFormData((prev) => ({
           ...prev,
-          department_id: depts[0].id,
-          course_id: crss[0].id
+          department_id: prev.department_id || depts[0].id,
+          course_id: prev.course_id || crss[0].id
         }));
       }
     } catch (err) {
@@ -89,9 +104,10 @@ export const AdminStudentsPage: React.FC = () => {
     fetchDependencies();
   }, []);
 
-  const handleToggleStatus = async (studentId: number) => {
+  const handleToggleStatus = async (studentId: number, currentActive: boolean) => {
     try {
       await api.patch(`/admin/students/${studentId}/status`);
+      showToast(`Student status ${currentActive ? 'deactivated' : 'activated'} successfully.`);
       fetchStudents();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Failed to toggle student status');
@@ -100,16 +116,26 @@ export const AdminStudentsPage: React.FC = () => {
 
   const openCreateModal = () => {
     setFormError(null);
+    setIsCustomCourse(false);
+    setCustomDegreePrefix('B.E.');
+    setCustomCourseTitle('');
+    setCustomCourseCode('');
+    setCustomCourseDuration(4);
     setFormData({
       ...initialForm,
-      department_id: departments[0]?.id || 0,
-      course_id: courses[0]?.id || 0
+      department_id: departments[0]?.id || 1,
+      course_id: courses[0]?.id || 1
     });
     setIsCreateOpen(true);
   };
 
   const openEditModal = (student: any) => {
     setFormError(null);
+    setIsCustomCourse(false);
+    setCustomDegreePrefix('B.E.');
+    setCustomCourseTitle('');
+    setCustomCourseCode('');
+    setCustomCourseDuration(4);
     setEditingStudent(student);
     setFormData({
       full_name: student.full_name || '',
@@ -117,12 +143,35 @@ export const AdminStudentsPage: React.FC = () => {
       email: student.email || '',
       password: '',
       phone: student.phone || '',
-      department_id: student.department_id || departments[0]?.id || 0,
-      course_id: student.course_id || courses[0]?.id || 0,
+      department_id: student.department_id || departments[0]?.id || 1,
+      course_id: student.course_id || courses[0]?.id || 1,
       year: student.year || 1,
       section: student.section || 'A',
       admission_year: student.admission_year || new Date().getFullYear()
     });
+  };
+
+  // Custom Course helper
+  const handleCustomTitleChange = (prefix: string, title: string) => {
+    setCustomDegreePrefix(prefix);
+    setCustomCourseTitle(title);
+
+    const fullTitle = prefix === 'None' || !prefix ? title.trim() : `${prefix} ${title}`.trim();
+    const suggestedCode = fullTitle
+      .replace(/[^a-zA-Z0-9]/g, '_')
+      .replace(/_+/g, '_')
+      .substring(0, 16)
+      .toUpperCase();
+
+    let duration = 4;
+    if (prefix.includes('M.E.') || prefix.includes('M.Tech') || prefix.includes('MBA') || prefix.includes('MCA')) {
+      duration = 2;
+    } else if (prefix.includes('Diploma')) {
+      duration = 3;
+    }
+
+    setCustomCourseCode(suggestedCode);
+    setCustomCourseDuration(duration);
   };
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
@@ -131,9 +180,29 @@ export const AdminStudentsPage: React.FC = () => {
     setFormError(null);
 
     try {
-      await api.post('/admin/students', formData);
+      const payload: any = { ...formData };
+
+      if (isCustomCourse) {
+        const fullCourseName = customDegreePrefix === 'None' || !customDegreePrefix
+          ? customCourseTitle.trim()
+          : `${customDegreePrefix} ${customCourseTitle}`.trim();
+
+        if (!fullCourseName) {
+          setFormError('Please enter a custom degree course title or select an existing one.');
+          setSubmitting(false);
+          return;
+        }
+
+        payload.custom_course_name = fullCourseName;
+        payload.custom_course_code = customCourseCode || fullCourseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15).toUpperCase();
+        payload.custom_course_duration = customCourseDuration;
+        payload.course_id = 0; // Trigger custom course creation on server
+      }
+
+      await api.post('/admin/students', payload);
       setIsCreateOpen(false);
-      await fetchStudents();
+      showToast(`Student "${payload.full_name}" enrolled successfully!`);
+      await Promise.all([fetchStudents(), fetchDependencies()]);
     } catch (err: any) {
       setFormError(err.response?.data?.detail || 'Failed to register student');
     } finally {
@@ -152,9 +221,27 @@ export const AdminStudentsPage: React.FC = () => {
       if (!payload.password) {
         delete payload.password;
       }
+
+      if (isCustomCourse) {
+        const fullCourseName = customDegreePrefix === 'None' || !customDegreePrefix
+          ? customCourseTitle.trim()
+          : `${customDegreePrefix} ${customCourseTitle}`.trim();
+
+        if (!fullCourseName) {
+          setFormError('Please enter a valid degree course title.');
+          setSubmitting(false);
+          return;
+        }
+
+        payload.custom_course_name = fullCourseName;
+        payload.custom_course_code = customCourseCode || fullCourseName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15).toUpperCase();
+        payload.custom_course_duration = customCourseDuration;
+      }
+
       await api.patch(`/admin/students/${editingStudent.id}`, payload);
       setEditingStudent(null);
-      await fetchStudents();
+      showToast(`Student profile "${payload.full_name}" updated and saved!`);
+      await Promise.all([fetchStudents(), fetchDependencies()]);
     } catch (err: any) {
       setFormError(err.response?.data?.detail || 'Failed to update student profile');
     } finally {
@@ -162,15 +249,18 @@ export const AdminStudentsPage: React.FC = () => {
     }
   };
 
-  const handleDelete = async (student: any) => {
-    const confirmMessage = `Are you sure you want to permanently delete student "${student.full_name}" (${student.register_number})?\n\nThis will remove their account, clearances, and associated dues records.`;
-    if (!window.confirm(confirmMessage)) return;
-
+  const confirmDeleteStudent = async () => {
+    if (!deletingStudent) return;
+    setSubmitting(true);
     try {
-      await api.delete(`/admin/students/${student.id}`);
+      await api.delete(`/admin/students/${deletingStudent.id}`);
+      showToast(`Student "${deletingStudent.full_name}" and all records deleted.`);
+      setDeletingStudent(null);
       await fetchStudents();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Failed to delete student');
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -181,20 +271,32 @@ export const AdminStudentsPage: React.FC = () => {
       search === '' ||
       s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
       s.register_number?.toLowerCase().includes(search.toLowerCase()) ||
-      s.email?.toLowerCase().includes(search.toLowerCase());
+      s.email?.toLowerCase().includes(search.toLowerCase()) ||
+      s.department_name?.toLowerCase().includes(search.toLowerCase()) ||
+      s.course_name?.toLowerCase().includes(search.toLowerCase());
     const matchesCourse = filterCourse === 'all' || s.course_name === filterCourse;
     return matchesSearch && matchesCourse;
   });
 
   return (
     <div className="space-y-6">
+      {/* Toast Notification */}
+      {successToast && (
+        <div className="fixed bottom-6 right-6 z-50 bg-emerald-900 text-emerald-50 px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-semibold border border-emerald-700 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+          <span>{successToast}</span>
+        </div>
+      )}
+
+      {/* Header & Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="font-display font-bold text-xl text-slate-900">
+          <h2 className="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+            <Users className="w-6 h-6 text-indigo-600" />
             Enrolled Students Registry
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Real-time management of enrolled students, degree departments, and clearance status
+            Manage student registrations, engineering degree programs, edit profiles, and clearance accounts
           </p>
         </div>
 
@@ -202,9 +304,9 @@ export const AdminStudentsPage: React.FC = () => {
           <select
             value={filterCourse}
             onChange={(e) => setFilterCourse(e.target.value)}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800"
+            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
           >
-            <option value="all">All Degree Programs</option>
+            <option value="all">All Degree Programs ({courses.length})</option>
             {courses.map((c) => (
               <option key={c.id} value={c.name}>
                 {c.name}
@@ -215,7 +317,7 @@ export const AdminStudentsPage: React.FC = () => {
           <div className="relative">
             <input
               type="text"
-              placeholder="Search students..."
+              placeholder="Search students, reg no..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-52"
@@ -232,6 +334,7 @@ export const AdminStudentsPage: React.FC = () => {
         </div>
       </div>
 
+      {/* Students Table */}
       {loading ? (
         <div className="py-20 text-center text-xs text-slate-400">Loading student directory...</div>
       ) : filteredStudents.length === 0 ? (
@@ -253,9 +356,9 @@ export const AdminStudentsPage: React.FC = () => {
                 <tr>
                   <th className="py-3.5 px-4">Student Profile</th>
                   <th className="py-3.5 px-4">Register Number</th>
-                  <th className="py-3.5 px-4">Department & Degree</th>
+                  <th className="py-3.5 px-4">Degree & Department</th>
                   <th className="py-3.5 px-4">Year / Sec</th>
-                  <th className="py-3.5 px-4">Admission</th>
+                  <th className="py-3.5 px-4">Batch</th>
                   <th className="py-3.5 px-4">Account Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
@@ -275,17 +378,19 @@ export const AdminStudentsPage: React.FC = () => {
                       </div>
                     </td>
 
-                    <td className="py-3.5 px-4 font-mono font-bold text-indigo-700">
-                      {student.register_number}
+                    <td className="py-3.5 px-4">
+                      <span className="font-mono font-bold text-indigo-700 bg-indigo-50/80 px-2 py-0.5 rounded border border-indigo-100">
+                        {student.register_number}
+                      </span>
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-700">
-                      <p className="font-medium">{student.department_name}</p>
-                      <p className="text-[11px] text-slate-400">{student.course_name}</p>
+                      <p className="font-semibold text-slate-900">{student.course_name || 'Degree Not Set'}</p>
+                      <p className="text-[11px] text-slate-400">{student.department_name}</p>
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-600">
-                      Year {student.year} ({student.section})
+                      Year {student.year} ({student.section || 'A'})
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-600">
@@ -303,14 +408,8 @@ export const AdminStudentsPage: React.FC = () => {
                         >
                           {student.is_active !== false ? 'Active' : 'Disabled'}
                         </span>
-                        <span
-                          className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${
-                            student.is_registered
-                              ? 'bg-blue-50 text-blue-700 border border-blue-100'
-                              : 'bg-amber-50 text-amber-700 border border-amber-100'
-                          }`}
-                        >
-                          {student.is_registered ? '✓ Self-Registered' : '⏳ Pending Self-Signup'}
+                        <span className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-100">
+                          ✓ Portal Login Ready
                         </span>
                       </div>
                     </td>
@@ -319,14 +418,14 @@ export const AdminStudentsPage: React.FC = () => {
                       <div className="flex items-center justify-end gap-1.5">
                         <button
                           onClick={() => openEditModal(student)}
-                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors inline-flex items-center"
+                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-indigo-50 hover:text-indigo-600 text-slate-700 transition-colors inline-flex items-center"
                           title="Edit Student Profile"
                         >
-                          <Edit2 className="w-3.5 h-3.5 text-slate-600" />
+                          <Edit2 className="w-3.5 h-3.5" />
                         </button>
 
                         <button
-                          onClick={() => handleToggleStatus(student.id)}
+                          onClick={() => handleToggleStatus(student.id, student.is_active !== false)}
                           className={`p-1.5 rounded-lg border transition-colors inline-flex items-center ${
                             student.is_active !== false
                               ? 'border-slate-200 hover:bg-amber-50 text-amber-600'
@@ -338,7 +437,7 @@ export const AdminStudentsPage: React.FC = () => {
                         </button>
 
                         <button
-                          onClick={() => handleDelete(student)}
+                          onClick={() => setDeletingStudent(student)}
                           className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors inline-flex items-center"
                           title="Delete Student Record"
                         >
@@ -357,9 +456,14 @@ export const AdminStudentsPage: React.FC = () => {
       {/* Add Student Modal */}
       {isCreateOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <h3 className="font-display font-bold text-slate-900 text-base">Enroll New Student</h3>
+              <div>
+                <h3 className="font-display font-bold text-slate-900 text-base">Enroll New Student</h3>
+                <p className="text-[11px] text-slate-500">
+                  Register student credentials and assign engineering degree program
+                </p>
+              </div>
               <button
                 onClick={() => setIsCreateOpen(false)}
                 className="p-1 rounded-md text-slate-400 hover:text-slate-700"
@@ -368,7 +472,7 @@ export const AdminStudentsPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-3 overflow-y-auto">
+            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4 overflow-y-auto">
               {formError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -376,17 +480,13 @@ export const AdminStudentsPage: React.FC = () => {
                 </div>
               )}
 
-              <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-[11px] text-indigo-900 leading-relaxed">
-                💡 <strong>Enrollment Rule:</strong> Once you add the student here with their official <strong>Register Number</strong> and <strong>College Email</strong>, the student can register at the Student Portal (<code>/register</code>) and set their own private password.
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. K. Vignesh"
+                    placeholder="e.g. S. Karthik"
                     value={formData.full_name}
                     onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
@@ -398,9 +498,9 @@ export const AdminStudentsPage: React.FC = () => {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. 713522104001"
+                    placeholder="e.g. 713522104042"
                     value={formData.register_number}
-                    onChange={(e) => setFormData({ ...formData, register_number: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, register_number: e.target.value.toUpperCase() })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 uppercase font-mono"
                   />
                 </div>
@@ -408,11 +508,11 @@ export const AdminStudentsPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">College Email Address *</label>
                   <input
                     type="email"
                     required
-                    placeholder="e.g. vignesh@college.edu"
+                    placeholder="e.g. karthik@college.edu"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
@@ -421,7 +521,7 @@ export const AdminStudentsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Initial Password <span className="text-slate-400 font-normal">(Optional)</span>
+                    Password <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="password"
@@ -430,13 +530,12 @@ export const AdminStudentsPage: React.FC = () => {
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 placeholder:text-slate-400"
                   />
-                  <span className="text-[10px] text-slate-400 mt-0.5 block">Student will set own password at /register</span>
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department *</label>
                   <select
                     value={formData.department_id}
                     onChange={(e) => setFormData({ ...formData, department_id: Number(e.target.value) })}
@@ -451,18 +550,71 @@ export const AdminStudentsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Degree Course *</label>
-                  <select
-                    value={formData.course_id}
-                    onChange={(e) => setFormData({ ...formData, course_id: Number(e.target.value) })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.code})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">Degree Course *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomCourse(!isCustomCourse)}
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
+                    >
+                      {isCustomCourse ? '← Pick Existing List' : '✏️ Type Custom Degree'}
+                    </button>
+                  </div>
+
+                  {!isCustomCourse ? (
+                    <select
+                      value={formData.course_id}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setIsCustomCourse(true);
+                        } else {
+                          setFormData({ ...formData, course_id: Number(e.target.value) });
+                        }
+                      }}
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                    >
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.code})
+                        </option>
+                      ))}
+                      <option value="custom">✏️ + Type New / Custom Degree Course...</option>
+                    </select>
+                  ) : (
+                    <div className="p-3 bg-slate-50 border border-indigo-200 rounded-xl space-y-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Prefix</label>
+                          <select
+                            value={customDegreePrefix}
+                            onChange={(e) => handleCustomTitleChange(e.target.value, customCourseTitle)}
+                            className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
+                          >
+                            <option value="B.E.">B.E.</option>
+                            <option value="B.Tech">B.Tech</option>
+                            <option value="M.E.">M.E.</option>
+                            <option value="M.Tech">M.Tech</option>
+                            <option value="MBA">MBA</option>
+                            <option value="MCA">MCA</option>
+                            <option value="None">None</option>
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Type Course Name *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Robotics & Automation"
+                            value={customCourseTitle}
+                            onChange={(e) => handleCustomTitleChange(customDegreePrefix, e.target.value)}
+                            className="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-[10px] text-indigo-700">
+                        Will be created as: <strong>{customDegreePrefix !== 'None' ? `${customDegreePrefix} ` : ''}{customCourseTitle || 'Your Course'}</strong>
+                      </p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -505,7 +657,7 @@ export const AdminStudentsPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number (Optional)</label>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">Phone Number</label>
                 <input
                   type="text"
                   placeholder="+91 98765 43210"
@@ -526,9 +678,9 @@ export const AdminStudentsPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs"
                 >
-                  {submitting ? 'Registering...' : 'Add Student'}
+                  {submitting ? 'Enrolling...' : 'Save & Enroll Student'}
                 </button>
               </div>
             </form>
@@ -539,11 +691,11 @@ export const AdminStudentsPage: React.FC = () => {
       {/* Edit Student Modal */}
       {editingStudent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-white rounded-2xl max-w-xl w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
             <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
               <div>
-                <h3 className="font-display font-bold text-slate-900 text-base">Edit Student Profile</h3>
-                <p className="text-[11px] text-slate-400 font-mono">ID #{editingStudent.id} • {editingStudent.register_number}</p>
+                <h3 className="font-display font-bold text-slate-900 text-base">Edit Student Record</h3>
+                <p className="text-[11px] text-slate-400 font-mono">{editingStudent.register_number}</p>
               </div>
               <button
                 onClick={() => setEditingStudent(null)}
@@ -553,7 +705,7 @@ export const AdminStudentsPage: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleEditSubmit} className="p-6 space-y-3 overflow-y-auto">
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-4 overflow-y-auto">
               {formError && (
                 <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center gap-2">
                   <AlertCircle className="w-4 h-4 shrink-0" />
@@ -563,7 +715,7 @@ export const AdminStudentsPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Full Name *</label>
                   <input
                     type="text"
                     required
@@ -574,12 +726,12 @@ export const AdminStudentsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Register Number</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Register Number *</label>
                   <input
                     type="text"
                     required
                     value={formData.register_number}
-                    onChange={(e) => setFormData({ ...formData, register_number: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, register_number: e.target.value.toUpperCase() })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 uppercase font-mono"
                   />
                 </div>
@@ -587,7 +739,7 @@ export const AdminStudentsPage: React.FC = () => {
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address</label>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Email Address *</label>
                   <input
                     type="email"
                     required
@@ -599,11 +751,11 @@ export const AdminStudentsPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
-                    Reset Password (Optional)
+                    Reset Password <span className="text-slate-400 font-normal">(Optional)</span>
                   </label>
                   <input
                     type="password"
-                    placeholder="Leave empty to keep unchanged"
+                    placeholder="Leave blank to keep unchanged"
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
@@ -628,18 +780,68 @@ export const AdminStudentsPage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Degree Course</label>
-                  <select
-                    value={formData.course_id}
-                    onChange={(e) => setFormData({ ...formData, course_id: Number(e.target.value) })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    {courses.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name} ({c.code})
-                      </option>
-                    ))}
-                  </select>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-slate-700">Degree Course</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCustomCourse(!isCustomCourse)}
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
+                    >
+                      {isCustomCourse ? '← Choose Existing' : '✏️ Type Custom Course'}
+                    </button>
+                  </div>
+
+                  {!isCustomCourse ? (
+                    <select
+                      value={formData.course_id}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') {
+                          setIsCustomCourse(true);
+                        } else {
+                          setFormData({ ...formData, course_id: Number(e.target.value) });
+                        }
+                      }}
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                    >
+                      {courses.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.name} ({c.code})
+                        </option>
+                      ))}
+                      <option value="custom">✏️ + Type New / Custom Degree...</option>
+                    </select>
+                  ) : (
+                    <div className="p-3 bg-slate-50 border border-indigo-200 rounded-xl space-y-2">
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Prefix</label>
+                          <select
+                            value={customDegreePrefix}
+                            onChange={(e) => handleCustomTitleChange(e.target.value, customCourseTitle)}
+                            className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
+                          >
+                            <option value="B.E.">B.E.</option>
+                            <option value="B.Tech">B.Tech</option>
+                            <option value="M.E.">M.E.</option>
+                            <option value="M.Tech">M.Tech</option>
+                            <option value="MBA">MBA</option>
+                            <option value="MCA">MCA</option>
+                            <option value="None">None</option>
+                          </select>
+                        </div>
+                        <div className="col-span-2">
+                          <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Type Course Name</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Biomedical Engineering"
+                            value={customCourseTitle}
+                            onChange={(e) => handleCustomTitleChange(customDegreePrefix, e.target.value)}
+                            className="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -701,12 +903,45 @@ export const AdminStudentsPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs"
                 >
                   {submitting ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deletingStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 p-6 space-y-4">
+            <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mx-auto">
+              <Trash2 className="w-5 h-5" />
+            </div>
+            <div className="text-center">
+              <h3 className="font-bold text-slate-900 text-sm">Delete Student Profile?</h3>
+              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                Permanently remove <strong>{deletingStudent.full_name}</strong> ({deletingStudent.register_number})?
+                This will cascade and remove their login credentials, clearances, and dues.
+              </p>
+            </div>
+            <div className="flex gap-2 justify-center pt-2">
+              <button
+                onClick={() => setDeletingStudent(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmDeleteStudent}
+                disabled={submitting}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs"
+              >
+                {submitting ? 'Deleting...' : 'Yes, Delete Student'}
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -58,7 +58,10 @@ export const StudentDashboard: React.FC = () => {
   }
 
   const activeRequest = summary.active_request;
-  const hasDues = summary.pending_due_amount > 0;
+  const pendingAmount = Number(summary.pending_due_amount ?? (summary as any).pending_dues_amount ?? 0);
+  const clearedAmount = Number(summary.cleared_due_amount ?? (summary as any).cleared_dues_amount ?? 0);
+  const hasDues = pendingAmount > 0;
+  const depts = (summary.departments_summary || (summary as any).department_statuses || []) as any[];
 
   return (
     <div className="space-y-6">
@@ -97,7 +100,7 @@ export const StudentDashboard: React.FC = () => {
               to="/student/dues"
               className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5"
             >
-              Pay Dues (₹{summary.pending_due_amount.toFixed(2)}) <ArrowRight className="w-3.5 h-3.5" />
+              Pay Dues (₹{pendingAmount.toFixed(2)}) <ArrowRight className="w-3.5 h-3.5" />
             </Link>
           ) : (
             <Link
@@ -120,7 +123,7 @@ export const StudentDashboard: React.FC = () => {
             </div>
           </div>
           <p className={`font-display font-extrabold text-2xl mt-2 ${hasDues ? 'text-rose-600' : 'text-emerald-600'}`}>
-            ₹{summary.pending_due_amount.toFixed(2)}
+            ₹{pendingAmount.toFixed(2)}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">
             {hasDues ? 'Must be cleared to request No Due' : 'All accounts settled'}
@@ -135,7 +138,7 @@ export const StudentDashboard: React.FC = () => {
             </div>
           </div>
           <p className="font-display font-extrabold text-2xl text-slate-900 mt-2">
-            ₹{summary.cleared_due_amount.toFixed(2)}
+            ₹{clearedAmount.toFixed(2)}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">Receipts verified on ledger</p>
         </div>
@@ -259,57 +262,62 @@ export const StudentDashboard: React.FC = () => {
         </div>
 
         <div className="divide-y divide-slate-100">
-          {summary.departments_summary.map((dept) => (
-            <div
-              key={dept.department_id}
-              className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
-            >
-              <div className="flex items-center gap-3">
-                <div
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                    dept.has_dues
-                      ? 'bg-rose-50 text-rose-600'
-                      : 'bg-emerald-50 text-emerald-600'
-                  }`}
-                >
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-slate-900">{dept.department_name}</p>
-                  <p className="text-[11px] text-slate-400 font-mono">Code: {dept.department_code}</p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <div className="text-right">
-                  <p
-                    className={`text-xs font-bold ${
-                      dept.has_dues ? 'text-rose-600' : 'text-emerald-700'
+          {depts.map((dept) => {
+            const deptPending = Number(dept.pending_dues_amount ?? dept.pending_amount ?? 0);
+            const deptCleared = Number(dept.cleared_dues_amount ?? 0);
+            const deptHasDues = dept.has_dues ?? deptPending > 0;
+            return (
+              <div
+                key={dept.department_id}
+                className="px-6 py-4 flex items-center justify-between hover:bg-slate-50/50 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-9 h-9 rounded-xl flex items-center justify-center ${
+                      deptHasDues
+                        ? 'bg-rose-50 text-rose-600'
+                        : 'bg-emerald-50 text-emerald-600'
                     }`}
                   >
-                    {dept.has_dues
-                      ? `₹${dept.pending_dues_amount.toFixed(2)} Pending`
-                      : 'Clear (₹0.00)'}
-                  </p>
-                  {dept.cleared_dues_amount > 0 && (
-                    <p className="text-[10px] text-slate-400">
-                      ₹{dept.cleared_dues_amount.toFixed(2)} previously cleared
-                    </p>
-                  )}
+                    <Building2 className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-slate-900">{dept.department_name}</p>
+                    <p className="text-[11px] text-slate-400 font-mono">Code: {dept.department_code}</p>
+                  </div>
                 </div>
 
-                <span
-                  className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
-                    dept.has_dues
-                      ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                      : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                  }`}
-                >
-                  {dept.status}
-                </span>
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    <p
+                      className={`text-xs font-bold ${
+                        deptHasDues ? 'text-rose-600' : 'text-emerald-700'
+                      }`}
+                    >
+                      {deptHasDues
+                        ? `₹${deptPending.toFixed(2)} Pending`
+                        : 'Clear (₹0.00)'}
+                    </p>
+                    {deptCleared > 0 && (
+                      <p className="text-[10px] text-slate-400">
+                        ₹{deptCleared.toFixed(2)} previously cleared
+                      </p>
+                    )}
+                  </div>
+
+                  <span
+                    className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase ${
+                      deptHasDues
+                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                    }`}
+                  >
+                    {dept.status || (deptHasDues ? 'PENDING' : 'CLEAR')}
+                  </span>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

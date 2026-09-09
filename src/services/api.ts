@@ -24,10 +24,10 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request Interceptor: Attach Access Token
+// Request Interceptor: Attach Access Token (sessionStorage prioritized for admin, then localStorage)
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token');
+    const token = sessionStorage.getItem('token') || localStorage.getItem('token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -62,12 +62,23 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = localStorage.getItem('refreshToken');
+      const refreshToken = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
+      const isPublicOrAuthMe =
+        originalRequest.url?.includes('/auth/me') ||
+        window.location.pathname === '/' ||
+        window.location.pathname.startsWith('/login') ||
+        window.location.pathname.startsWith('/verify');
+
       if (!refreshToken) {
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        if (!isPublicOrAuthMe) {
+          window.location.href = '/login';
+        }
         return Promise.reject(error);
       }
 
@@ -79,9 +90,16 @@ api.interceptors.response.use(
         const newAccessToken = res.data.access_token;
         const newRefreshToken = res.data.refresh_token;
 
-        localStorage.setItem('token', newAccessToken);
-        if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
+        if (sessionStorage.getItem('refreshToken')) {
+          sessionStorage.setItem('token', newAccessToken);
+          if (newRefreshToken) {
+            sessionStorage.setItem('refreshToken', newRefreshToken);
+          }
+        } else {
+          localStorage.setItem('token', newAccessToken);
+          if (newRefreshToken) {
+            localStorage.setItem('refreshToken', newRefreshToken);
+          }
         }
 
         api.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
@@ -91,10 +109,15 @@ api.interceptors.response.use(
         return api(originalRequest);
       } catch (refreshErr) {
         processQueue(refreshErr, null);
+        sessionStorage.removeItem('token');
+        sessionStorage.removeItem('refreshToken');
+        sessionStorage.removeItem('user');
         localStorage.removeItem('token');
         localStorage.removeItem('refreshToken');
         localStorage.removeItem('user');
-        window.location.href = '/login';
+        if (!isPublicOrAuthMe) {
+          window.location.href = '/login';
+        }
         return Promise.reject(refreshErr);
       } finally {
         isRefreshing = false;

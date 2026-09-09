@@ -178,7 +178,7 @@ export const StaffApprovalsPage: React.FC = () => {
                       {app.has_pending_dues ? (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 font-semibold text-[11px]">
                           <AlertTriangle className="w-3.5 h-3.5 text-rose-600" />
-                          ₹{app.pending_dues_amount?.toFixed(2)} Outstanding
+                          ₹{Number(app.pending_dues_amount || 0).toFixed(2)} Outstanding
                         </div>
                       ) : (
                         <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold text-[11px]">

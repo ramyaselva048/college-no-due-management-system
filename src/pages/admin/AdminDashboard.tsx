@@ -113,7 +113,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <p className="font-display font-extrabold text-2xl text-rose-600 mt-2">
-            ₹{stats.pending_dues_amount.toFixed(2)}
+            ₹{Number(stats.pending_dues_amount || 0).toFixed(2)}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">{stats.pending_dues_count} pending fee records</p>
         </div>
@@ -126,7 +126,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
           <p className="font-display font-extrabold text-2xl text-emerald-700 mt-2">
-            ₹{stats.cleared_dues_amount.toFixed(2)}
+            ₹{Number(stats.cleared_dues_amount || 0).toFixed(2)}
           </p>
           <p className="text-[11px] text-slate-400 mt-1">{stats.cleared_dues_count} settled dues</p>
         </div>
@@ -237,7 +237,7 @@ export const AdminDashboard: React.FC = () => {
               <div className="mt-3 pt-2 border-t border-slate-200/60 flex items-center justify-between">
                 <span className="text-[10px] text-slate-400 font-medium">Uncollected:</span>
                 <span className={`font-display font-bold text-sm ${dept.pending_amount > 0 ? 'text-rose-600' : 'text-emerald-700'}`}>
-                  ₹{dept.pending_amount.toFixed(2)}
+                  ₹{Number(dept.pending_amount || 0).toFixed(2)}
                 </span>
               </div>
             </div>
