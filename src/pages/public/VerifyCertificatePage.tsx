@@ -224,8 +224,33 @@ export const VerifyCertificatePage: React.FC = () => {
                       })}
                     </span>
                   </div>
+
+                  <div>
+                    <span className="text-slate-400 block mb-0.5">Issued By</span>
+                    <span className="font-semibold text-slate-900">
+                      {result.issued_by || 'Institutional Administrator'}
+                    </span>
+                  </div>
                 </div>
               </div>
+
+              {!result.is_valid && (
+                <div className="p-4 rounded-xl bg-rose-50 border border-rose-200 text-xs text-rose-800">
+                  <p className="font-bold mb-1">Notice of Revocation</p>
+                  <p>
+                    This certificate was revoked by the college administration on{' '}
+                    <span className="font-semibold">
+                      {result.revoked_at ? new Date(result.revoked_at).toLocaleDateString() : 'Record Date'}
+                    </span>
+                    .
+                  </p>
+                  {result.revocation_reason && (
+                    <p className="mt-1">
+                      <span className="font-semibold">Reason:</span> {result.revocation_reason}
+                    </p>
+                  )}
+                </div>
+              )}
 
               {/* Institution Seal Card */}
               <div className="mt-8 p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between text-xs">

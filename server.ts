@@ -1,11 +1,20 @@
+import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { apiRouter } from './server/routes';
+import { db } from './server/db';
 
 const PORT = 3000;
 
 async function startServer() {
+  // Initialize connection and sync with PostgreSQL
+  try {
+    await db.init();
+  } catch (err) {
+    console.error('PostgreSQL boot sync warning:', err);
+  }
+
   const app = express();
 
   // Basic middleware

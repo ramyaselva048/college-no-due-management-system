@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { db, hashPassword, verifyPassword, createToken, verifyToken, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, DueCategoryRecord } from './db';
+import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, DueCategoryRecord, CertificateRecord } from './db';
 import { generateCertificatePdf } from './pdf';
 
 export const apiRouter = Router();
@@ -61,11 +61,31 @@ function requireRole(roles: Array<'STUDENT' | 'STAFF' | 'ADMIN'>) {
 // ----------------------------------------------------
 // Health Check
 // ----------------------------------------------------
-apiRouter.get('/health', (req, res) => {
+apiRouter.get('/health', async (req, res) => {
+  let pgStatus = 'disconnected';
+  try {
+    const pgRes = await pgQuery('SELECT NOW() as now');
+    if (pgRes && pgRes.rows && pgRes.rows.length > 0) {
+      pgStatus = 'connected (PostgreSQL - Neon Cloud SQL)';
+    }
+  } catch (err: any) {
+    pgStatus = 'error: ' + (err?.message || 'unknown');
+  }
+
   res.json({
     status: 'healthy',
-    service: 'College No Due API',
-    database: 'connected (in-memory persistent)'
+    service: 'College No Due Management System',
+    database: pgStatus,
+    stats: {
+      users: db.users.length,
+      students: db.students.length,
+      staff: db.staff.length,
+      departments: db.departments.length,
+      courses: db.courses.length,
+      due_records: db.dueRecords.length,
+      no_due_requests: db.noDueRequests.length,
+      certificates: db.certificates.length
+    }
   });
 });
 
@@ -73,11 +93,7 @@ apiRouter.get('/health', (req, res) => {
 // Authentication Routes (/api/auth)
 // ----------------------------------------------------
 const COLLEGE_ADMIN_EMAILS = [
-  'ramya@sasurie.edu',
-  'ramyacse23@sasurie.com',
-  'ramya@sasurie.com',
-  'ramyaselva048@gmail.com',
-  'admin@college.edu'
+  'ramya@sasurie.edu'
 ];
 
 // Verification endpoint: Informs client that self-registration is permanently disabled
@@ -98,6 +114,8 @@ apiRouter.post(['/auth/signup', '/auth/register'], (req: Request, res: Response)
 apiRouter.post('/auth/login', (req: Request, res: Response) => {
   const identifierField = (req.body.email || req.body.identifier || req.body.username || req.body.register_number || '').trim();
   const password = req.body.password;
+  const requestedRole = (req.body.role || req.body.expected_role || '').toString().trim().toUpperCase();
+
   if (!identifierField || !password) {
     return res.status(400).json({ detail: 'Register Number or College Email and password are required' });
   }
@@ -125,20 +143,8 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     // If staff is found in Admin registry, find their linked user account
     user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
   } else {
-    // Check if this is an institutional Staff or Admin user
-    if (
-      lowerIdentifier === 'admin' ||
-      lowerIdentifier === 'ramya' ||
-      lowerIdentifier === 'ramyacse23' ||
-      lowerIdentifier === 'ramyaselva' ||
-      lowerIdentifier === 'ramyaselva048' ||
-      lowerIdentifier === 'ramyaselva048@gmail.com'
-    ) {
-      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && u.role === 'ADMIN') ||
-             db.users.find(u => u.role === 'ADMIN');
-    } else {
-      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
-    }
+    // User login via email
+    user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
   }
 
   // If user does not exist or password does not match
@@ -146,6 +152,43 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     return res.status(401).json({
       detail: 'Invalid Employee ID, Register Number, Email or Password. Please check your credentials.'
     });
+  }
+
+  // STRICT ROLE SEPARATION:
+  // "student login only students staffs login only staffs"
+  // "oru admin mattum than athu ramya@sasurie.edu password : RamyaSasurie@123"
+  if (requestedRole === 'STUDENT') {
+    if (user.role !== 'STUDENT') {
+      return res.status(403).json({
+        detail: 'Access denied: Only students are authorized to log in through the Student Portal.'
+      });
+    }
+  } else if (requestedRole === 'STAFF') {
+    if (user.role !== 'STAFF') {
+      return res.status(403).json({
+        detail: 'Access denied: Only department staff are authorized to log in through the Staff Portal.'
+      });
+    }
+  } else if (requestedRole === 'ADMIN') {
+    if (user.role !== 'ADMIN' || user.email.toLowerCase() !== 'ramya@sasurie.edu') {
+      return res.status(403).json({
+        detail: 'Access denied: Only the institutional administrator is authorized to log in through the Admin Portal.'
+      });
+    }
+  }
+
+  // Administrator strict validation
+  if (user.role === 'ADMIN') {
+    if (user.email.toLowerCase() !== 'ramya@sasurie.edu') {
+      return res.status(403).json({
+        detail: 'Access denied: Unauthorized administrator account.'
+      });
+    }
+    if (requestedRole && requestedRole !== 'ADMIN') {
+      return res.status(403).json({
+        detail: `Access denied: Administrator cannot log in through the ${requestedRole === 'STUDENT' ? 'Student' : 'Staff'} Portal.`
+      });
+    }
   }
 
   // STRICT REQUIREMENT FOR STUDENTS:
@@ -176,7 +219,7 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     return res.status(403).json({ detail: 'This account has been deactivated. Please contact the college administration.' });
   }
 
-  // Admin check - strictly authorized admin accounts permitted
+  // Admin check - strictly authorized admin account permitted
   if (user.role === 'ADMIN' && !COLLEGE_ADMIN_EMAILS.some(e => e.toLowerCase() === user!.email.toLowerCase())) {
     return res.status(401).json({
       detail: 'Invalid email or password'
@@ -218,7 +261,7 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
       userInfo.designation = staff.designation;
     }
   } else if (user.role === 'ADMIN') {
-    userInfo.full_name = 'Ramya (College Administrator)';
+    userInfo.full_name = 'College Administrator';
   }
 
   res.json({
@@ -272,7 +315,7 @@ apiRouter.post('/auth/refresh', (req: Request, res: Response) => {
       userInfo.department_id = staff.department_id;
     }
   } else if (user.role === 'ADMIN') {
-    userInfo.full_name = 'Ramya (College Administrator)';
+    userInfo.full_name = 'College Administrator';
   }
 
   res.json({
@@ -328,7 +371,7 @@ apiRouter.get('/auth/me', authMiddleware, (req: AuthRequest, res: Response) => {
     userInfo.designation = st.designation;
     userInfo.staff_profile = { ...st, department_name: userInfo.department_name };
   } else if (user.role === 'ADMIN') {
-    userInfo.full_name = 'Ramya (College Administrator)';
+    userInfo.full_name = 'College Administrator';
     userInfo.department_name = 'Office of the Principal / Administration';
   }
 
@@ -1207,11 +1250,12 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
   }
 
   const nextCertId = Math.max(0, ...db.certificates.map(c => c.id)) + 1;
-  const certNumber = `NDC-2026-${nextCertId.toString().padStart(6, '0')}`;
+  const certNumber = `CERT-2026-${nextCertId.toString().padStart(5, '0')}`;
   const verifCode = `VFY-${crypto.randomBytes(6).toString('hex').toUpperCase()}`;
   const now = new Date().toISOString();
+  const issuerName = req.user?.role === 'ADMIN' ? 'College Administrator' : (req.user?.email || 'Institutional Administrator');
 
-  const cert: any = {
+  const cert: CertificateRecord = {
     id: nextCertId,
     request_id: r.id,
     student_id: r.student_id,
@@ -1219,6 +1263,8 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
     verification_code: verifCode,
     issued_at: now,
     is_valid: true,
+    issued_by: req.user!.id,
+    issued_by_name: issuerName,
     created_at: now
   };
   db.certificates.push(cert);
@@ -1241,7 +1287,13 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
     );
   }
 
-  db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_ISSUED', 'CERTIFICATE', cert.id, null, { cert_number: certNumber, student_id: r.student_id }, getClientIp(req));
+  db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_ISSUED', 'CERTIFICATE', cert.id, null, {
+    cert_number: certNumber,
+    student_id: r.student_id,
+    student_name: st ? st.full_name : '',
+    register_number: st ? st.register_number : '',
+    issued_by: issuerName
+  }, getClientIp(req));
 
   res.json({
     id: cert.id,
@@ -1250,11 +1302,14 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
     student_name: st ? st.full_name : '',
     register_number: st ? st.register_number : '',
     course_name: course ? course.name : '',
+    department_id: dept ? dept.id : undefined,
     department_name: dept ? dept.name : '',
     certificate_number: cert.certificate_number,
     verification_code: cert.verification_code,
     issued_at: cert.issued_at,
     is_valid: cert.is_valid,
+    issued_by: cert.issued_by,
+    issued_by_name: cert.issued_by_name,
     created_at: cert.created_at
   });
 });
@@ -1272,11 +1327,18 @@ apiRouter.get('/certificates/my', authMiddleware, requireRole(['STUDENT']), (req
     student_name: student.full_name,
     register_number: student.register_number,
     course_name: course ? course.name : '',
+    department_id: dept ? dept.id : undefined,
     department_name: dept ? dept.name : '',
     certificate_number: c.certificate_number,
     verification_code: c.verification_code,
     issued_at: c.issued_at,
     is_valid: c.is_valid,
+    issued_by: c.issued_by,
+    issued_by_name: c.issued_by_name || 'Institutional Administrator',
+    revoked_by: c.revoked_by,
+    revoked_by_name: c.revoked_by_name,
+    revoked_at: c.revoked_at,
+    revocation_reason: c.revocation_reason,
     created_at: c.created_at
   }));
 
@@ -1285,9 +1347,33 @@ apiRouter.get('/certificates/my', authMiddleware, requireRole(['STUDENT']), (req
 
 apiRouter.get(['/certificates', '/certificates/all'], authMiddleware, requireRole(['STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
   let certs = db.certificates;
-  if (req.query.is_valid !== undefined) {
+  
+  // Filter by status: 'issued' | 'revoked' | 'all'
+  if (req.query.status) {
+    const status = String(req.query.status).toLowerCase();
+    if (status === 'issued' || status === 'valid') {
+      certs = certs.filter(c => c.is_valid === true);
+    } else if (status === 'revoked') {
+      certs = certs.filter(c => c.is_valid === false);
+    }
+  } else if (req.query.is_valid !== undefined) {
     const isValid = req.query.is_valid === 'true';
     certs = certs.filter(c => c.is_valid === isValid);
+  }
+
+  // Filter by department
+  if (req.query.department_id) {
+    const deptId = Number(req.query.department_id);
+    certs = certs.filter(c => {
+      const st = db.students.find(s => s.id === c.student_id);
+      return st && st.department_id === deptId;
+    });
+  }
+
+  // Filter by issue date (YYYY-MM-DD)
+  if (req.query.issue_date) {
+    const filterDate = String(req.query.issue_date).trim();
+    certs = certs.filter(c => c.issued_at.startsWith(filterDate));
   }
 
   const search = (req.query.search as string || '').toLowerCase().trim();
@@ -1303,9 +1389,8 @@ apiRouter.get(['/certificates', '/certificates/all'], authMiddleware, requireRol
     });
   }
 
-  const total = certs.length;
   const skip = Number(req.query.skip) || 0;
-  const limit = Number(req.query.limit) || 50;
+  const limit = Number(req.query.limit) || 100;
   const paginated = certs.slice().reverse().slice(skip, skip + limit);
 
   const result = paginated.map(c => {
@@ -1319,24 +1404,74 @@ apiRouter.get(['/certificates', '/certificates/all'], authMiddleware, requireRol
       student_name: st ? st.full_name : '',
       register_number: st ? st.register_number : '',
       course_name: course ? course.name : '',
+      department_id: dept ? dept.id : undefined,
       department_name: dept ? dept.name : '',
       certificate_number: c.certificate_number,
       verification_code: c.verification_code,
       issued_at: c.issued_at,
       is_valid: c.is_valid,
-      created_at: c.created_at
+      issued_by: c.issued_by,
+      issued_by_name: c.issued_by_name || 'Institutional Administrator',
+      revoked_by: c.revoked_by,
+      revoked_by_name: c.revoked_by_name,
+      revoked_at: c.revoked_at,
+      revocation_reason: c.revocation_reason,
+      created_at: c.created_at,
+      updated_at: c.updated_at
     };
   });
 
   res.json(result);
 });
 
-// Public verification endpoint
+// Certificate audit history endpoint
+apiRouter.get('/certificates/audits', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const limit = Number(req.query.limit) || 100;
+  const certId = req.query.certificate_id ? Number(req.query.certificate_id) : null;
+  let logs = db.auditLogs.filter(l => l.entity_type === 'CERTIFICATE');
+  if (certId) {
+    logs = logs.filter(l => l.entity_id === certId);
+  }
+  const mapped = logs.slice().reverse().slice(0, limit).map(l => ({
+    id: l.id,
+    action: l.action,
+    user_id: l.user_id,
+    user_email: l.user_email,
+    entity_id: l.entity_id,
+    details: l.new_values || l.old_values || {},
+    ip_address: l.ip_address,
+    created_at: l.created_at
+  }));
+  res.json(mapped);
+});
+
+// Audit view log endpoint
+apiRouter.post('/certificates/:id/audit-view', authMiddleware, (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const cert = db.certificates.find(c => c.id === id);
+  if (!cert) return res.status(404).json({ detail: 'Certificate not found' });
+  const st = db.students.find(s => s.id === cert.student_id);
+
+  db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_VIEWED', 'CERTIFICATE', cert.id, null, {
+    certificate_number: cert.certificate_number,
+    student_id: cert.student_id,
+    student_name: st ? st.full_name : '',
+    register_number: st ? st.register_number : '',
+    viewer_role: req.user!.role
+  }, getClientIp(req));
+
+  res.json({ success: true });
+});
+
+// Public verification endpoint (supports verification code OR certificate number)
 apiRouter.get('/certificates/verify/:verification_code', (req: Request, res: Response) => {
   const code = (req.params.verification_code || '').trim().toUpperCase();
-  const cert = db.certificates.find(c => c.verification_code.toUpperCase() === code);
+  const cert = db.certificates.find(c => 
+    c.verification_code.toUpperCase() === code || 
+    c.certificate_number.toUpperCase() === code
+  );
   if (!cert) {
-    return res.status(404).json({ detail: 'Certificate with this verification code was not found in institutional records.' });
+    return res.status(404).json({ detail: 'Certificate with this verification code or certificate ID was not found in institutional records.' });
   }
 
   const st = db.students.find(s => s.id === cert.student_id);
@@ -1353,6 +1488,9 @@ apiRouter.get('/certificates/verify/:verification_code', (req: Request, res: Res
     department_name: dept ? dept.name : 'N/A',
     academic_year: st ? `Class of ${st.admission_year + (course?.duration || 4)}` : 'N/A',
     issued_at: cert.issued_at,
+    issued_by: cert.issued_by_name || 'Institutional Administrator',
+    revoked_at: cert.revoked_at,
+    revocation_reason: cert.revocation_reason,
     college_name: 'Apex Institute of Technology & Higher Education',
     status_message: cert.is_valid ? 'AUTHENTIC & VALID' : 'REVOKED / INVALID'
   });
@@ -1370,6 +1508,7 @@ apiRouter.get('/certificates/:id/download', authMiddleware, (req: AuthRequest, r
   const st = db.students.find(s => s.id === cert.student_id);
   const dept = st ? db.departments.find(d => d.id === st.department_id) : null;
   const course = st ? db.courses.find(c => c.id === st.course_id) : null;
+  const issuer = cert.issued_by_name || 'Institutional Administrator';
 
   const pdfBuffer = generateCertificatePdf(
     st ? st.full_name : 'STUDENT',
@@ -1379,8 +1518,16 @@ apiRouter.get('/certificates/:id/download', authMiddleware, (req: AuthRequest, r
     st ? `${st.year}th Year (${st.admission_year}-${st.admission_year + 4})` : '2022-2026',
     cert.certificate_number,
     cert.verification_code,
-    cert.issued_at
+    cert.issued_at,
+    issuer
   );
+
+  db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_DOWNLOADED', 'CERTIFICATE', cert.id, null, {
+    certificate_number: cert.certificate_number,
+    student_id: cert.student_id,
+    student_name: st ? st.full_name : '',
+    register_number: st ? st.register_number : ''
+  }, getClientIp(req));
 
   const filename = `NoDueCertificate_${st ? st.register_number : cert.certificate_number}.pdf`;
   res.setHeader('Content-Type', 'application/pdf');
@@ -1393,21 +1540,40 @@ apiRouter.patch('/certificates/:id/revoke', authMiddleware, requireRole(['ADMIN'
   const cert = db.certificates.find(c => c.id === id);
   if (!cert) return res.status(404).json({ detail: 'Certificate not found' });
 
+  const reason = (req.body.reason || 'Administrative review and discrepancy verification').trim();
+  const issuerName = req.user?.role === 'ADMIN' ? 'College Administrator' : (req.user?.email || 'Administrator');
   cert.is_valid = false;
+  cert.revoked_at = new Date().toISOString();
+  cert.revoked_by = req.user!.id;
+  cert.revoked_by_name = issuerName;
+  cert.revocation_reason = reason;
   cert.updated_at = new Date().toISOString();
+  db.saveToFile();
 
   const st = db.students.find(s => s.id === cert.student_id);
   if (st) {
     db.createNotification(
       st.user_id,
       'Certificate Revoked',
-      `Your certificate #${cert.certificate_number} has been revoked by administration. Reason: ${req.body.reason || 'Administrative review'}.`,
+      `Your certificate #${cert.certificate_number} has been revoked by administration. Reason: ${reason}.`,
       'danger'
     );
   }
 
-  db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_REVOKED', 'CERTIFICATE', cert.id, { is_valid: true }, { is_valid: false, reason: req.body.reason }, getClientIp(req));
-  res.json({ message: 'Certificate revoked successfully', is_valid: false });
+  db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_REVOKED', 'CERTIFICATE', cert.id, { is_valid: true }, {
+    is_valid: false,
+    reason,
+    revoked_by: issuerName,
+    certificate_number: cert.certificate_number
+  }, getClientIp(req));
+
+  res.json({
+    message: 'Certificate revoked successfully',
+    is_valid: false,
+    revoked_at: cert.revoked_at,
+    revoked_by_name: cert.revoked_by_name,
+    revocation_reason: cert.revocation_reason
+  });
 });
 
 apiRouter.delete('/certificates/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
@@ -1417,6 +1583,7 @@ apiRouter.delete('/certificates/:id', authMiddleware, requireRole(['ADMIN']), (r
 
   const cert = db.certificates[idx];
   db.certificates.splice(idx, 1);
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'CERTIFICATE_DELETED', 'CERTIFICATE', id, null, { cert_number: cert.certificate_number }, getClientIp(req));
   res.json({ message: 'Certificate removed from records', id });
@@ -2428,6 +2595,26 @@ apiRouter.get('/admin/reports', authMiddleware, requireRole(['ADMIN']), (req: Au
     total_revoked_certificates: db.certificates.filter(c => !c.is_valid).length,
     total_requests: db.noDueRequests.length
   });
+});
+
+apiRouter.post('/admin/reset', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const mode = req.body?.mode || 'full_reset';
+  if (!['clear_cycle', 'clear_dues', 'full_reset'].includes(mode)) {
+    return res.status(400).json({ detail: 'Invalid reset mode. Must be clear_cycle, clear_dues, or full_reset' });
+  }
+
+  const result = db.resetDatabase(mode);
+  db.logAudit(
+    req.user!.id,
+    req.user!.email,
+    `ADMIN_PORTAL_RESET_${mode.toUpperCase()}`,
+    'SYSTEM',
+    1,
+    null,
+    { mode, message: result.message },
+    getClientIp(req)
+  );
+  res.json({ success: true, mode, ...result });
 });
 
 // ----------------------------------------------------

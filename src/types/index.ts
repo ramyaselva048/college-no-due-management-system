@@ -142,12 +142,20 @@ export interface Certificate {
   student_name?: string;
   register_number?: string;
   course_name?: string;
+  department_id?: number;
   department_name?: string;
   certificate_number: string;
   verification_code: string;
   issued_at: string;
   is_valid: boolean;
+  issued_by?: number;
+  issued_by_name?: string;
+  revoked_by?: number;
+  revoked_by_name?: string;
+  revoked_at?: string;
+  revocation_reason?: string;
   created_at: string;
+  updated_at?: string;
 }
 
 export interface PublicVerificationResult {
@@ -160,6 +168,9 @@ export interface PublicVerificationResult {
   department_name: string;
   academic_year: string;
   issued_at: string;
+  issued_by?: string;
+  revoked_at?: string;
+  revocation_reason?: string;
   college_name: string;
   status_message: string;
 }

@@ -11,7 +11,8 @@ export function generateCertificatePdf(
   academicYear: string,
   certificateNumber: string,
   verificationCode: string,
-  issuedAt: string
+  issuedAt: string,
+  issuedBy: string = 'Institutional Administrator'
 ): Buffer {
   const dateStr = new Date(issuedAt).toLocaleDateString('en-US', {
     year: 'numeric',
@@ -171,6 +172,8 @@ export function generateCertificatePdf(
     '0.4 0.4 0.4 rg',
     '/F2 7 Tf',
     '1 0 0 1 50 250 Tm',
+    `(${escapePdf(`Issued By: ${issuedBy}`)}) Tj`,
+    '1 0 0 1 50 238 Tm',
     `(${escapePdf('Verify authentic status at public college portal.')}) Tj`,
     'ET',
 

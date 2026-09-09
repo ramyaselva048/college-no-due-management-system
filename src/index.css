@@ -28,3 +28,43 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
 }
+
+/* Dedicated Print Styles for Reports */
+@media print {
+  /* Hide UI elements that should not appear on printed sheets */
+  nav,
+  aside,
+  header,
+  .no-print,
+  button,
+  .print-hide {
+    display: none !important;
+  }
+
+  body,
+  #root,
+  main {
+    background: #ffffff !important;
+    color: #000000 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Make sure background colors and borders are printed */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .printable-document {
+    position: static !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    box-shadow: none !important;
+    border: none !important;
+    background: #ffffff !important;
+    display: block !important;
+  }
+}

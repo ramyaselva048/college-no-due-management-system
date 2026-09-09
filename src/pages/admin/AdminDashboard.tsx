@@ -13,7 +13,12 @@ import {
   TrendingUp,
   AlertTriangle,
   History,
-  BookOpen
+  BookOpen,
+  RotateCcw,
+  RefreshCw,
+  ShieldAlert,
+  X,
+  Check
 } from 'lucide-react';
 import api from '../../services/api';
 import { AdminDashboardData } from '../../types';
@@ -22,16 +27,38 @@ export const AdminDashboard: React.FC = () => {
   const [data, setData] = useState<AdminDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [resetMode, setResetMode] = useState<'clear_cycle' | 'clear_dues' | 'full_reset'>('clear_cycle');
+  const [resetting, setResetting] = useState(false);
+  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
 
   const fetchData = async () => {
     try {
-      setLoading(true);
+      setRefreshing(true);
       const res = await api.get('/admin/dashboard');
       setData(res.data);
+      setError(null);
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load administrative analytics');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+    }
+  };
+
+  const handleExecuteReset = async () => {
+    try {
+      setResetting(true);
+      setError(null);
+      const res = await api.post('/admin/reset', { mode: resetMode });
+      setSuccessMsg(res.data.message || 'Portal reset completed successfully.');
+      setShowResetModal(false);
+      await fetchData();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to complete reset operation.');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -56,6 +83,19 @@ export const AdminDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* Notifications */}
+      {successMsg && (
+        <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between shadow-2xs">
+          <div className="flex items-center gap-2">
+            <Check className="w-4 h-4 text-emerald-600 shrink-0" />
+            <span>{successMsg}</span>
+          </div>
+          <button onClick={() => setSuccessMsg(null)} className="text-emerald-600 hover:text-emerald-800">
+            <X className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      )}
+
       {/* Top Banner */}
       <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -72,7 +112,16 @@ export const AdminDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={fetchData}
+            disabled={refreshing}
+            title="Refresh dashboard metrics"
+            className="px-3 py-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-2xs disabled:opacity-50"
+          >
+            <RotateCcw className={`w-3.5 h-3.5 ${refreshing ? 'animate-spin' : ''}`} /> Refresh
+          </button>
+
           <Link
             to="/admin/requests"
             className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5"
@@ -85,6 +134,14 @@ export const AdminDashboard: React.FC = () => {
           >
             <TrendingUp className="w-3.5 h-3.5" /> Analytics & Reports
           </Link>
+
+          <button
+            onClick={() => setShowResetModal(true)}
+            id="dashboard-portal-reset-button"
+            className="px-3.5 py-2 rounded-xl border border-rose-200 bg-rose-50 hover:bg-rose-100 text-xs font-bold text-rose-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
+          >
+            <RefreshCw className="w-3.5 h-3.5 text-rose-600" /> Reset Portal
+          </button>
         </div>
       </div>
 
@@ -323,6 +380,142 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Admin Portal System Reset Modal */}
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden">
+            <div className="p-5 border-b border-slate-100 flex items-center justify-between bg-rose-50/50">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 rounded-xl bg-rose-100 text-rose-700">
+                  <ShieldAlert className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-sm text-slate-900">
+                    Admin Portal System Reset
+                  </h3>
+                  <p className="text-xs text-slate-500">
+                    Reset clearance cycles or restore clean baseline institutional records
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-5 space-y-3.5">
+              <p className="text-xs text-slate-600">
+                Choose the scope of reset operation for the college portal:
+              </p>
+
+              <label
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  resetMode === 'clear_cycle'
+                    ? 'border-indigo-600 bg-indigo-50/40 text-indigo-950'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="dashboard_reset_mode"
+                  checked={resetMode === 'clear_cycle'}
+                  onChange={() => setResetMode('clear_cycle')}
+                  className="mt-0.5 text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <span className="text-xs font-bold block">
+                    Reset Clearance Cycle (New Academic Semester)
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Clears student clearance applications, department approvals, and issued certificates. Keeps all student accounts, staff, departments, and dues intact.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  resetMode === 'clear_dues'
+                    ? 'border-indigo-600 bg-indigo-50/40 text-indigo-950'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="dashboard_reset_mode"
+                  checked={resetMode === 'clear_dues'}
+                  onChange={() => setResetMode('clear_dues')}
+                  className="mt-0.5 text-indigo-600 focus:ring-indigo-500"
+                />
+                <div>
+                  <span className="text-xs font-bold block">
+                    Clear Dues & Payment Records
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Clears all student fee records and payment logs, resetting pending liabilities to zero.
+                  </p>
+                </div>
+              </label>
+
+              <label
+                className={`flex items-start gap-3 p-3.5 rounded-xl border cursor-pointer transition-all ${
+                  resetMode === 'full_reset'
+                    ? 'border-rose-600 bg-rose-50/40 text-rose-950'
+                    : 'border-slate-200 hover:bg-slate-50 text-slate-700'
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="dashboard_reset_mode"
+                  checked={resetMode === 'full_reset'}
+                  onChange={() => setResetMode('full_reset')}
+                  className="mt-0.5 text-rose-600 focus:ring-rose-500"
+                />
+                <div>
+                  <span className="text-xs font-bold block text-rose-700">
+                    Institutional Baseline Reset (Full Reset)
+                  </span>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Restores clean institutional default database: baseline departments, courses, official staff clearance officers, and enrolled student accounts.
+                  </p>
+                </div>
+              </label>
+
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-800 text-[11px] flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 shrink-0 text-amber-600 mt-0.5" />
+                <span>
+                  This operation is logged in the audit trail. Active administrator session will remain logged in.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 flex items-center justify-end gap-2.5 bg-slate-50">
+              <button
+                onClick={() => setShowResetModal(false)}
+                disabled={resetting}
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExecuteReset}
+                disabled={resetting}
+                className={`px-4 py-2 rounded-xl text-xs font-bold text-white transition-colors flex items-center gap-1.5 shadow-xs ${
+                  resetMode === 'full_reset'
+                    ? 'bg-rose-600 hover:bg-rose-700'
+                    : 'bg-indigo-600 hover:bg-indigo-700'
+                }`}
+              >
+                {resetting && <RefreshCw className="w-3.5 h-3.5 animate-spin" />}
+                <span>{resetting ? 'Resetting...' : 'Confirm Reset'}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

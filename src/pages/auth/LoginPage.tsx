@@ -33,7 +33,7 @@ export const LoginPage: React.FC = () => {
     setError(null);
 
     try {
-      const loggedIn = await login(email.trim(), password);
+      const loggedIn = await login(email.trim(), password, activeRole);
       if (loggedIn.role === 'STUDENT') navigate('/student/dashboard');
       else if (loggedIn.role === 'STAFF') navigate('/staff/dashboard');
       else if (loggedIn.role === 'ADMIN') navigate('/admin/dashboard');
@@ -64,7 +64,7 @@ export const LoginPage: React.FC = () => {
           Sign In to Clearance Portal
         </h2>
         <p className="mt-1 text-xs text-slate-500">
-          Enter institutional credentials or choose a pre-configured demo account
+          Enter institutional credentials to access your designated clearance portal
         </p>
       </div>
 
@@ -155,10 +155,10 @@ export const LoginPage: React.FC = () => {
                   required
                   placeholder={
                     activeRole === 'STUDENT'
-                      ? 'e.g. 2022BCSE042 or student@college.edu'
+                      ? 'e.g. 732423104036 or student@sasurie.edu'
                       : activeRole === 'STAFF'
                       ? 'e.g. EMP-LIB-101 or staff.library@college.edu'
-                      : 'ramyacse23@sasurie.com or ramya@sasurie.edu'
+                      : 'e.g. admin@sasurie.edu'
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
@@ -172,7 +172,7 @@ export const LoginPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700">Password</label>
                 <button
                   type="button"
-                  onClick={() => alert('Student accounts and passwords are centrally managed by the College Administration. If you forgot your password or need access, please contact the Admin Office (ramya@sasurie.edu).')}
+                  onClick={() => alert('Clearance accounts and passwords are centrally managed by the College Administration. If you forgot your password or need access, please contact the College Administration Office.')}
                   className="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium"
                 >
                   Forgot Password?

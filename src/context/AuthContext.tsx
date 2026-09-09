@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import api from '../services/api';
-import { User, StudentProfile, StaffProfile } from '../types';
+import { User, StudentProfile, StaffProfile, UserRole } from '../types';
 
 interface AuthContextType {
   user: User | null;
   studentProfile: StudentProfile | null;
   staffProfile: StaffProfile | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (email: string, password: string, role?: UserRole | string) => Promise<User>;
   signup: (payload: any) => Promise<any>;
   logout: () => Promise<void>;
   refreshMe: () => Promise<void>;
@@ -69,8 +69,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchCurrentUser();
   }, []);
 
-  const login = async (email: string, password: string): Promise<User> => {
-    const res = await api.post('/auth/login', { email, password });
+  const login = async (email: string, password: string, role?: UserRole | string): Promise<User> => {
+    const res = await api.post('/auth/login', { email, password, role });
     const { access_token, refresh_token, user: loggedUser } = res.data;
 
     // Persist securely in both localStorage and sessionStorage for full cross-tab and reload stability

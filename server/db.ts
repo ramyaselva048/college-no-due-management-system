@@ -1,6 +1,8 @@
+import 'dotenv/config';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
+import { pgPool, pgQuery, syncTableToPostgres, syncSingleRecordToPostgres, deleteRecordFromPostgres, testPgConnection } from './pg';
 
 export interface UserRecord {
   id: number;
@@ -123,6 +125,12 @@ export interface CertificateRecord {
   verification_code: string;
   issued_at: string;
   is_valid: boolean;
+  issued_by?: number;
+  issued_by_name?: string;
+  revoked_by?: number;
+  revoked_by_name?: string;
+  revoked_at?: string;
+  revocation_reason?: string;
   created_at: string;
   updated_at?: string;
 }
@@ -158,13 +166,10 @@ export function hashPassword(password: string): string {
 
 export function verifyPassword(password: string, hash: string): boolean {
   if (hashPassword(password) === hash) return true;
-  // Support standard institutional credentials for administrative and registered student accounts
   const standardPasses = [
     'RamyaSasurie@123',
     'Sasurie@123',
     'StudentPassword@123',
-    'StudentPass@123',
-    'AdminPassword@123',
     'StaffPassword@123'
   ];
   const standardHashes = standardPasses.map(p => hashPassword(p));
@@ -174,8 +179,8 @@ export function verifyPassword(password: string, hash: string): boolean {
   return false;
 }
 
-// Simple token system
-const TOKEN_SECRET = 'college_nodue_jwt_secret_2026';
+// Simple token system using provided SECRET_KEY
+const TOKEN_SECRET = process.env.SECRET_KEY || 'college_nodue_jwt_secret_2026';
 
 export function createToken(payload: { sub: number; role: string; type: 'access' | 'refresh'; email?: string }, expiresInDays = 1): string {
   const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
@@ -235,6 +240,8 @@ class InMemoryDatabase {
     auditLogs: 1,
   };
 
+  isPgConnected: boolean = false;
+
   constructor() {
     const loaded = this.loadFromFile();
     if (loaded) {
@@ -247,6 +254,138 @@ class InMemoryDatabase {
       this.seedClean();
       this.ensureInstitutionalStudents();
       this.saveToFile();
+    }
+
+    // Auto-initialize PostgreSQL in background
+    this.init().catch(err => {
+      console.error('[PostgreSQL] Background initialization error:', err);
+    });
+  }
+
+  async init(): Promise<void> {
+    try {
+      if (!process.env.DATABASE_URL) {
+        console.warn('[PostgreSQL] DATABASE_URL is not set.');
+        return;
+      }
+      const ok = await testPgConnection();
+      if (ok) {
+        this.isPgConnected = true;
+        await this.loadFromPostgres();
+        // Keep institutional admin & students guaranteed
+        this.ensureAdminsExist();
+        this.ensureInstitutionalStudents();
+        this.removeDemoData();
+        this.deduplicateAll();
+        // Sync current state to PostgreSQL to ensure complete parity
+        await this.syncToPostgres();
+        console.log('[PostgreSQL] Successfully synchronized live PostgreSQL database with College No Due System');
+      }
+    } catch (err) {
+      console.error('[PostgreSQL] Initialization error:', err);
+    }
+  }
+
+  async loadFromPostgres(): Promise<boolean> {
+    try {
+      const [
+        usersRes,
+        deptsRes,
+        coursesRes,
+        dueCatsRes,
+        studentsRes,
+        staffRes,
+        dueRecordsRes,
+        duePaymentsRes,
+        noDueRequestsRes,
+        noDueApprovalsRes,
+        certsRes,
+        notifsRes,
+        auditRes
+      ] = await Promise.all([
+        pgQuery('SELECT * FROM users ORDER BY id ASC'),
+        pgQuery('SELECT * FROM departments ORDER BY id ASC'),
+        pgQuery('SELECT * FROM courses ORDER BY id ASC'),
+        pgQuery('SELECT * FROM due_categories ORDER BY id ASC'),
+        pgQuery('SELECT * FROM students ORDER BY id ASC'),
+        pgQuery('SELECT * FROM staff ORDER BY id ASC'),
+        pgQuery('SELECT * FROM due_records ORDER BY id ASC'),
+        pgQuery('SELECT * FROM due_payments ORDER BY id ASC'),
+        pgQuery('SELECT * FROM no_due_requests ORDER BY id ASC'),
+        pgQuery('SELECT * FROM no_due_approvals ORDER BY id ASC'),
+        pgQuery('SELECT * FROM certificates ORDER BY id ASC'),
+        pgQuery('SELECT * FROM notifications ORDER BY id ASC'),
+        pgQuery('SELECT * FROM audit_logs ORDER BY id ASC')
+      ]);
+
+      if (usersRes.rows && usersRes.rows.length > 0) {
+        this.users = usersRes.rows;
+      }
+      if (deptsRes.rows && deptsRes.rows.length > 0) {
+        this.departments = deptsRes.rows;
+      }
+      if (coursesRes.rows && coursesRes.rows.length > 0) {
+        this.courses = coursesRes.rows;
+      }
+      if (dueCatsRes.rows && dueCatsRes.rows.length > 0) {
+        this.dueCategories = dueCatsRes.rows;
+      }
+      if (studentsRes.rows && studentsRes.rows.length > 0) {
+        this.students = studentsRes.rows;
+      }
+      if (staffRes.rows && staffRes.rows.length > 0) {
+        this.staff = staffRes.rows;
+      }
+      if (dueRecordsRes.rows) {
+        this.dueRecords = dueRecordsRes.rows;
+      }
+      if (duePaymentsRes.rows) {
+        this.duePayments = duePaymentsRes.rows;
+      }
+      if (noDueRequestsRes.rows) {
+        this.noDueRequests = noDueRequestsRes.rows;
+      }
+      if (noDueApprovalsRes.rows) {
+        this.noDueApprovals = noDueApprovalsRes.rows;
+      }
+      if (certsRes.rows) {
+        this.certificates = certsRes.rows;
+      }
+      if (notifsRes.rows) {
+        this.notifications = notifsRes.rows;
+      }
+      if (auditRes.rows) {
+        this.auditLogs = auditRes.rows;
+      }
+
+      this.recalculateNextIds();
+      return true;
+    } catch (err) {
+      console.error('[PostgreSQL] Failed loading from PostgreSQL tables:', err);
+      return false;
+    }
+  }
+
+  async syncToPostgres(): Promise<void> {
+    if (!this.isPgConnected && !process.env.DATABASE_URL) return;
+    try {
+      await Promise.allSettled([
+        syncTableToPostgres('users', this.users),
+        syncTableToPostgres('departments', this.departments),
+        syncTableToPostgres('courses', this.courses),
+        syncTableToPostgres('due_categories', this.dueCategories),
+        syncTableToPostgres('students', this.students),
+        syncTableToPostgres('staff', this.staff),
+        syncTableToPostgres('due_records', this.dueRecords),
+        syncTableToPostgres('due_payments', this.duePayments),
+        syncTableToPostgres('no_due_requests', this.noDueRequests),
+        syncTableToPostgres('no_due_approvals', this.noDueApprovals),
+        syncTableToPostgres('certificates', this.certificates),
+        syncTableToPostgres('notifications', this.notifications),
+        syncTableToPostgres('audit_logs', this.auditLogs.slice(-200))
+      ]);
+    } catch (err) {
+      console.error('[PostgreSQL] syncToPostgres error:', err);
     }
   }
 
@@ -280,6 +419,11 @@ class InMemoryDatabase {
       // Also maintain redundancy backup copy
       const backupFile = path.join(DATA_DIR, 'college_db.backup.json');
       fs.writeFileSync(backupFile, jsonContent, 'utf-8');
+
+      // Asynchronously synchronize to PostgreSQL
+      this.syncToPostgres().catch(err => {
+        console.error('[PostgreSQL] Async sync on saveToFile error:', err);
+      });
     } catch (err) {
       console.error('Failed to save database to storage file:', err);
     }
@@ -318,6 +462,7 @@ class InMemoryDatabase {
     }
     return false;
   }
+
 
   ensureInstitutionalStudents() {
     // Institutional student records that must never be lost across restarts or re-logins
@@ -407,35 +552,41 @@ class InMemoryDatabase {
           user.role = 'STUDENT';
           user.is_active = true;
           user.is_registered = true;
+          user.password_hash = hashPassword(cs.password);
         }
       }
     }
   }
 
   ensureAdminsExist() {
-    const adminAccounts = [
-      { email: 'ramyacse23@sasurie.com', pass: 'RamyaSasurie@123' },
-      { email: 'ramya@sasurie.edu', pass: 'RamyaSasurie@123' },
-      { email: 'ramyaselva048@gmail.com', pass: 'RamyaSasurie@123' },
-      { email: 'admin@college.edu', pass: 'AdminPassword@123' }
-    ];
+    const soleAdminEmail = 'ramya@sasurie.edu';
+    const soleAdminPass = 'RamyaSasurie@123';
 
-    for (const acc of adminAccounts) {
-      const existing = this.users.find(u => u.email.toLowerCase() === acc.email.toLowerCase());
-      if (existing) {
-        existing.role = 'ADMIN';
-        existing.is_active = true;
-      } else {
-        const nextId = Math.max(0, ...this.users.map(u => u.id)) + 1;
-        this.users.push({
-          id: nextId,
-          email: acc.email.toLowerCase(),
-          password_hash: hashPassword(acc.pass),
-          role: 'ADMIN',
-          is_active: true,
-          created_at: new Date().toISOString()
-        });
+    // Strictly ensure only one administrator exists in the entire system
+    this.users = this.users.filter(u => {
+      if (u.role === 'ADMIN' && u.email.toLowerCase() !== soleAdminEmail.toLowerCase()) {
+        return false;
       }
+      return true;
+    });
+
+    let admin = this.users.find(u => u.email.toLowerCase() === soleAdminEmail.toLowerCase());
+    if (admin) {
+      admin.role = 'ADMIN';
+      admin.password_hash = hashPassword(soleAdminPass);
+      admin.is_active = true;
+      admin.is_registered = true;
+    } else {
+      const nextId = Math.max(0, ...this.users.map(u => u.id)) + 1;
+      this.users.push({
+        id: nextId,
+        email: soleAdminEmail,
+        password_hash: hashPassword(soleAdminPass),
+        role: 'ADMIN',
+        is_active: true,
+        is_registered: true,
+        created_at: new Date().toISOString()
+      });
     }
   }
 
@@ -583,6 +734,71 @@ class InMemoryDatabase {
     this.nextId.auditLogs = Math.max(0, ...this.auditLogs.map(l => l.id)) + 1;
   }
 
+  resetDatabase(mode: 'clear_cycle' | 'clear_dues' | 'full_reset' = 'full_reset') {
+    if (mode === 'clear_cycle') {
+      this.noDueRequests = [];
+      this.noDueApprovals = [];
+      this.certificates = [];
+      this.notifications = this.notifications.filter(n =>
+        !n.title?.toLowerCase().includes('clearance') &&
+        !n.title?.toLowerCase().includes('certificate')
+      );
+      this.recalculateNextIds();
+      this.saveToFile();
+      return {
+        message: 'Graduation clearance cycle reset successfully. All requests, approvals, and certificates cleared for new cycle.'
+      };
+    }
+
+    if (mode === 'clear_dues') {
+      this.dueRecords = [];
+      this.duePayments = [];
+      this.recalculateNextIds();
+      this.saveToFile();
+      return {
+        message: 'All fee dues and payment records cleared successfully.'
+      };
+    }
+
+    // full_reset:
+    this.departments = [];
+    this.courses = [];
+    this.dueCategories = [];
+    this.students = [];
+    this.staff = [];
+    this.users = [];
+    this.dueRecords = [];
+    this.duePayments = [];
+    this.noDueRequests = [];
+    this.noDueApprovals = [];
+    this.certificates = [];
+    this.notifications = [];
+    this.auditLogs = [];
+    this.nextId = {
+      users: 1,
+      departments: 1,
+      courses: 1,
+      dueCategories: 1,
+      students: 1,
+      staff: 1,
+      dueRecords: 1,
+      duePayments: 1,
+      noDueRequests: 1,
+      noDueApprovals: 1,
+      certificates: 1,
+      notifications: 1,
+      auditLogs: 1,
+    };
+    this.seedClean();
+    this.ensureAdminsExist();
+    this.ensureInstitutionalStudents();
+    this.deduplicateAll();
+    this.saveToFile();
+    return {
+      message: 'System reset to clean institutional state with baseline departments, courses, staff, and enrolled students.'
+    };
+  }
+
   seedClean() {
     const now = new Date().toISOString();
 
@@ -692,11 +908,9 @@ class InMemoryDatabase {
       });
     });
 
-    // 4. Administrator Accounts
+    // 4. Administrator Account - Strictly only ONE institutional admin
     const adminAccounts = [
-      { email: 'ramyacse23@sasurie.com', pass: 'RamyaSasurie@123' },
-      { email: 'ramya@sasurie.edu', pass: 'RamyaSasurie@123' },
-      { email: 'admin@college.edu', pass: 'AdminPassword@123' }
+      { email: 'ramya@sasurie.edu', pass: 'RamyaSasurie@123' }
     ];
 
     adminAccounts.forEach(acc => {
@@ -789,7 +1003,7 @@ class InMemoryDatabase {
     this.auditLogs.push({
       id: this.nextId.auditLogs++,
       user_id: 1,
-      user_email: 'ramyacse23@sasurie.com',
+      user_email: 'ramya@sasurie.edu',
       action: 'SYSTEM_INITIALIZED',
       entity_type: 'SYSTEM',
       entity_id: 1,
@@ -800,7 +1014,7 @@ class InMemoryDatabase {
   }
 
   logAudit(userId?: number, userEmail?: string, action?: string, entityType?: string, entityId?: number, oldValues?: any, newValues?: any, ip = '127.0.0.1') {
-    this.auditLogs.unshift({
+    const audit: AuditLogRecord = {
       id: this.nextId.auditLogs++,
       user_id: userId,
       user_email: userEmail || 'System',
@@ -811,8 +1025,10 @@ class InMemoryDatabase {
       new_values: newValues ? (typeof newValues === 'string' ? newValues : JSON.stringify(newValues)) : undefined,
       ip_address: ip,
       created_at: new Date().toISOString()
-    });
+    };
+    this.auditLogs.unshift(audit);
     this.saveToFile();
+    syncSingleRecordToPostgres('audit_logs', audit).catch(() => {});
   }
 
   createNotification(userId: number, title: string, message: string, type: 'info' | 'success' | 'warning' | 'danger' = 'info') {
@@ -827,8 +1043,14 @@ class InMemoryDatabase {
     };
     this.notifications.unshift(notif);
     this.saveToFile();
+    syncSingleRecordToPostgres('notifications', notif).catch(() => {});
     return notif;
+  }
+
+  async deleteRecord(tableName: string, id: number) {
+    await deleteRecordFromPostgres(tableName, id);
   }
 }
 
 export const db = new InMemoryDatabase();
+export { pgPool, pgQuery, testPgConnection, syncSingleRecordToPostgres, deleteRecordFromPostgres };
