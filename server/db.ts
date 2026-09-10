@@ -34,6 +34,17 @@ export interface CourseRecord {
   created_at: string;
 }
 
+export interface SubjectCourseRecord {
+  id: number;
+  title: string;
+  code: string;
+  department_id: number;
+  year: number;
+  semester: number;
+  is_active: boolean;
+  created_at: string;
+}
+
 export interface DueCategoryRecord {
   id: number;
   name: string;
@@ -225,6 +236,7 @@ class InMemoryDatabase {
   certificates: CertificateRecord[] = [];
   notifications: NotificationRecord[] = [];
   auditLogs: AuditLogRecord[] = [];
+  subjectCourses: SubjectCourseRecord[] = [];
 
   nextId = {
     users: 1,
@@ -240,6 +252,7 @@ class InMemoryDatabase {
     certificates: 1,
     notifications: 1,
     auditLogs: 1,
+    subjectCourses: 1,
   };
 
   isPgConnected: boolean = false;
@@ -273,9 +286,24 @@ class InMemoryDatabase {
       const ok = await testPgConnection();
       if (ok) {
         this.isPgConnected = true;
+        // Ensure subject_courses table exists
+        await pgQuery(`
+          CREATE TABLE IF NOT EXISTS subject_courses (
+            id SERIAL PRIMARY KEY,
+            title VARCHAR(255) NOT NULL,
+            code VARCHAR(50) NOT NULL,
+            department_id INTEGER,
+            year INTEGER NOT NULL,
+            semester INTEGER NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+          )
+        `).catch(e => console.warn('[PostgreSQL] subject_courses table check:', e?.message));
+
         await this.loadFromPostgres();
         // Keep institutional admin guaranteed
         this.ensureAdminsExist();
+        this.ensureDefaultSubjectCourses();
         this.deduplicateAll();
         // Sync current state to PostgreSQL to ensure complete parity
         await this.syncToPostgres();
@@ -301,7 +329,8 @@ class InMemoryDatabase {
         noDueApprovalsRes,
         certsRes,
         notifsRes,
-        auditRes
+        auditRes,
+        subCoursesRes
       ] = await Promise.all([
         pgQuery('SELECT * FROM users ORDER BY id ASC'),
         pgQuery('SELECT * FROM departments ORDER BY id ASC'),
@@ -315,7 +344,8 @@ class InMemoryDatabase {
         pgQuery('SELECT * FROM no_due_approvals ORDER BY id ASC'),
         pgQuery('SELECT * FROM certificates ORDER BY id ASC'),
         pgQuery('SELECT * FROM notifications ORDER BY id ASC'),
-        pgQuery('SELECT * FROM audit_logs ORDER BY id ASC')
+        pgQuery('SELECT * FROM audit_logs ORDER BY id ASC'),
+        pgQuery('SELECT * FROM subject_courses ORDER BY id ASC').catch(() => ({ rows: [] }))
       ]);
 
       if (usersRes.rows && usersRes.rows.length > 0) {
@@ -356,6 +386,9 @@ class InMemoryDatabase {
       }
       if (auditRes.rows) {
         this.auditLogs = auditRes.rows;
+      }
+      if (subCoursesRes.rows && subCoursesRes.rows.length > 0) {
+        this.subjectCourses = subCoursesRes.rows;
       }
 
       this.recalculateNextIds();
@@ -412,6 +445,7 @@ class InMemoryDatabase {
       await syncTableToPostgres('no_due_requests', this.noDueRequests);
       await syncTableToPostgres('no_due_approvals', this.noDueApprovals);
       await syncTableToPostgres('certificates', this.certificates);
+      await syncTableToPostgres('subject_courses', this.subjectCourses);
       await syncTableToPostgres('notifications', this.notifications.slice(0, 100));
       await syncTableToPostgres('audit_logs', this.auditLogs.slice(0, 200));
     } catch (err) {
@@ -438,6 +472,7 @@ class InMemoryDatabase {
         certificates: this.certificates,
         notifications: this.notifications,
         auditLogs: this.auditLogs,
+        subjectCourses: this.subjectCourses,
         nextId: this.nextId
       };
       const jsonContent = JSON.stringify(data, null, 2);
@@ -479,9 +514,11 @@ class InMemoryDatabase {
           this.certificates = Array.isArray(data.certificates) ? data.certificates : [];
           this.notifications = Array.isArray(data.notifications) ? data.notifications : [];
           this.auditLogs = Array.isArray(data.auditLogs) ? data.auditLogs : [];
+          this.subjectCourses = Array.isArray(data.subjectCourses) ? data.subjectCourses : [];
           if (data.nextId) {
             this.nextId = { ...this.nextId, ...data.nextId };
           }
+          this.ensureDefaultSubjectCourses();
           return true;
         }
       } catch (err) {
@@ -489,6 +526,59 @@ class InMemoryDatabase {
       }
     }
     return false;
+  }
+
+  ensureDefaultSubjectCourses() {
+    if (this.subjectCourses.length > 0) return;
+    const cseDept = this.departments.find(d => d.code === 'CSE') || this.departments[0];
+    const itDept = this.departments.find(d => d.code === 'IT') || cseDept;
+    const mechDept = this.departments.find(d => d.code === 'MECH') || cseDept;
+    const eeeDept = this.departments.find(d => d.code === 'EEE') || cseDept;
+    const civilDept = this.departments.find(d => d.code === 'CIVIL') || cseDept;
+
+    const sampleSubjects = [
+      // CSE
+      { title: 'Problem Solving and Python Programming', code: 'GE3151', deptId: cseDept?.id || 1, year: 1, semester: 1 },
+      { title: 'Programming in C', code: 'CS3251', deptId: cseDept?.id || 1, year: 1, semester: 2 },
+      { title: 'Data Structures and Algorithms', code: 'CS3301', deptId: cseDept?.id || 1, year: 2, semester: 3 },
+      { title: 'Digital Principles and Computer Organization', code: 'CS3351', deptId: cseDept?.id || 1, year: 2, semester: 3 },
+      { title: 'Database Management Systems', code: 'CS3492', deptId: cseDept?.id || 1, year: 2, semester: 4 },
+      { title: 'Operating Systems', code: 'CS3452', deptId: cseDept?.id || 1, year: 2, semester: 4 },
+      { title: 'Computer Networks', code: 'CS3591', deptId: cseDept?.id || 1, year: 3, semester: 5 },
+      { title: 'Theory of Computation', code: 'CS3501', deptId: cseDept?.id || 1, year: 3, semester: 5 },
+      { title: 'Compiler Design', code: 'CS3601', deptId: cseDept?.id || 1, year: 3, semester: 6 },
+      { title: 'Artificial Intelligence and Machine Learning', code: 'CS3691', deptId: cseDept?.id || 1, year: 3, semester: 6 },
+      { title: 'Cloud Computing and Big Data Analytics', code: 'CS3701', deptId: cseDept?.id || 1, year: 4, semester: 7 },
+      { title: 'Cryptography and Cyber Security', code: 'CS3791', deptId: cseDept?.id || 1, year: 4, semester: 7 },
+      { title: 'Deep Learning & Professional Ethics', code: 'CS3801', deptId: cseDept?.id || 1, year: 4, semester: 8 },
+      // IT
+      { title: 'Object Oriented Programming using Java', code: 'IT3301', deptId: itDept?.id || 1, year: 2, semester: 3 },
+      { title: 'Web Technology and Frameworks', code: 'IT3401', deptId: itDept?.id || 1, year: 2, semester: 4 },
+      { title: 'Full Stack Web Development', code: 'IT3501', deptId: itDept?.id || 1, year: 3, semester: 5 },
+      // MECH
+      { title: 'Engineering Thermodynamics', code: 'ME3351', deptId: mechDept?.id || 1, year: 2, semester: 3 },
+      { title: 'Fluid Mechanics and Machinery', code: 'ME3491', deptId: mechDept?.id || 1, year: 2, semester: 4 },
+      // EEE
+      { title: 'Electric Circuit Analysis', code: 'EE3301', deptId: eeeDept?.id || 1, year: 2, semester: 3 },
+      { title: 'Electrical Machines - I', code: 'EE3401', deptId: eeeDept?.id || 1, year: 2, semester: 4 },
+      // CIVIL
+      { title: 'Mechanics of Solids', code: 'CE3301', deptId: civilDept?.id || 1, year: 2, semester: 3 },
+      { title: 'Surveying and Geomatics', code: 'CE3401', deptId: civilDept?.id || 1, year: 2, semester: 4 },
+    ];
+
+    let id = Math.max(0, ...this.subjectCourses.map(s => s.id)) + 1;
+    for (const sub of sampleSubjects) {
+      this.subjectCourses.push({
+        id: id++,
+        title: sub.title,
+        code: sub.code,
+        department_id: sub.deptId,
+        year: sub.year,
+        semester: sub.semester,
+        is_active: true,
+        created_at: new Date().toISOString()
+      });
+    }
   }
 
 
@@ -635,6 +725,7 @@ class InMemoryDatabase {
     this.nextId.certificates = Math.max(0, ...this.certificates.map(c => c.id)) + 1;
     this.nextId.notifications = Math.max(0, ...this.notifications.map(n => n.id)) + 1;
     this.nextId.auditLogs = Math.max(0, ...this.auditLogs.map(l => l.id)) + 1;
+    this.nextId.subjectCourses = Math.max(0, ...this.subjectCourses.map(s => s.id)) + 1;
   }
 
   resetDatabase(mode: 'clear_cycle' | 'clear_dues' | 'full_reset' = 'full_reset') {
@@ -677,6 +768,7 @@ class InMemoryDatabase {
     this.certificates = [];
     this.notifications = [];
     this.auditLogs = [];
+    this.subjectCourses = [];
     this.nextId = {
       users: 1,
       departments: 1,
@@ -691,8 +783,10 @@ class InMemoryDatabase {
       certificates: 1,
       notifications: 1,
       auditLogs: 1,
+      subjectCourses: 1,
     };
     this.ensureAdminsExist();
+    this.ensureDefaultSubjectCourses();
     this.deduplicateAll();
     this.saveToFile();
     return {

@@ -28,6 +28,19 @@ export interface Course {
   created_at?: string;
 }
 
+export interface SubjectCourse {
+  id: number;
+  title: string;
+  code: string;
+  department_id: number;
+  department_name?: string;
+  department_code?: string;
+  year: number;
+  semester: number;
+  is_active: boolean;
+  created_at?: string;
+}
+
 export interface DueCategory {
   id: number;
   name: string;

@@ -38,7 +38,7 @@
       "email": "hod.ece@sasurie.edu",
       "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
       "role": "HOD",
-      "is_active": true,
+      "is_active": false,
       "is_registered": true,
       "created_at": "2026-09-10T08:39:05.166Z",
       "updated_at": null,
@@ -49,7 +49,7 @@
       "email": "hod.mech@sasurie.edu",
       "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
       "role": "HOD",
-      "is_active": true,
+      "is_active": false,
       "is_registered": true,
       "created_at": "2026-09-10T08:39:05.166Z",
       "updated_at": null,
@@ -263,6 +263,17 @@
       "created_at": "2026-09-10T09:00:37.965Z",
       "updated_at": null,
       "department_id": null
+    },
+    {
+      "id": 29,
+      "email": "mugesh23@sasurie.com",
+      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "role": "STUDENT",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-10T12:05:15.847Z",
+      "updated_at": null,
+      "department_id": null
     }
   ],
   "departments": [
@@ -287,7 +298,7 @@
       "name": "Mechanical Engineering",
       "code": "MECH",
       "description": "Department of Mechanical Engineering",
-      "is_active": true,
+      "is_active": false,
       "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
@@ -295,7 +306,7 @@
       "name": "Electrical and Electronics Engineering",
       "code": "EEE",
       "description": "Department of Electrical & Electronics Engineering",
-      "is_active": true,
+      "is_active": false,
       "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
@@ -303,7 +314,7 @@
       "name": "Civil Engineering",
       "code": "CIVIL",
       "description": "Department of Civil Engineering",
-      "is_active": true,
+      "is_active": false,
       "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
@@ -313,6 +324,14 @@
       "description": "Department of Information Technology",
       "is_active": true,
       "created_at": "2026-09-10T08:39:05.166Z"
+    },
+    {
+      "id": 7,
+      "name": "Artificial Intelligence and Data Science",
+      "code": "AIADS",
+      "description": "Artificial Intelligence and Data Science Department",
+      "is_active": true,
+      "created_at": "2026-09-10T12:34:53.545Z"
     }
   ],
   "courses": [
@@ -442,6 +461,44 @@
       "academic_year": "2025-2026",
       "student_type": "day_scholar",
       "attendance_percentage": "84",
+      "undertaking_status": "submitted"
+    },
+    {
+      "id": 4,
+      "user_id": 29,
+      "register_number": "732423104009",
+      "full_name": "Mugesh R",
+      "email": "mugesh23@sasurie.com",
+      "phone": "",
+      "department_id": 1,
+      "course_id": 1,
+      "year": 4,
+      "section": "A",
+      "admission_year": 2023,
+      "created_at": "2026-09-10T12:05:15.847Z",
+      "semester": 6,
+      "academic_year": "2025-2026",
+      "student_type": "day_scholar",
+      "attendance_percentage": "85.0",
+      "undertaking_status": "submitted"
+    },
+    {
+      "id": 5,
+      "user_id": 31,
+      "register_number": "732423104005",
+      "full_name": "Monisha S",
+      "email": "monisha23@sasurie.com",
+      "phone": null,
+      "department_id": 2,
+      "course_id": 2,
+      "year": 4,
+      "section": "B",
+      "admission_year": 2023,
+      "created_at": " 2026-09-10T08:39:05.166Z",
+      "semester": 7,
+      "academic_year": "2023-2027",
+      "student_type": "day_scholar",
+      "attendance_percentage": "99",
       "undertaking_status": "submitted"
     }
   ],
@@ -853,7 +910,18 @@
   ],
   "auditLogs": [
     {
-      "id": 31,
+      "id": 46,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "COURSE_CREATED",
+      "entity_type": "COURSE",
+      "entity_id": 25,
+      "new_values": "{\"title\":\"Deep Learning Architectures\",\"code\":\"AD3601\",\"department\":\"Artificial Intelligence and Data Science\",\"year\":3,\"semester\":6}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T12:34:53.547Z"
+    },
+    {
+      "id": 45,
       "user_id": 3,
       "user_email": "admin@sasurie.edu",
       "action": "USER_LOGIN",
@@ -861,7 +929,7 @@
       "entity_id": 3,
       "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
       "ip_address": "127.0.0.1",
-      "created_at": "2026-09-10T11:57:59.433Z"
+      "created_at": "2026-09-10T12:34:53.525Z"
     },
     {
       "id": 1,
@@ -1222,14 +1290,434 @@
       "new_values": "{\"is_active\":false}",
       "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
       "created_at": "2026-09-10T11:22:34.253Z"
+    },
+    {
+      "id": 31,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T11:57:59.433Z"
+    },
+    {
+      "id": 32,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 4,
+      "old_values": null,
+      "new_values": "{\"full_name\":\"Mugesh R\",\"register_number\":\"732423104009\",\"email\":\"mugesh23@sasurie.com\",\"password\":\"Sasurie@123\",\"phone\":\"\",\"department_id\":1,\"course_id\":1,\"year\":4,\"section\":\"A\",\"admission_year\":2023}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:05:15.901Z"
+    },
+    {
+      "id": 33,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:19:51.205Z"
+    },
+    {
+      "id": 34,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:19:56.441Z"
+    },
+    {
+      "id": 35,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STAFF_STATUS_TOGGLED",
+      "entity_type": "STAFF",
+      "entity_id": 2,
+      "old_values": null,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:21:57.618Z"
+    },
+    {
+      "id": 36,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STAFF_STATUS_TOGGLED",
+      "entity_type": "STAFF",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:22:05.299Z"
+    },
+    {
+      "id": 37,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "DEPARTMENT_STATUS_TOGGLED",
+      "entity_type": "DEPARTMENT",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:24:28.447Z"
+    },
+    {
+      "id": 38,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "DEPARTMENT_STATUS_TOGGLED",
+      "entity_type": "DEPARTMENT",
+      "entity_id": 4,
+      "old_values": null,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:24:33.218Z"
+    },
+    {
+      "id": 39,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "DEPARTMENT_STATUS_TOGGLED",
+      "entity_type": "DEPARTMENT",
+      "entity_id": 5,
+      "old_values": null,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:24:36.733Z"
+    },
+    {
+      "id": 40,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T12:25:18.079Z"
+    },
+    {
+      "id": 41,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T12:25:22.536Z"
+    },
+    {
+      "id": 42,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T12:25:28.251Z"
+    },
+    {
+      "id": 43,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "COURSE_CREATED",
+      "entity_type": "COURSE",
+      "entity_id": 23,
+      "old_values": null,
+      "new_values": "{\"title\":\"Distributed Cloud Computing Systems\",\"code\":\"CS3705\",\"department\":\"Computer Science and Engineering\",\"year\":4,\"semester\":7}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T12:25:28.274Z"
+    },
+    {
+      "id": 44,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "COURSE_CREATED",
+      "entity_type": "COURSE",
+      "entity_id": 24,
+      "old_values": null,
+      "new_values": "{\"title\":\"FinTech Regulation\",\"code\":\"EG7843\",\"department\":\"Computer Science and Engineering\",\"year\":4,\"semester\":7}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T12:33:43.070Z"
+    }
+  ],
+  "subjectCourses": [
+    {
+      "id": 25,
+      "title": "Deep Learning Architectures",
+      "code": "AD3601",
+      "department_id": 7,
+      "year": 3,
+      "semester": 6,
+      "is_active": true,
+      "created_at": "2026-09-10T12:34:53.547Z"
+    },
+    {
+      "id": 1,
+      "title": "Problem Solving and Python Programming",
+      "code": "GE3151",
+      "department_id": 1,
+      "year": 1,
+      "semester": 1,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.270Z"
+    },
+    {
+      "id": 2,
+      "title": "Programming in C",
+      "code": "CS3251",
+      "department_id": 1,
+      "year": 1,
+      "semester": 2,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 3,
+      "title": "Data Structures and Algorithms",
+      "code": "CS3301",
+      "department_id": 1,
+      "year": 2,
+      "semester": 3,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 4,
+      "title": "Digital Principles and Computer Organization",
+      "code": "CS3351",
+      "department_id": 1,
+      "year": 2,
+      "semester": 3,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 5,
+      "title": "Database Management Systems",
+      "code": "CS3492",
+      "department_id": 1,
+      "year": 2,
+      "semester": 4,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 6,
+      "title": "Operating Systems",
+      "code": "CS3452",
+      "department_id": 1,
+      "year": 2,
+      "semester": 4,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 7,
+      "title": "Computer Networks",
+      "code": "CS3591",
+      "department_id": 1,
+      "year": 3,
+      "semester": 5,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 8,
+      "title": "Theory of Computation",
+      "code": "CS3501",
+      "department_id": 1,
+      "year": 3,
+      "semester": 5,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 9,
+      "title": "Compiler Design",
+      "code": "CS3601",
+      "department_id": 1,
+      "year": 3,
+      "semester": 6,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 10,
+      "title": "Artificial Intelligence and Machine Learning",
+      "code": "CS3691",
+      "department_id": 1,
+      "year": 3,
+      "semester": 6,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 11,
+      "title": "Cloud Computing and Big Data Analytics",
+      "code": "CS3701",
+      "department_id": 1,
+      "year": 4,
+      "semester": 7,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 12,
+      "title": "Cryptography and Cyber Security",
+      "code": "CS3791",
+      "department_id": 1,
+      "year": 4,
+      "semester": 7,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 13,
+      "title": "Deep Learning & Professional Ethics",
+      "code": "CS3801",
+      "department_id": 1,
+      "year": 4,
+      "semester": 8,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 14,
+      "title": "Object Oriented Programming using Java",
+      "code": "IT3301",
+      "department_id": 6,
+      "year": 2,
+      "semester": 3,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 15,
+      "title": "Web Technology and Frameworks",
+      "code": "IT3401",
+      "department_id": 6,
+      "year": 2,
+      "semester": 4,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 16,
+      "title": "Full Stack Web Development",
+      "code": "IT3501",
+      "department_id": 6,
+      "year": 3,
+      "semester": 5,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 17,
+      "title": "Engineering Thermodynamics",
+      "code": "ME3351",
+      "department_id": 3,
+      "year": 2,
+      "semester": 3,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 18,
+      "title": "Fluid Mechanics and Machinery",
+      "code": "ME3491",
+      "department_id": 3,
+      "year": 2,
+      "semester": 4,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 19,
+      "title": "Electric Circuit Analysis",
+      "code": "EE3301",
+      "department_id": 4,
+      "year": 2,
+      "semester": 3,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 20,
+      "title": "Electrical Machines - I",
+      "code": "EE3401",
+      "department_id": 4,
+      "year": 2,
+      "semester": 4,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 21,
+      "title": "Mechanics of Solids",
+      "code": "CE3301",
+      "department_id": 5,
+      "year": 2,
+      "semester": 3,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 22,
+      "title": "Surveying and Geomatics",
+      "code": "CE3401",
+      "department_id": 5,
+      "year": 2,
+      "semester": 4,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:14.271Z"
+    },
+    {
+      "id": 23,
+      "title": "Distributed Cloud Computing Systems",
+      "code": "CS3705",
+      "department_id": 1,
+      "year": 4,
+      "semester": 7,
+      "is_active": true,
+      "created_at": "2026-09-10T12:25:28.273Z"
+    },
+    {
+      "id": 24,
+      "title": "FinTech Regulation",
+      "code": "EG7843",
+      "department_id": 1,
+      "year": 4,
+      "semester": 7,
+      "is_active": true,
+      "created_at": "2026-09-10T12:33:43.068Z"
     }
   ],
   "nextId": {
-    "users": 29,
+    "users": 30,
     "departments": 7,
     "courses": 4,
     "dueCategories": 6,
-    "students": 4,
+    "students": 6,
     "staff": 11,
     "dueRecords": 1,
     "duePayments": 1,
@@ -1237,6 +1725,7 @@
     "noDueApprovals": 13,
     "certificates": 7,
     "notifications": 8,
-    "auditLogs": 32
+    "auditLogs": 47,
+    "subjectCourses": 25
   }
 }

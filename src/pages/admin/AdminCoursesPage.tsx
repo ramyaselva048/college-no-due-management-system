@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Search,
   PlusCircle,
@@ -7,647 +7,882 @@ import {
   X,
   AlertCircle,
   CheckCircle2,
-  GraduationCap
+  BookOpen,
+  Building2,
+  Calendar,
+  Layers,
+  Sparkles,
+  Filter
 } from 'lucide-react';
 import api from '../../services/api';
-import { Department, Course } from '../../types';
+import { Department, SubjectCourse } from '../../types';
 
-// Common branches catalog for autocomplete suggestions
-const COMMON_BRANCH_PRESETS = [
-  { degree: 'B.E.', branch: 'Computer Science and Engineering', code: 'BE_CSE', dept: 'CSE', duration: 4 },
-  { degree: 'B.Tech', branch: 'Artificial Intelligence and Data Science', code: 'BTECH_AIDS', dept: 'AIDS', duration: 4 },
-  { degree: 'B.Tech', branch: 'Information Technology', code: 'BTECH_IT', dept: 'IT', duration: 4 },
-  { degree: 'B.Tech', branch: 'Artificial Intelligence and Machine Learning', code: 'BTECH_AIML', dept: 'AIDS', duration: 4 },
-  { degree: 'B.Tech', branch: 'Cyber Security', code: 'BTECH_CS', dept: 'CSE', duration: 4 },
-  { degree: 'B.Tech', branch: 'Computer Science and Business Systems', code: 'BTECH_CSBS', dept: 'CSE', duration: 4 },
-  { degree: 'B.E.', branch: 'Electronics and Communication Engineering', code: 'BE_ECE', dept: 'ECE', duration: 4 },
-  { degree: 'B.E.', branch: 'Electrical and Electronics Engineering', code: 'BE_EEE', dept: 'EEE', duration: 4 },
-  { degree: 'B.E.', branch: 'Mechanical Engineering', code: 'BE_MECH', dept: 'MECH', duration: 4 },
-  { degree: 'B.E.', branch: 'Civil Engineering', code: 'BE_CIVIL', dept: 'CIVIL', duration: 4 },
-  { degree: 'B.E.', branch: 'Mechatronics Engineering', code: 'BE_MTE', dept: 'MECH', duration: 4 },
-  { degree: 'B.E.', branch: 'Biomedical Engineering', code: 'BE_BME', dept: 'BME', duration: 4 },
-  { degree: 'B.E.', branch: 'Automobile Engineering', code: 'BE_AUTO', dept: 'MECH', duration: 4 },
-  { degree: 'B.Tech', branch: 'Chemical Engineering', code: 'BTECH_CHEM', dept: 'CSE', duration: 4 },
-  { degree: 'B.Tech', branch: 'Biotechnology', code: 'BTECH_BIO', dept: 'BME', duration: 4 },
-  { degree: 'M.E.', branch: 'Computer Science and Engineering', code: 'ME_CSE', dept: 'CSE', duration: 2 },
-  { degree: 'M.E.', branch: 'VLSI Design', code: 'ME_VLSI', dept: 'ECE', duration: 2 },
-  { degree: 'M.E.', branch: 'Embedded System Technologies', code: 'ME_EST', dept: 'ECE', duration: 2 },
-  { degree: 'M.E.', branch: 'Power Electronics and Drives', code: 'ME_PED', dept: 'EEE', duration: 2 },
-  { degree: 'M.E.', branch: 'Structural Engineering', code: 'ME_STR', dept: 'CIVIL', duration: 2 },
-  { degree: 'M.E.', branch: 'CAD / CAM', code: 'ME_CAD', dept: 'MECH', duration: 2 },
-  { degree: 'M.Tech', branch: 'Data Science', code: 'MTECH_DS', dept: 'AIDS', duration: 2 },
-  { degree: 'MBA', branch: 'Master of Business Administration', code: 'MBA', dept: 'MBA', duration: 2 },
-  { degree: 'MCA', branch: 'Master of Computer Applications', code: 'MCA', dept: 'MCA', duration: 2 }
-];
-
-const DEGREE_SUGGESTIONS = [
-  'B.E.',
-  'B.Tech',
-  'M.E.',
-  'M.Tech',
-  'MBA',
-  'MCA',
-  'B.Sc',
-  'M.Sc',
-  'Diploma',
-  'Ph.D'
+// Anna University / AICTE common course quick suggestion catalog
+const QUICK_COURSE_SUGGESTIONS = [
+  { title: 'Data Structures and Algorithms', code: 'CS3301', defaultDept: 'CSE', year: 2, sem: 3 },
+  { title: 'Digital Principles and Computer Organization', code: 'CS3351', defaultDept: 'CSE', year: 2, sem: 3 },
+  { title: 'Database Management Systems', code: 'CS3492', defaultDept: 'CSE', year: 2, sem: 4 },
+  { title: 'Operating Systems', code: 'CS3452', defaultDept: 'CSE', year: 2, sem: 4 },
+  { title: 'Computer Networks', code: 'CS3591', defaultDept: 'CSE', year: 3, sem: 5 },
+  { title: 'Theory of Computation', code: 'CS3501', defaultDept: 'CSE', year: 3, sem: 5 },
+  { title: 'Compiler Design', code: 'CS3601', defaultDept: 'CSE', year: 3, sem: 6 },
+  { title: 'Artificial Intelligence and Machine Learning', code: 'CS3691', defaultDept: 'CSE', year: 3, sem: 6 },
+  { title: 'Cloud Computing and Big Data Analytics', code: 'CS3701', defaultDept: 'CSE', year: 4, sem: 7 },
+  { title: 'Cryptography and Cyber Security', code: 'CS3791', defaultDept: 'CSE', year: 4, sem: 7 },
+  { title: 'Deep Learning & Ethics in AI', code: 'CS3801', defaultDept: 'CSE', year: 4, sem: 8 },
+  { title: 'Object Oriented Programming using Java', code: 'IT3301', defaultDept: 'IT', year: 2, sem: 3 },
+  { title: 'Web Technology and Frameworks', code: 'IT3401', defaultDept: 'IT', year: 2, sem: 4 },
+  { title: 'Engineering Thermodynamics', code: 'ME3351', defaultDept: 'MECH', year: 2, sem: 3 },
+  { title: 'Electric Circuit Analysis', code: 'EE3301', defaultDept: 'EEE', year: 2, sem: 3 },
+  { title: 'Mechanics of Solids', code: 'CE3301', defaultDept: 'CIVIL', year: 2, sem: 3 }
 ];
 
 export const AdminCoursesPage: React.FC = () => {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<SubjectCourse[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [selectedTab, setSelectedTab] = useState<'ALL' | 'BE' | 'BTECH' | 'PG' | 'CUSTOM'>('ALL');
+  const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('ALL');
+  const [selectedYearFilter, setSelectedYearFilter] = useState<string>('ALL');
+  const [selectedSemFilter, setSelectedSemFilter] = useState<string>('ALL');
+
+  // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [editingCourse, setEditingCourse] = useState<Course | null>(null);
-  const [deletingCourse, setDeletingCourse] = useState<Course | null>(null);
+  const [editingCourse, setEditingCourse] = useState<SubjectCourse | null>(null);
+  const [deletingCourse, setDeletingCourse] = useState<SubjectCourse | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  // Form Fields: Type Degree, Type Branch, Branch Code, Duration (Years), Department
-  const [degreeType, setDegreeType] = useState('B.E.');
-  const [branchName, setBranchName] = useState('');
-  const [branchCode, setBranchCode] = useState('');
-  const [duration, setDuration] = useState<number>(4);
-  const [departmentId, setDepartmentId] = useState<number>(0);
-  const [codeManuallyEdited, setCodeManuallyEdited] = useState(false);
+  // Form Fields (department, course title, course code, year, semester)
+  const [formDeptId, setFormDeptId] = useState<number>(0);
+  const [formDeptName, setFormDeptName] = useState('');
+  const [deptInputMode, setDeptInputMode] = useState<'type' | 'select'>('type');
+  const [formCourseTitle, setFormCourseTitle] = useState('');
+  const [formCourseCode, setFormCourseCode] = useState('');
+  const [formYear, setFormYear] = useState<number>(1);
+  const [formSemester, setFormSemester] = useState<number>(1);
+  const [formError, setFormError] = useState('');
 
-  const showToast = (msg: string) => {
-    setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3500);
+  const showToast = (type: 'success' | 'error', text: string) => {
+    setToastMessage({ type, text });
+    setTimeout(() => setToastMessage(null), 4000);
   };
 
-  const fetchDependencies = async () => {
-    try {
-      const res = await api.get('/student/departments');
-      const depts = Array.isArray(res.data) ? res.data : [];
-      setDepartments(depts);
-      if (depts.length > 0 && departmentId === 0) {
-        setDepartmentId(depts[0].id);
-      }
-    } catch (err) {
-      console.error('Failed to load departments', err);
-    }
-  };
-
-  const fetchCourses = async () => {
+  const fetchData = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/admin/courses');
-      const data = Array.isArray(res.data) ? res.data : [];
-      setCourses(data);
-    } catch (err) {
-      console.error('Failed to fetch courses', err);
-      setCourses([]);
+      const [coursesRes, deptsRes] = await Promise.all([
+        api.get<SubjectCourse[]>('/admin/subject-courses'),
+        api.get<Department[]>('/departments')
+      ]);
+      setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : []);
+      const depts = Array.isArray(deptsRes.data) ? deptsRes.data : [];
+      setDepartments(depts);
+      if (depts.length > 0 && formDeptId === 0) {
+        setFormDeptId(depts[0].id);
+      }
+    } catch (err: any) {
+      console.error('Failed to load courses data:', err);
+      showToast('error', 'Failed to fetch courses list. Using offline cache.');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCourses();
-    fetchDependencies();
+    fetchData();
   }, []);
 
-  // Helper to auto-generate code from degree and branch
-  const generateSuggestedCode = (deg: string, br: string) => {
-    // Check if matches preset
-    const preset = COMMON_BRANCH_PRESETS.find(
-      (p) => p.branch.toLowerCase() === br.toLowerCase() && p.degree.toLowerCase() === deg.toLowerCase()
-    );
-    if (preset) return preset.code;
-
-    const cleanDeg = deg.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
-    const cleanBr = br
-      .split(/\s+/)
-      .filter((w) => !['and', 'of', '&', 'in', 'the'].includes(w.toLowerCase()))
-      .map((w) => w[0] || '')
-      .join('')
-      .toUpperCase();
-
-    if (cleanDeg && cleanBr) {
-      return `${cleanDeg}_${cleanBr}`;
-    }
-    if (cleanBr) return cleanBr;
-    return br.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 10).toUpperCase();
-  };
-
-  // Helper to parse existing course title into degree & branch
-  const parseDegreeAndBranch = (fullName: string) => {
-    const knownDegrees = ['B.Tech', 'B.E.', 'M.Tech', 'M.E.', 'MBA', 'MCA', 'B.Sc', 'M.Sc', 'Diploma', 'Ph.D'];
-    for (const deg of knownDegrees) {
-      if (fullName.startsWith(deg)) {
-        return {
-          degree: deg,
-          branch: fullName.substring(deg.length).trim()
-        };
-      }
-    }
-    const parts = fullName.split(' ');
-    if (parts.length > 1 && (parts[0].endsWith('.') || parts[0].length <= 5)) {
-      return {
-        degree: parts[0],
-        branch: parts.slice(1).join(' ')
-      };
-    }
-    return {
-      degree: '',
-      branch: fullName
-    };
-  };
-
-  const handleDegreeChange = (newDeg: string) => {
-    setDegreeType(newDeg);
-    // Auto-adjust default duration
-    if (newDeg.includes('M.E.') || newDeg.includes('M.Tech') || newDeg.includes('MBA') || newDeg.includes('MCA')) {
-      setDuration(2);
-    } else if (newDeg.includes('Diploma')) {
-      setDuration(3);
-    } else if (newDeg.includes('B.E.') || newDeg.includes('B.Tech')) {
-      setDuration(4);
-    }
-
-    if (!codeManuallyEdited && branchName.trim()) {
-      setBranchCode(generateSuggestedCode(newDeg, branchName));
-    }
-  };
-
-  const handleBranchChange = (newBr: string) => {
-    setBranchName(newBr);
-
-    // Auto-match department if available
-    const matchedPreset = COMMON_BRANCH_PRESETS.find(
-      (p) => p.branch.toLowerCase() === newBr.toLowerCase()
-    );
-    if (matchedPreset) {
-      const d = departments.find(
-        (dept) => dept.code === matchedPreset.dept || dept.name.toLowerCase().includes(matchedPreset.dept.toLowerCase())
-      );
-      if (d) setDepartmentId(d.id);
-    }
-
-    if (!codeManuallyEdited) {
-      setBranchCode(generateSuggestedCode(degreeType, newBr));
-    }
-  };
-
-  const openCreateModal = () => {
-    setError(null);
-    setDegreeType('B.E.');
-    setBranchName('');
-    setBranchCode('');
-    setDuration(4);
-    setDepartmentId(departments[0]?.id || 1);
-    setCodeManuallyEdited(false);
+  const openAddModal = () => {
+    setEditingCourse(null);
+    setFormCourseTitle('');
+    setFormCourseCode('');
+    setFormYear(1);
+    setFormSemester(1);
+    const defaultDept = departments[0];
+    setFormDeptId(defaultDept?.id || 1);
+    setFormDeptName(defaultDept ? `${defaultDept.name} (${defaultDept.code})` : '');
+    setDeptInputMode('type');
+    setFormError('');
     setIsModalOpen(true);
   };
 
-  const openEditModal = (c: Course) => {
-    setError(null);
+  const openEditModal = (c: SubjectCourse) => {
     setEditingCourse(c);
-    const parsed = parseDegreeAndBranch(c.name);
-    setDegreeType(parsed.degree || 'B.E.');
-    setBranchName(parsed.branch);
-    setBranchCode(c.code);
-    setDuration(c.duration || 4);
-    setDepartmentId(c.department_id || departments[0]?.id || 1);
-    setCodeManuallyEdited(true);
+    setFormCourseTitle(c.title);
+    setFormCourseCode(c.code);
+    setFormYear(c.year || 1);
+    setFormSemester(c.semester || 1);
+    const matchedDept = departments.find(d => d.id === c.department_id);
+    setFormDeptId(c.department_id || departments[0]?.id || 1);
+    setFormDeptName(c.department_name || (matchedDept ? `${matchedDept.name} (${matchedDept.code})` : ''));
+    setDeptInputMode('type');
+    setFormError('');
+    setIsModalOpen(true);
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError(null);
+  // When year changes, ensure semester is within the corresponding year
+  const handleYearChange = (newYear: number) => {
+    setFormYear(newYear);
+    // If current semester is outside the year's default semesters, update it
+    const minSem = (newYear - 1) * 2 + 1;
+    const maxSem = newYear * 2;
+    if (formSemester < minSem || formSemester > maxSem) {
+      setFormSemester(minSem);
+    }
+  };
 
-    const trimmedBranch = branchName.trim();
-    if (!trimmedBranch) {
-      setError('Please enter a branch name.');
-      setSubmitting(false);
+  const handleDeptNameChange = (val: string) => {
+    setFormDeptName(val);
+    const trimmed = val.trim().toLowerCase();
+    const matched = departments.find(d =>
+      d.name.toLowerCase() === trimmed ||
+      d.code.toLowerCase() === trimmed ||
+      `${d.name} (${d.code})`.toLowerCase() === trimmed ||
+      trimmed.includes(d.code.toLowerCase())
+    );
+    if (matched) {
+      setFormDeptId(matched.id);
+    }
+  };
+
+  const handleSelectDeptChip = (dept: Department) => {
+    setFormDeptId(dept.id);
+    setFormDeptName(`${dept.name} (${dept.code})`);
+  };
+
+  const handleApplyPreset = (preset: typeof QUICK_COURSE_SUGGESTIONS[0]) => {
+    setFormCourseTitle(preset.title);
+    setFormCourseCode(preset.code);
+    setFormYear(preset.year);
+    setFormSemester(preset.sem);
+    const matchedDept = departments.find(d => d.code.toUpperCase() === preset.defaultDept.toUpperCase());
+    if (matchedDept) {
+      setFormDeptId(matchedDept.id);
+      setFormDeptName(`${matchedDept.name} (${matchedDept.code})`);
+    } else {
+      setFormDeptName(preset.defaultDept);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError('');
+
+    const trimmedTitle = formCourseTitle.trim();
+    if (!trimmedTitle) {
+      setFormError('Course Title is required');
       return;
     }
 
-    const trimmedDegree = degreeType.trim();
-    const fullName = trimmedDegree ? `${trimmedDegree} ${trimmedBranch}` : trimmedBranch;
-
-    let finalCode = branchCode.trim().toUpperCase();
-    if (!finalCode) {
-      finalCode = generateSuggestedCode(trimmedDegree, trimmedBranch);
+    const trimmedCode = formCourseCode.trim().toUpperCase();
+    if (!trimmedCode) {
+      setFormError('Course Code is required');
+      return;
     }
 
+    const trimmedDeptName = formDeptName.trim();
+    if (!trimmedDeptName && !formDeptId) {
+      setFormError('Please type or select a Department');
+      return;
+    }
+
+    setSubmitting(true);
     try {
-      await api.post('/admin/courses', {
-        name: fullName,
-        code: finalCode,
-        department_id: Number(departmentId) || departments[0]?.id || 1,
-        duration: Number(duration) || 4
-      });
+      const payload = {
+        department_id: formDeptId || undefined,
+        department_name: trimmedDeptName || undefined,
+        department: trimmedDeptName || formDeptId,
+        course_title: trimmedTitle,
+        course_code: trimmedCode,
+        year: Number(formYear),
+        semester: Number(formSemester)
+      };
+
+      if (editingCourse) {
+        const res = await api.patch<SubjectCourse>(`/admin/subject-courses/${editingCourse.id}`, payload);
+        setCourses(prev => prev.map(c => (c.id === editingCourse.id ? res.data : c)));
+        showToast('success', `Course "${trimmedTitle}" updated successfully`);
+      } else {
+        const res = await api.post<SubjectCourse>('/admin/subject-courses', payload);
+        setCourses(prev => [res.data, ...prev]);
+        showToast('success', `Course "${trimmedTitle}" added successfully`);
+      }
+
       setIsModalOpen(false);
-      showToast(`Degree / Branch "${fullName}" created successfully!`);
-      await fetchCourses();
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to create degree / branch');
+      console.error('Failed saving course:', err);
+      setFormError(err?.response?.data?.detail || 'Failed to save course. Please try again.');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const handleEdit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingCourse) return;
-    setSubmitting(true);
-    setError(null);
-
-    const trimmedBranch = branchName.trim();
-    if (!trimmedBranch) {
-      setError('Please enter a branch name.');
-      setSubmitting(false);
-      return;
-    }
-
-    const trimmedDegree = degreeType.trim();
-    const fullName = trimmedDegree ? `${trimmedDegree} ${trimmedBranch}` : trimmedBranch;
-
-    let finalCode = branchCode.trim().toUpperCase();
-    if (!finalCode) {
-      finalCode = editingCourse.code;
-    }
-
-    try {
-      await api.patch(`/admin/courses/${editingCourse.id}`, {
-        name: fullName,
-        code: finalCode,
-        department_id: Number(departmentId) || departments[0]?.id || 1,
-        duration: Number(duration) || 4
-      });
-      setEditingCourse(null);
-      showToast(`Degree / Branch "${fullName}" updated successfully!`);
-      await fetchCourses();
-    } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to update degree / branch');
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const confirmDelete = async () => {
+  const handleDelete = async () => {
     if (!deletingCourse) return;
     setSubmitting(true);
     try {
-      await api.delete(`/admin/courses/${deletingCourse.id}`);
-      showToast(`Degree / Branch "${deletingCourse.name}" deleted successfully.`);
+      await api.delete(`/admin/subject-courses/${deletingCourse.id}`);
+      setCourses(prev => prev.filter(c => c.id !== deletingCourse.id));
+      showToast('success', `Course "${deletingCourse.title}" deleted successfully`);
       setDeletingCourse(null);
-      await fetchCourses();
     } catch (err: any) {
-      alert(err.response?.data?.detail || 'Failed to delete degree / branch');
+      console.error('Failed deleting course:', err);
+      showToast('error', err?.response?.data?.detail || 'Failed to delete course');
     } finally {
       setSubmitting(false);
     }
   };
 
-  const filteredCourses = courses.filter((c) => {
-    const matchesSearch =
-      c.name?.toLowerCase().includes(search.toLowerCase()) ||
-      c.code?.toLowerCase().includes(search.toLowerCase()) ||
-      c.department_name?.toLowerCase().includes(search.toLowerCase());
+  // Filtered courses
+  const filteredCourses = useMemo(() => {
+    return courses.filter(c => {
+      // Search filter
+      const matchesSearch =
+        !search.trim() ||
+        c.title.toLowerCase().includes(search.toLowerCase()) ||
+        c.code.toLowerCase().includes(search.toLowerCase()) ||
+        (c.department_name && c.department_name.toLowerCase().includes(search.toLowerCase())) ||
+        (c.department_code && c.department_code.toLowerCase().includes(search.toLowerCase()));
 
-    if (!matchesSearch) return false;
+      // Dept filter
+      const matchesDept =
+        selectedDeptFilter === 'ALL' || String(c.department_id) === selectedDeptFilter;
 
-    if (selectedTab === 'BE') {
-      return c.name?.startsWith('B.E.') || c.code?.startsWith('BE_');
+      // Year filter
+      const matchesYear =
+        selectedYearFilter === 'ALL' || String(c.year) === selectedYearFilter;
+
+      // Sem filter
+      const matchesSem =
+        selectedSemFilter === 'ALL' || String(c.semester) === selectedSemFilter;
+
+      return matchesSearch && matchesDept && matchesYear && matchesSem;
+    });
+  }, [courses, search, selectedDeptFilter, selectedYearFilter, selectedSemFilter]);
+
+  // Quick stats
+  const stats = useMemo(() => {
+    const total = courses.length;
+    const year1_2 = courses.filter(c => c.year === 1 || c.year === 2).length;
+    const year3_4 = courses.filter(c => c.year === 3 || c.year === 4).length;
+    const deptsCount = new Set(courses.map(c => c.department_id)).size;
+    return { total, year1_2, year3_4, deptsCount };
+  }, [courses]);
+
+  const getYearBadgeColor = (year: number) => {
+    switch (year) {
+      case 1:
+        return 'bg-blue-50 text-blue-700 border-blue-200';
+      case 2:
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+      case 3:
+        return 'bg-purple-50 text-purple-700 border-purple-200';
+      case 4:
+        return 'bg-amber-50 text-amber-700 border-amber-200';
+      default:
+        return 'bg-slate-50 text-slate-700 border-slate-200';
     }
-    if (selectedTab === 'BTECH') {
-      return c.name?.startsWith('B.Tech') || c.code?.startsWith('BTECH_');
-    }
-    if (selectedTab === 'PG') {
-      return (
-        c.name?.startsWith('M.E.') ||
-        c.name?.startsWith('M.Tech') ||
-        c.name?.includes('MBA') ||
-        c.name?.includes('MCA') ||
-        c.duration <= 2
-      );
-    }
-    if (selectedTab === 'CUSTOM') {
-      return (
-        !c.name?.startsWith('B.E.') &&
-        !c.name?.startsWith('B.Tech') &&
-        !c.name?.startsWith('M.E.') &&
-        !c.name?.startsWith('M.Tech') &&
-        !c.name?.includes('MBA') &&
-        !c.name?.includes('MCA')
-      );
-    }
-    return true;
-  });
+  };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-12" id="admin-courses-page">
       {/* Toast Notification */}
-      {successToast && (
-        <div className="fixed bottom-6 right-6 z-50 bg-emerald-900 text-emerald-50 px-4 py-3 rounded-xl shadow-xl flex items-center gap-2.5 text-xs font-semibold border border-emerald-700 animate-in fade-in slide-in-from-bottom-3 duration-200">
-          <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{successToast}</span>
+      {toastMessage && (
+        <div
+          className={`fixed top-4 right-4 z-50 flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all ${
+            toastMessage.type === 'success'
+              ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+              : 'bg-rose-50 text-rose-800 border-rose-200'
+          }`}
+        >
+          {toastMessage.type === 'success' ? (
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          ) : (
+            <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+          )}
+          <span>{toastMessage.text}</span>
         </div>
       )}
 
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      {/* Header Section */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h2 className="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
-            <GraduationCap className="w-6 h-6 text-indigo-600" />
-            Degrees & Branches
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage institutional academic degrees, branch specializations, branch codes, and program durations
+          <div className="flex items-center gap-2.5">
+            <div className="p-2 rounded-xl bg-blue-600 text-white shadow-xs">
+              <BookOpen className="w-5 h-5" />
+            </div>
+            <h1 className="font-display font-bold text-2xl text-slate-900 tracking-tight">
+              Courses
+            </h1>
+          </div>
+          <p className="text-sm text-slate-500 mt-1">
+            Manage departmental curriculum courses, course codes, academic year, and semester subjects
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="relative">
+        <button
+          id="add-course-btn"
+          onClick={openAddModal}
+          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer"
+        >
+          <PlusCircle className="w-4 h-4" />
+          <span>Add Course</span>
+        </button>
+      </div>
+
+      {/* Metric Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Total Courses</span>
+            <BookOpen className="w-4 h-4 text-blue-600" />
+          </div>
+          <p className="font-display font-bold text-2xl text-slate-900 mt-2">{stats.total}</p>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Across all departments</span>
+        </div>
+
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Year 1 & 2 Subjects</span>
+            <Layers className="w-4 h-4 text-indigo-600" />
+          </div>
+          <p className="font-display font-bold text-2xl text-indigo-600 mt-2">{stats.year1_2}</p>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Semesters 1 to 4</span>
+        </div>
+
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Year 3 & 4 Subjects</span>
+            <Calendar className="w-4 h-4 text-purple-600" />
+          </div>
+          <p className="font-display font-bold text-2xl text-purple-600 mt-2">{stats.year3_4}</p>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Semesters 5 to 8</span>
+        </div>
+
+        <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-medium text-slate-500">Active Departments</span>
+            <Building2 className="w-4 h-4 text-emerald-600" />
+          </div>
+          <p className="font-display font-bold text-2xl text-emerald-600 mt-2">{stats.deptsCount}</p>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">With assigned curriculum</span>
+        </div>
+      </div>
+
+      {/* Filter and Search Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs p-4 space-y-3">
+        <div className="flex flex-col md:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
+              id="course-search-input"
               type="text"
-              placeholder="Search degrees, branches, codes..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-60"
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search by course title, course code (e.g. CS3301), or department..."
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          <button
-            onClick={openCreateModal}
-            className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
-          >
-            <PlusCircle className="w-3.5 h-3.5" /> Add Degree/Branch
-          </button>
+          {/* Department Filter */}
+          <div className="flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-slate-400 shrink-0 hidden sm:block" />
+            <select
+              id="dept-filter-select"
+              value={selectedDeptFilter}
+              onChange={e => setSelectedDeptFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Departments</option>
+              {departments.map(d => (
+                <option key={d.id} value={String(d.id)}>
+                  {d.name} ({d.code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Year Filter */}
+          <div className="flex items-center gap-2">
+            <select
+              id="year-filter-select"
+              value={selectedYearFilter}
+              onChange={e => setSelectedYearFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Years</option>
+              <option value="1">Year 1 (1st Yr)</option>
+              <option value="2">Year 2 (2nd Yr)</option>
+              <option value="3">Year 3 (3rd Yr)</option>
+              <option value="4">Year 4 (Final Yr)</option>
+            </select>
+          </div>
+
+          {/* Semester Filter */}
+          <div className="flex items-center gap-2">
+            <select
+              id="sem-filter-select"
+              value={selectedSemFilter}
+              onChange={e => setSelectedSemFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Semesters</option>
+              {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
+                <option key={s} value={String(s)}>
+                  Semester {s}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {(selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL' || search) && (
+            <button
+              onClick={() => {
+                setSelectedDeptFilter('ALL');
+                setSelectedYearFilter('ALL');
+                setSelectedSemFilter('ALL');
+                setSearch('');
+              }}
+              className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer whitespace-nowrap"
+            >
+              Reset Filters
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Category Tabs */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1">
-        {[
-          { id: 'ALL', label: `All Degrees & Branches (${courses.length})` },
-          { id: 'BE', label: 'B.E. Branches' },
-          { id: 'BTECH', label: 'B.Tech Branches' },
-          { id: 'PG', label: 'Postgraduate (M.E./M.Tech/MBA/MCA)' },
-          { id: 'CUSTOM', label: 'Other Degrees' }
-        ].map((tab) => (
-          <button
-            key={tab.id}
-            onClick={() => setSelectedTab(tab.id as any)}
-            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-colors whitespace-nowrap cursor-pointer ${
-              selectedTab === tab.id
-                ? 'bg-indigo-600 text-white shadow-xs'
-                : 'bg-white border border-slate-200 text-slate-600 hover:bg-slate-50'
-            }`}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Degrees & Branches List */}
-      {loading ? (
-        <div className="py-20 text-center text-xs text-slate-400">Loading degrees and branches...</div>
-      ) : filteredCourses.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-          <GraduationCap className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-          <p className="text-xs text-slate-600 font-medium">No degrees or branches found matching criteria.</p>
-          <button
-            onClick={openCreateModal}
-            className="mt-3 px-3.5 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg inline-flex items-center gap-1 cursor-pointer"
-          >
-            <PlusCircle className="w-3 h-3" /> Add Degree/Branch
-          </button>
-        </div>
-      ) : (
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* Courses List Table */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+        {loading ? (
+          <div className="py-20 flex flex-col items-center justify-center text-slate-400 space-y-3">
+            <div className="w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin" />
+            <p className="text-sm font-medium">Loading courses curriculum...</p>
+          </div>
+        ) : filteredCourses.length === 0 ? (
+          <div className="py-16 text-center px-4 space-y-4">
+            <div className="w-12 h-12 bg-slate-100 text-slate-400 rounded-2xl flex items-center justify-center mx-auto">
+              <BookOpen className="w-6 h-6" />
+            </div>
+            <div>
+              <h3 className="font-display font-semibold text-base text-slate-800">
+                No Courses Found
+              </h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+                {search || selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL'
+                  ? 'No course matches your current search or filter criteria. Try resetting filters.'
+                  : 'No curriculum courses have been added yet. Click "+ Add Course" to create the first course.'}
+              </p>
+            </div>
+            <button
+              onClick={openAddModal}
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-all cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" />
+              <span>Add Course</span>
+            </button>
+          </div>
+        ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider">
-                <tr>
-                  <th className="py-3.5 px-4">Degree & Branch</th>
-                  <th className="py-3.5 px-4">Branch Code</th>
-                  <th className="py-3.5 px-4">Parent Department</th>
-                  <th className="py-3.5 px-4">Duration (Years)</th>
+            <table className="w-full text-left text-sm" id="courses-table">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold text-slate-500">
+                  <th className="py-3.5 px-4">Course Code</th>
+                  <th className="py-3.5 px-4">Course Title</th>
+                  <th className="py-3.5 px-4">Department</th>
+                  <th className="py-3.5 px-4">Year</th>
+                  <th className="py-3.5 px-4">Semester</th>
                   <th className="py-3.5 px-4">Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredCourses.map((c) => (
-                  <tr key={c.id} className="hover:bg-slate-50/50 transition-colors">
-                    <td className="py-3.5 px-4">
-                      <div className="font-bold text-slate-900">{c.name}</div>
-                    </td>
-                    <td className="py-3.5 px-4">
-                      <span className="font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100">
-                        {c.code}
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-slate-700 font-medium">{c.department_name || 'Academic'}</td>
-                    <td className="py-3.5 px-4 text-slate-600">{c.duration} Years</td>
-                    <td className="py-3.5 px-4">
-                      <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
-                        Active
-                      </span>
-                    </td>
-                    <td className="py-3.5 px-4 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <button
-                          onClick={() => openEditModal(c)}
-                          className="p-1.5 rounded-lg border border-slate-200 hover:bg-slate-100 text-slate-700 transition-colors inline-flex items-center cursor-pointer"
-                          title="Edit Degree/Branch"
+                {filteredCourses.map(course => {
+                  const dept = departments.find(d => d.id === course.department_id);
+                  const deptName = course.department_name || dept?.name || 'Department';
+                  const deptCode = course.department_code || dept?.code || 'DEPT';
+
+                  return (
+                    <tr
+                      key={course.id}
+                      className="hover:bg-slate-50/70 transition-colors group"
+                      id={`course-row-${course.id}`}
+                    >
+                      {/* Course Code */}
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
+                          {course.code}
+                        </span>
+                      </td>
+
+                      {/* Course Title */}
+                      <td className="py-3.5 px-4">
+                        <span className="font-semibold text-slate-900 block">
+                          {course.title}
+                        </span>
+                      </td>
+
+                      {/* Department */}
+                      <td className="py-3.5 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-xs font-semibold text-slate-800">
+                            {deptName}
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
+                            {deptCode}
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Year */}
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${getYearBadgeColor(
+                            course.year
+                          )}`}
                         >
-                          <Edit2 className="w-3.5 h-3.5 text-slate-600" />
-                        </button>
-                        <button
-                          onClick={() => setDeletingCourse(c)}
-                          className="p-1.5 rounded-lg border border-rose-200 hover:bg-rose-50 text-rose-600 transition-colors inline-flex items-center cursor-pointer"
-                          title="Delete Degree/Branch"
+                          Year {course.year}
+                        </span>
+                      </td>
+
+                      {/* Semester */}
+                      <td className="py-3.5 px-4">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                          Semester {course.semester}
+                        </span>
+                      </td>
+
+                      {/* Status */}
+                      <td className="py-3.5 px-4">
+                        <span
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
+                            course.is_active !== false
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-slate-100 text-slate-600 border-slate-200'
+                          }`}
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              course.is_active !== false ? 'bg-emerald-500' : 'bg-slate-400'
+                            }`}
+                          />
+                          {course.is_active !== false ? 'Active' : 'Inactive'}
+                        </span>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="py-3.5 px-4 text-right">
+                        <div className="inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
+                          <button
+                            id={`edit-course-${course.id}`}
+                            onClick={() => openEditModal(course)}
+                            title="Edit Course"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition-all cursor-pointer"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            id={`delete-course-${course.id}`}
+                            onClick={() => setDeletingCourse(course)}
+                            title="Delete Course"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
-      {/* Add Degree/Branch Modal */}
+      {/* Add / Edit Course Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-display font-bold text-slate-900 text-base">Add Degree/Branch</h3>
-                <p className="text-[11px] text-slate-500">
-                  Enter degree type, branch name, branch code, and duration
-                </p>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-lg max-h-[calc(100vh-1.5rem)] sm:max-h-[90vh] flex flex-col my-auto overflow-hidden animate-in zoom-in-95 duration-150">
+            {/* Pinned Modal Header */}
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/80 shrink-0">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-100 text-blue-700 shrink-0">
+                  <BookOpen className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-base text-slate-900">
+                    {editingCourse ? 'Edit Course' : 'Add New Course'}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    {editingCourse
+                      ? 'Update course details and curriculum position'
+                      : 'Fill in the course title, code, department, year, and semester'}
+                  </p>
+                </div>
               </div>
               <button
+                type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 cursor-pointer"
+                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition-all cursor-pointer"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
 
-            <form onSubmit={handleCreate} className="p-6 space-y-4 overflow-y-auto">
-              {error && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
+            {/* Modal Form Container */}
+            <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden min-h-0">
+              {/* Scrollable Form Body */}
+              <div className="p-6 space-y-4 overflow-y-auto flex-1 overscroll-contain focus:outline-none">
+                {formError && (
+                  <div className="flex items-center gap-2 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                    <AlertCircle className="w-4 h-4 shrink-0" />
+                    <span>{formError}</span>
+                  </div>
+                )}
 
-              {/* Field 1: Type Degree */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-700">Type Degree *</label>
-                  <span className="text-[10px] text-slate-400">Select or type custom</span>
-                </div>
-                <input
-                  type="text"
-                  required
-                  list="degree-type-suggestions"
-                  placeholder="e.g. B.E., B.Tech, M.E., MBA, MCA, Diploma..."
-                  value={degreeType}
-                  onChange={(e) => handleDegreeChange(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-                />
-                <datalist id="degree-type-suggestions">
-                  {DEGREE_SUGGESTIONS.map((d) => (
-                    <option key={d} value={d} />
-                  ))}
-                </datalist>
+                {/* Quick Preset helper for new courses */}
+                {!editingCourse && (
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                      <span>Quick Suggestion Presets:</span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                      {QUICK_COURSE_SUGGESTIONS.slice(0, 6).map(preset => (
+                        <button
+                          key={preset.code}
+                          type="button"
+                          onClick={() => handleApplyPreset(preset)}
+                          className="text-[11px] px-2 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 rounded-lg font-medium transition-all text-left truncate max-w-[200px] cursor-pointer"
+                        >
+                          {preset.code}: {preset.title}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
-                {/* Quick Selection Chips */}
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {['B.E.', 'B.Tech', 'M.E.', 'M.Tech', 'MBA', 'MCA', 'Diploma'].map((deg) => (
-                    <button
-                      key={deg}
-                      type="button"
-                      onClick={() => handleDegreeChange(deg)}
-                      className={`text-[11px] px-2.5 py-1 rounded-md border transition-colors cursor-pointer ${
-                        degreeType === deg
-                          ? 'bg-indigo-50 border-indigo-300 text-indigo-700 font-bold'
-                          : 'bg-slate-50 border-slate-200 text-slate-600 hover:bg-slate-100'
-                      }`}
-                    >
-                      {deg}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Field 2: Type Branch */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Type Branch *</label>
-                <input
-                  type="text"
-                  required
-                  list="branch-name-suggestions"
-                  placeholder="e.g. Computer Science and Engineering, Mechanical Engineering..."
-                  value={branchName}
-                  onChange={(e) => handleBranchChange(e.target.value)}
-                  className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
-                />
-                <datalist id="branch-name-suggestions">
-                  {COMMON_BRANCH_PRESETS.map((p, idx) => (
-                    <option key={idx} value={p.branch}>
-                      {p.degree} - {p.code}
-                    </option>
-                  ))}
-                </datalist>
-                <p className="text-[11px] text-slate-400 mt-1">
-                  Type any engineering or academic branch/specialization name freely.
-                </p>
-              </div>
-
-              {/* Field 3: Branch Code */}
-              <div>
-                <div className="flex items-center justify-between mb-1">
-                  <label className="block text-xs font-semibold text-slate-700">Branch Code *</label>
-                  <span className="text-[10px] text-slate-400">Unique identifier</span>
-                </div>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. BE_CSE or CSE"
-                  value={branchCode}
-                  onChange={(e) => {
-                    setBranchCode(e.target.value.toUpperCase());
-                    setCodeManuallyEdited(true);
-                  }}
-                  className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 uppercase font-mono font-bold focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                />
-              </div>
-
-              {/* Field 4: Duration (Years) & Parent Department */}
-              <div className="grid grid-cols-2 gap-3">
+                {/* 1. Type Department */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Duration (Years) *</label>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-slate-700">
+                      Type Department <span className="text-rose-500">*</span>
+                    </label>
+                    <div className="flex items-center gap-1.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+                      <button
+                        type="button"
+                        onClick={() => setDeptInputMode('type')}
+                        className={`text-[10px] px-2 py-0.5 rounded-md font-semibold transition-all cursor-pointer ${
+                          deptInputMode === 'type'
+                            ? 'bg-white text-blue-700 shadow-2xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Type Department
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setDeptInputMode('select')}
+                        className={`text-[10px] px-2 py-0.5 rounded-md font-semibold transition-all cursor-pointer ${
+                          deptInputMode === 'select'
+                            ? 'bg-white text-blue-700 shadow-2xs'
+                            : 'text-slate-500 hover:text-slate-800'
+                        }`}
+                      >
+                        Select List
+                      </button>
+                    </div>
+                  </div>
+
+                  {deptInputMode === 'type' ? (
+                    <div className="space-y-2">
+                      <div className="relative">
+                        <input
+                          id="form-course-department-type"
+                          type="text"
+                          list="department-type-options"
+                          value={formDeptName}
+                          onChange={e => handleDeptNameChange(e.target.value)}
+                          placeholder="Type department (e.g. Computer Science, ECE, Mechanical, IT...)"
+                          required
+                          className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                        />
+                        <datalist id="department-type-options">
+                          {departments.map(d => (
+                            <option key={d.id} value={`${d.name} (${d.code})`} />
+                          ))}
+                        </datalist>
+                      </div>
+
+                      {/* Quick Department Suggestion Chips */}
+                      {departments.length > 0 && (
+                        <div className="space-y-1">
+                          <span className="text-[10px] uppercase tracking-wider text-slate-400 font-bold block">
+                            Quick Select Department:
+                          </span>
+                          <div className="flex flex-wrap gap-1.5 max-h-20 overflow-y-auto pr-1">
+                            {departments.map(d => {
+                              const isSelected =
+                                formDeptId === d.id ||
+                                formDeptName.toLowerCase().includes(d.code.toLowerCase()) ||
+                                formDeptName.toLowerCase().includes(d.name.toLowerCase());
+                              return (
+                                <button
+                                  key={d.id}
+                                  type="button"
+                                  onClick={() => handleSelectDeptChip(d)}
+                                  className={`text-[11px] px-2.5 py-1 rounded-lg border transition-all cursor-pointer font-medium ${
+                                    isSelected
+                                      ? 'bg-blue-600 text-white border-blue-600 shadow-2xs font-semibold'
+                                      : 'bg-white hover:bg-blue-50 text-slate-700 border-slate-200 hover:border-blue-300'
+                                  }`}
+                                >
+                                  {d.code} - {d.name}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      <select
+                        id="form-course-department-select"
+                        value={formDeptId}
+                        onChange={e => {
+                          const id = Number(e.target.value);
+                          setFormDeptId(id);
+                          const d = departments.find(x => x.id === id);
+                          if (d) setFormDeptName(`${d.name} (${d.code})`);
+                        }}
+                        required
+                        className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                      >
+                        {departments.map(d => (
+                          <option key={d.id} value={d.id}>
+                            {d.name} ({d.code})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    Type any department name or select directly from institutional offerings
+                  </span>
+                </div>
+
+                {/* 2. Course Title */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Course Title <span className="text-rose-500">*</span>
+                  </label>
                   <input
-                    type="number"
-                    min={1}
-                    max={6}
+                    id="form-course-title"
+                    type="text"
+                    value={formCourseTitle}
+                    onChange={e => setFormCourseTitle(e.target.value)}
+                    placeholder="e.g. Data Structures and Algorithms"
                     required
-                    placeholder="4"
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value) || 1)}
-                    className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+                    className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                   />
                 </div>
 
+                {/* 3. Course Code */}
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department</label>
-                  <select
-                    value={departmentId}
-                    onChange={(e) => setDepartmentId(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.code})
-                      </option>
-                    ))}
-                  </select>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Course Code <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    id="form-course-code"
+                    type="text"
+                    value={formCourseCode}
+                    onChange={e => setFormCourseCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. CS3301"
+                    required
+                    className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm font-mono text-slate-800 uppercase placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                  />
+                  <span className="text-[11px] text-slate-400 mt-1 block">
+                    Official catalog / regulation code (e.g. CS3301, EC8452, ME3351)
+                  </span>
+                </div>
+
+                {/* 4 & 5. Year and Semester (Two columns) */}
+                <div className="grid grid-cols-2 gap-3 pb-2">
+                  {/* Year */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Year <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      id="form-course-year"
+                      value={formYear}
+                      onChange={e => handleYearChange(Number(e.target.value))}
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                    >
+                      <option value={1}>1st Year (Year 1)</option>
+                      <option value={2}>2nd Year (Year 2)</option>
+                      <option value={3}>3rd Year (Year 3)</option>
+                      <option value={4}>4th Year (Final Year)</option>
+                    </select>
+                  </div>
+
+                  {/* Semester */}
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Semester <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      id="form-course-semester"
+                      value={formSemester}
+                      onChange={e => setFormSemester(Number(e.target.value))}
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => {
+                        const isExpectedForYear = Math.ceil(sem / 2) === formYear;
+                        return (
+                          <option key={sem} value={sem}>
+                            Semester {sem} {isExpectedForYear ? '★' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {/* Preview Box */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="text-[11px] text-slate-500 font-semibold mb-1">Preview of Degree & Branch:</div>
-                <div className="text-xs font-bold text-slate-900">
-                  {degreeType.trim() ? `${degreeType.trim()} ` : ''}
-                  {branchName.trim() || '<Branch Name>'}
-                </div>
-                <div className="text-[11px] text-indigo-600 font-mono mt-0.5">
-                  Code: {branchCode || '—'} &bull; Duration: {duration} Years
-                </div>
-              </div>
-
-              <div className="pt-3 flex justify-end gap-3 border-t border-slate-100">
+              {/* Pinned Modal Footer */}
+              <div className="px-6 py-3.5 border-t border-slate-100 flex items-center justify-end gap-2.5 bg-slate-50/80 shrink-0 shadow-xs">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-200/70 transition-all cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
+                  id="submit-course-btn"
                   type="submit"
                   disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs cursor-pointer disabled:opacity-50"
+                  className="px-4 py-2 rounded-xl text-xs font-semibold bg-blue-600 hover:bg-blue-700 text-white shadow-xs transition-all disabled:opacity-50 cursor-pointer flex items-center gap-1.5"
                 >
-                  {submitting ? 'Saving...' : 'Add Degree/Branch'}
+                  {submitting && (
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  )}
+                  <span>{editingCourse ? 'Save Changes' : 'Add Course'}</span>
                 </button>
               </div>
             </form>
@@ -655,162 +890,43 @@ export const AdminCoursesPage: React.FC = () => {
         </div>
       )}
 
-      {/* Edit Degree/Branch Modal */}
-      {editingCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden max-h-[92vh] flex flex-col">
-            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
-              <div>
-                <h3 className="font-display font-bold text-slate-900 text-base">Edit Degree/Branch</h3>
-                <p className="text-[11px] text-slate-400 font-mono">{editingCourse.code}</p>
-              </div>
-              <button
-                onClick={() => setEditingCourse(null)}
-                className="p-1 rounded-md text-slate-400 hover:text-slate-700 cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleEdit} className="p-6 space-y-4 overflow-y-auto">
-              {error && (
-                <div className="p-3 bg-rose-50 border border-rose-200 rounded-lg text-rose-700 text-xs flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
-                  <span>{error}</span>
-                </div>
-              )}
-
-              {/* Field 1: Type Degree */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Type Degree *</label>
-                <input
-                  type="text"
-                  required
-                  list="edit-degree-type-suggestions"
-                  placeholder="e.g. B.E., B.Tech, M.E., MBA..."
-                  value={degreeType}
-                  onChange={(e) => setDegreeType(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
-                />
-                <datalist id="edit-degree-type-suggestions">
-                  {DEGREE_SUGGESTIONS.map((d) => (
-                    <option key={d} value={d} />
-                  ))}
-                </datalist>
-              </div>
-
-              {/* Field 2: Type Branch */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Type Branch *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Computer Science and Engineering"
-                  value={branchName}
-                  onChange={(e) => setBranchName(e.target.value)}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
-                />
-              </div>
-
-              {/* Field 3: Branch Code */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">Branch Code *</label>
-                <input
-                  type="text"
-                  required
-                  value={branchCode}
-                  onChange={(e) => setBranchCode(e.target.value.toUpperCase())}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 uppercase font-mono font-bold"
-                />
-              </div>
-
-              {/* Field 4: Duration (Years) & Parent Department */}
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Duration (Years) *</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={6}
-                    required
-                    value={duration}
-                    onChange={(e) => setDuration(Number(e.target.value) || 1)}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department</label>
-                  <select
-                    value={departmentId}
-                    onChange={(e) => setDepartmentId(Number(e.target.value))}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Preview Box */}
-              <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl">
-                <div className="text-[11px] text-slate-500 font-semibold mb-1">Preview:</div>
-                <div className="text-xs font-bold text-slate-900">
-                  {degreeType.trim() ? `${degreeType.trim()} ` : ''}
-                  {branchName.trim()}
-                </div>
-              </div>
-
-              <div className="pt-2 flex justify-end gap-3 border-t border-slate-100">
-                <button
-                  type="button"
-                  onClick={() => setEditingCourse(null)}
-                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 cursor-pointer"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={submitting}
-                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl cursor-pointer disabled:opacity-50"
-                >
-                  {submitting ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
+      {/* Delete Confirmation Dialog */}
       {deletingCourse && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-2xl max-w-sm w-full shadow-2xl border border-slate-200 p-6 space-y-4">
-            <div className="w-10 h-10 rounded-full bg-rose-50 border border-rose-100 flex items-center justify-center text-rose-600 mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 w-full max-w-sm p-6 space-y-4 animate-in zoom-in-95 duration-150 my-auto">
+            <div className="w-10 h-10 rounded-xl bg-rose-100 text-rose-600 flex items-center justify-center">
               <Trash2 className="w-5 h-5" />
             </div>
-            <div className="text-center">
-              <h3 className="font-bold text-slate-900 text-sm">Delete Degree / Branch?</h3>
+
+            <div>
+              <h3 className="font-display font-bold text-base text-slate-900">
+                Delete Course?
+              </h3>
               <p className="text-xs text-slate-500 mt-1">
-                Are you sure you want to permanently delete <strong>{deletingCourse.name}</strong> ({deletingCourse.code})?
+                Are you sure you want to delete{' '}
+                <span className="font-semibold text-slate-800">
+                  {deletingCourse.title} ({deletingCourse.code})
+                </span>
+                ? This will remove it from the curriculum catalog.
               </p>
             </div>
-            <div className="flex gap-2 justify-center">
+
+            <div className="flex items-center justify-end gap-2.5 pt-2">
               <button
+                type="button"
                 onClick={() => setDeletingCourse(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-xl cursor-pointer"
+                className="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-all cursor-pointer"
               >
                 Cancel
               </button>
               <button
-                onClick={confirmDelete}
+                id="confirm-delete-course-btn"
+                type="button"
+                onClick={handleDelete}
                 disabled={submitting}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 rounded-xl text-xs font-semibold bg-rose-600 hover:bg-rose-700 text-white shadow-xs transition-all disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? 'Deleting...' : 'Yes, Delete'}
+                {submitting ? 'Deleting...' : 'Delete Course'}
               </button>
             </div>
           </div>

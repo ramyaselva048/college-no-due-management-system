@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, deleteRecordFromPostgres, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, DueCategoryRecord, CertificateRecord } from './db';
+import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, deleteRecordFromPostgres, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, SubjectCourseRecord, DueCategoryRecord, CertificateRecord } from './db';
 import { generateCertificatePdf } from './pdf';
 
 export const apiRouter = Router();
@@ -2517,6 +2517,332 @@ apiRouter.delete('/admin/courses/:id', authMiddleware, requireRole(['ADMIN']), (
   db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { course: c.name, code: c.code }, getClientIp(req));
+  res.json({ message: 'Course deleted successfully', id });
+});
+
+// Degrees & Branches alias routes
+apiRouter.get('/admin/degrees', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const list = db.courses.map(c => {
+    const dept = db.departments.find(d => d.id === c.department_id);
+    return {
+      id: c.id,
+      name: c.name,
+      code: c.code,
+      department_id: c.department_id,
+      department_name: dept ? dept.name : '',
+      duration: c.duration,
+      is_active: c.is_active,
+      created_at: c.created_at
+    };
+  });
+  res.json(list);
+});
+
+apiRouter.post('/admin/degrees', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const { name, code, department_id, duration, is_active } = req.body;
+  const trimmedName = (name || '').trim();
+  if (!trimmedName) {
+    return res.status(400).json({ detail: 'Branch name is required' });
+  }
+
+  let upperCode = (code || '').toUpperCase().trim();
+  if (!upperCode) {
+    upperCode = trimmedName.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 15).toUpperCase();
+  }
+  if (db.courses.some(c => c.code === upperCode)) {
+    upperCode = `${upperCode}_${Date.now().toString().slice(-4)}`;
+  }
+
+  let dept = db.departments.find(d => d.id === Number(department_id));
+  if (!dept) {
+    dept = db.departments.find(d => d.code === 'CSE') || db.departments[0];
+  }
+
+  const nextCourseId = Math.max(...db.courses.map(c => c.id), 0) + 1;
+  const newCourse: CourseRecord = {
+    id: nextCourseId,
+    name: trimmedName,
+    code: upperCode,
+    department_id: dept ? dept.id : 1,
+    duration: Number(duration) || 4,
+    is_active: is_active !== undefined ? is_active : true,
+    created_at: new Date().toISOString()
+  };
+  db.courses.push(newCourse);
+  db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_CREATED', 'DEGREE', newCourse.id, null, req.body, getClientIp(req));
+
+  res.json({
+    ...newCourse,
+    department_name: dept ? dept.name : ''
+  });
+});
+
+apiRouter.patch('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const course = db.courses.find(c => c.id === id);
+  if (!course) return res.status(404).json({ detail: 'Degree/Branch not found' });
+
+  const { name, code, department_id, duration, is_active } = req.body;
+  if (code) {
+    const upperCode = code.toUpperCase().trim();
+    if (db.courses.some(c => c.id !== id && c.code === upperCode)) {
+      return res.status(400).json({ detail: 'Branch code already exists' });
+    }
+    course.code = upperCode;
+  }
+  if (name !== undefined) course.name = name.trim();
+  if (department_id !== undefined) course.department_id = Number(department_id);
+  if (duration !== undefined) course.duration = Number(duration);
+  if (is_active !== undefined) course.is_active = is_active;
+
+  const dept = db.departments.find(d => d.id === course.department_id);
+  db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_UPDATED', 'DEGREE', course.id, null, req.body, getClientIp(req));
+
+  res.json({
+    ...course,
+    department_name: dept ? dept.name : ''
+  });
+});
+
+apiRouter.delete('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const idx = db.courses.findIndex(c => c.id === id);
+  if (idx === -1) return res.status(404).json({ detail: 'Degree/Branch not found' });
+
+  const c = db.courses[idx];
+  db.courses.splice(idx, 1);
+  deleteRecordFromPostgres('courses', id).catch(() => {});
+  db.saveToFile();
+
+  db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_DELETED', 'DEGREE', id, null, { degree: c.name, code: c.code }, getClientIp(req));
+  res.json({ message: 'Degree/Branch deleted successfully', id });
+});
+
+// ==========================================
+// Academic Subject Courses (Curriculum) Endpoints
+// Form fields: department, course title, course code, year, semester
+// ==========================================
+apiRouter.get(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  let list = db.subjectCourses;
+
+  if (req.query.department_id) {
+    list = list.filter(c => c.department_id === Number(req.query.department_id));
+  }
+  if (req.query.year) {
+    list = list.filter(c => c.year === Number(req.query.year));
+  }
+  if (req.query.semester) {
+    list = list.filter(c => c.semester === Number(req.query.semester));
+  }
+  if (req.query.search) {
+    const q = String(req.query.search).toLowerCase().trim();
+    list = list.filter(c =>
+      c.title.toLowerCase().includes(q) ||
+      c.code.toLowerCase().includes(q)
+    );
+  }
+
+  const enriched = list.map(c => {
+    const dept = db.departments.find(d => d.id === c.department_id);
+    return {
+      id: c.id,
+      title: c.title,
+      code: c.code,
+      department_id: c.department_id,
+      department_name: dept ? dept.name : 'General Engineering',
+      department_code: dept ? dept.code : 'GEN',
+      year: c.year,
+      semester: c.semester,
+      is_active: c.is_active,
+      created_at: c.created_at
+    };
+  });
+
+  res.json(enriched);
+});
+
+apiRouter.post(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const { department, department_id, course_title, title, course_code, code, year, semester } = req.body;
+
+  const finalTitle = (course_title || title || '').trim();
+  if (!finalTitle) {
+    return res.status(400).json({ detail: 'Course title is required' });
+  }
+
+  let finalCode = (course_code || code || '').toUpperCase().trim();
+  if (!finalCode) {
+    finalCode = finalTitle.replace(/[^a-zA-Z0-9]/g, '_').substring(0, 10).toUpperCase();
+  }
+
+  // Find or create department from ID or typed department name/code
+  let deptId = Number(department_id || department);
+  let dept = db.departments.find(d => d.id === deptId);
+  const rawDeptName = (typeof department === 'string' ? department : (req.body.department_name || '')).trim();
+  if (!dept && rawDeptName) {
+    dept = db.departments.find(d =>
+      d.name.toLowerCase() === rawDeptName.toLowerCase() ||
+      d.code.toLowerCase() === rawDeptName.toLowerCase() ||
+      rawDeptName.toLowerCase().includes(d.name.toLowerCase()) ||
+      rawDeptName.toLowerCase().includes(d.code.toLowerCase())
+    );
+    if (!dept) {
+      const newDeptId = Math.max(0, ...db.departments.map(d => d.id)) + 1;
+      const codeSuggestion = rawDeptName
+        .replace(/[^a-zA-Z0-9\s]/g, '')
+        .split(' ')
+        .filter(Boolean)
+        .map(w => w[0])
+        .join('')
+        .toUpperCase()
+        .slice(0, 6) || `DEPT${newDeptId}`;
+
+      dept = {
+        id: newDeptId,
+        name: rawDeptName,
+        code: codeSuggestion,
+        description: `${rawDeptName} Department`,
+        is_active: true,
+        created_at: new Date().toISOString()
+      };
+      db.departments.push(dept);
+      db.saveToFile();
+    }
+  }
+
+  if (!dept) {
+    dept = db.departments[0];
+    deptId = dept ? dept.id : 1;
+  } else {
+    deptId = dept.id;
+  }
+
+  const finalYear = Math.max(1, Math.min(4, Number(year) || 1));
+  const finalSemester = Math.max(1, Math.min(8, Number(semester) || 1));
+
+  // Check code uniqueness within same semester/department
+  if (db.subjectCourses.some(c => c.code === finalCode && c.department_id === deptId)) {
+    finalCode = `${finalCode}_${Date.now().toString().slice(-4)}`;
+  }
+
+  const nextId = Math.max(0, ...db.subjectCourses.map(s => s.id)) + 1;
+  const newCourse: SubjectCourseRecord = {
+    id: nextId,
+    title: finalTitle,
+    code: finalCode,
+    department_id: deptId,
+    year: finalYear,
+    semester: finalSemester,
+    is_active: true,
+    created_at: new Date().toISOString()
+  };
+
+  db.subjectCourses.unshift(newCourse);
+  db.saveToFile();
+
+  db.logAudit(
+    req.user!.id,
+    req.user!.email,
+    'COURSE_CREATED',
+    'COURSE',
+    newCourse.id,
+    null,
+    { title: newCourse.title, code: newCourse.code, department: dept?.name, year: finalYear, semester: finalSemester },
+    getClientIp(req)
+  );
+
+  res.json({
+    ...newCourse,
+    department_name: dept ? dept.name : 'General Engineering',
+    department_code: dept ? dept.code : 'GEN'
+  });
+});
+
+apiRouter.patch('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const course = db.subjectCourses.find(c => c.id === id);
+  if (!course) return res.status(404).json({ detail: 'Course not found' });
+
+  const { department, department_id, course_title, title, course_code, code, year, semester, is_active } = req.body;
+
+  if (course_title !== undefined || title !== undefined) {
+    const t = (course_title || title || '').trim();
+    if (t) course.title = t;
+  }
+  if (course_code !== undefined || code !== undefined) {
+    const c = (course_code || code || '').toUpperCase().trim();
+    if (c) course.code = c;
+  }
+  if (department_id !== undefined || department !== undefined || req.body.department_name) {
+    const rawDept = (typeof department === 'string' ? department : (req.body.department_name || '')).trim();
+    let dId = Number(department_id || department);
+    let matchedDept = db.departments.find(d => d.id === dId);
+    if (!matchedDept && rawDept) {
+      matchedDept = db.departments.find(d =>
+        d.name.toLowerCase() === rawDept.toLowerCase() ||
+        d.code.toLowerCase() === rawDept.toLowerCase() ||
+        rawDept.toLowerCase().includes(d.name.toLowerCase()) ||
+        rawDept.toLowerCase().includes(d.code.toLowerCase())
+      );
+      if (!matchedDept) {
+        const newDeptId = Math.max(0, ...db.departments.map(d => d.id)) + 1;
+        const codeSuggestion = rawDept
+          .replace(/[^a-zA-Z0-9\s]/g, '')
+          .split(' ')
+          .filter(Boolean)
+          .map(w => w[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 6) || `DEPT${newDeptId}`;
+
+        matchedDept = {
+          id: newDeptId,
+          name: rawDept,
+          code: codeSuggestion,
+          description: `${rawDept} Department`,
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
+        db.departments.push(matchedDept);
+        db.saveToFile();
+      }
+    }
+    if (matchedDept) {
+      course.department_id = matchedDept.id;
+    }
+  }
+  if (year !== undefined) {
+    course.year = Math.max(1, Math.min(4, Number(year) || 1));
+  }
+  if (semester !== undefined) {
+    course.semester = Math.max(1, Math.min(8, Number(semester) || 1));
+  }
+  if (is_active !== undefined) {
+    course.is_active = Boolean(is_active);
+  }
+
+  db.saveToFile();
+
+  const dept = db.departments.find(d => d.id === course.department_id);
+  db.logAudit(req.user!.id, req.user!.email, 'COURSE_UPDATED', 'COURSE', course.id, null, req.body, getClientIp(req));
+
+  res.json({
+    ...course,
+    department_name: dept ? dept.name : 'General Engineering',
+    department_code: dept ? dept.code : 'GEN'
+  });
+});
+
+apiRouter.delete('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const idx = db.subjectCourses.findIndex(c => c.id === id);
+  if (idx === -1) return res.status(404).json({ detail: 'Course not found' });
+
+  const deleted = db.subjectCourses[idx];
+  db.subjectCourses.splice(idx, 1);
+  deleteRecordFromPostgres('subject_courses', id).catch(() => {});
+  db.saveToFile();
+
+  db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { title: deleted.title, code: deleted.code }, getClientIp(req));
   res.json({ message: 'Course deleted successfully', id });
 });
 

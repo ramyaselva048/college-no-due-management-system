@@ -1,5 +1,6 @@
 import 'dotenv/config';
-import { Pool, QueryResult } from 'pg';
+import { Pool } from 'pg';
+import type { QueryResult } from 'pg';
 
 let realPool: Pool | null = null;
 

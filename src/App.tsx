@@ -28,6 +28,7 @@ import { AdminRequestsPage } from './pages/admin/AdminRequestsPage';
 import { AdminStudentsPage } from './pages/admin/AdminStudentsPage';
 import { AdminStaffPage } from './pages/admin/AdminStaffPage';
 import { AdminDepartmentsPage } from './pages/admin/AdminDepartmentsPage';
+import { AdminDegreesPage } from './pages/admin/AdminDegreesPage';
 import { AdminCoursesPage } from './pages/admin/AdminCoursesPage';
 import { AdminCertificatesPage } from './pages/admin/AdminCertificatesPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
@@ -96,7 +97,9 @@ export default function App() {
               <Route path="dues" element={<AdminDuesPage />} />
               <Route path="staff" element={<AdminStaffPage />} />
               <Route path="departments" element={<AdminDepartmentsPage />} />
+              <Route path="degrees" element={<AdminDegreesPage />} />
               <Route path="courses" element={<AdminCoursesPage />} />
+              <Route path="subject-courses" element={<Navigate to="/admin/courses" replace />} />
               <Route path="certificates" element={<AdminCertificatesPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
