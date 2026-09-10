@@ -243,6 +243,9 @@ class InMemoryDatabase {
   };
 
   isPgConnected: boolean = false;
+  private isSyncing: boolean = false;
+  private syncPending: boolean = false;
+  private syncDebounceTimer: NodeJS.Timeout | null = null;
 
   constructor() {
     const loaded = this.loadFromFile();
@@ -363,24 +366,54 @@ class InMemoryDatabase {
     }
   }
 
+  queueSyncToPostgres(delayMs = 300) {
+    if (this.syncDebounceTimer) {
+      clearTimeout(this.syncDebounceTimer);
+    }
+    this.syncDebounceTimer = setTimeout(() => {
+      this.syncDebounceTimer = null;
+      this.executeSyncToPostgres().catch(err => {
+        console.warn('[PostgreSQL] Async sync execution warning:', err);
+      });
+    }, delayMs);
+  }
+
+  private async executeSyncToPostgres(): Promise<void> {
+    if (!this.isPgConnected && !process.env.DATABASE_URL) return;
+    if (this.isSyncing) {
+      this.syncPending = true;
+      return;
+    }
+    this.isSyncing = true;
+    this.syncPending = false;
+    try {
+      await this.syncToPostgres();
+    } finally {
+      this.isSyncing = false;
+      if (this.syncPending) {
+        this.syncPending = false;
+        this.queueSyncToPostgres(150);
+      }
+    }
+  }
+
   async syncToPostgres(): Promise<void> {
     if (!this.isPgConnected && !process.env.DATABASE_URL) return;
     try {
-      await Promise.allSettled([
-        syncTableToPostgres('users', this.users),
-        syncTableToPostgres('departments', this.departments),
-        syncTableToPostgres('courses', this.courses),
-        syncTableToPostgres('due_categories', this.dueCategories),
-        syncTableToPostgres('students', this.students),
-        syncTableToPostgres('staff', this.staff),
-        syncTableToPostgres('due_records', this.dueRecords),
-        syncTableToPostgres('due_payments', this.duePayments),
-        syncTableToPostgres('no_due_requests', this.noDueRequests),
-        syncTableToPostgres('no_due_approvals', this.noDueApprovals),
-        syncTableToPostgres('certificates', this.certificates),
-        syncTableToPostgres('notifications', this.notifications),
-        syncTableToPostgres('audit_logs', this.auditLogs.slice(-200))
-      ]);
+      // Sync parent tables first to avoid foreign key / dependency locks and deadlock conflicts
+      await syncTableToPostgres('users', this.users);
+      await syncTableToPostgres('departments', this.departments);
+      await syncTableToPostgres('courses', this.courses);
+      await syncTableToPostgres('due_categories', this.dueCategories);
+      await syncTableToPostgres('students', this.students);
+      await syncTableToPostgres('staff', this.staff);
+      await syncTableToPostgres('due_records', this.dueRecords);
+      await syncTableToPostgres('due_payments', this.duePayments);
+      await syncTableToPostgres('no_due_requests', this.noDueRequests);
+      await syncTableToPostgres('no_due_approvals', this.noDueApprovals);
+      await syncTableToPostgres('certificates', this.certificates);
+      await syncTableToPostgres('notifications', this.notifications.slice(0, 100));
+      await syncTableToPostgres('audit_logs', this.auditLogs.slice(0, 200));
     } catch (err) {
       console.error('[PostgreSQL] syncToPostgres error:', err);
     }
@@ -417,10 +450,8 @@ class InMemoryDatabase {
       const backupFile = path.join(DATA_DIR, 'college_db.backup.json');
       fs.writeFileSync(backupFile, jsonContent, 'utf-8');
 
-      // Asynchronously synchronize to PostgreSQL
-      this.syncToPostgres().catch(err => {
-        console.error('[PostgreSQL] Async sync on saveToFile error:', err);
-      });
+      // Debounced, serialized synchronization to PostgreSQL (prevents concurrency conflicts & deadlocks)
+      this.queueSyncToPostgres();
     } catch (err) {
       console.error('Failed to save database to storage file:', err);
     }
@@ -700,7 +731,6 @@ class InMemoryDatabase {
     };
     this.auditLogs.unshift(audit);
     this.saveToFile();
-    syncSingleRecordToPostgres('audit_logs', audit).catch(() => {});
   }
 
   createNotification(userId: number, title: string, message: string, type: 'info' | 'success' | 'warning' | 'danger' = 'info') {
@@ -715,7 +745,6 @@ class InMemoryDatabase {
     };
     this.notifications.unshift(notif);
     this.saveToFile();
-    syncSingleRecordToPostgres('notifications', notif).catch(() => {});
     return notif;
   }
 

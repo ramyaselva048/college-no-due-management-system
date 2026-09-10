@@ -853,125 +853,15 @@
   ],
   "auditLogs": [
     {
-      "id": 30,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "DEPARTMENT_STATUS_TOGGLED",
-      "entity_type": "DEPARTMENT",
-      "entity_id": 2,
-      "new_values": "{\"is_active\":false}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T11:22:34.253Z"
-    },
-    {
-      "id": 29,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
+      "id": 31,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
       "action": "USER_LOGIN",
       "entity_type": "USER",
-      "entity_id": 1,
-      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T11:13:35.069Z"
-    },
-    {
-      "id": 28,
-      "user_id": 28,
-      "user_email": "732423104036@sasurie.edu",
-      "action": "USER_LOGOUT",
-      "entity_type": "USER",
-      "entity_id": 28,
-      "new_values": "{\"email\":\"732423104036@sasurie.edu\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T11:13:19.919Z"
-    },
-    {
-      "id": 27,
-      "user_id": 28,
-      "user_email": "732423104036@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 28,
-      "new_values": "{\"identifier\":\"732423104036@sasurie.edu\",\"role\":\"STUDENT\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T11:10:20.732Z"
-    },
-    {
-      "id": 26,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "USER_LOGOUT",
-      "entity_type": "USER",
-      "entity_id": 1,
-      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T11:09:39.174Z"
-    },
-    {
-      "id": 25,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 1,
-      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T10:58:54.341Z"
-    },
-    {
-      "id": 24,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "USER_LOGOUT",
-      "entity_type": "USER",
-      "entity_id": 1,
-      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T10:58:24.274Z"
-    },
-    {
-      "id": 23,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "CERTIFICATE_DOWNLOADED",
-      "entity_type": "CERTIFICATE",
-      "entity_id": 1,
-      "new_values": "{\"certificate_number\":\"CERT-2026-00001\",\"student_id\":1,\"student_name\":\"Ramya S\",\"register_number\":\"732423104036\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T10:55:48.456Z"
-    },
-    {
-      "id": 22,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "CERTIFICATE_VIEWED",
-      "entity_type": "CERTIFICATE",
-      "entity_id": 1,
-      "new_values": "{\"certificate_number\":\"CERT-2026-00001\",\"student_id\":1,\"student_name\":\"Ramya S\",\"register_number\":\"732423104036\",\"viewer_role\":\"ADMIN\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T10:55:06.533Z"
-    },
-    {
-      "id": 21,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "CERTIFICATE_DOWNLOADED",
-      "entity_type": "CERTIFICATE",
-      "entity_id": 6,
-      "new_values": "{\"certificate_number\":\"CERT-2026-00001\",\"student_id\":1,\"student_name\":\"Ramya S\",\"register_number\":\"732423104036\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T10:54:26.224Z"
-    },
-    {
-      "id": 20,
-      "user_id": 1,
-      "user_email": "ramya@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 1,
-      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
-      "created_at": "2026-09-10T10:49:59.323Z"
+      "entity_id": 3,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-10T11:57:59.433Z"
     },
     {
       "id": 1,
@@ -1200,6 +1090,138 @@
       "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
       "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
       "created_at": "2026-09-10T09:04:58.091Z"
+    },
+    {
+      "id": 20,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T10:49:59.323Z"
+    },
+    {
+      "id": 21,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "CERTIFICATE_DOWNLOADED",
+      "entity_type": "CERTIFICATE",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"certificate_number\":\"CERT-2026-00001\",\"student_id\":1,\"student_name\":\"Ramya S\",\"register_number\":\"732423104036\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T10:54:26.224Z"
+    },
+    {
+      "id": 22,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "CERTIFICATE_VIEWED",
+      "entity_type": "CERTIFICATE",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"certificate_number\":\"CERT-2026-00001\",\"student_id\":1,\"student_name\":\"Ramya S\",\"register_number\":\"732423104036\",\"viewer_role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T10:55:06.533Z"
+    },
+    {
+      "id": 23,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "CERTIFICATE_DOWNLOADED",
+      "entity_type": "CERTIFICATE",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"certificate_number\":\"CERT-2026-00001\",\"student_id\":1,\"student_name\":\"Ramya S\",\"register_number\":\"732423104036\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T10:55:48.456Z"
+    },
+    {
+      "id": 24,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T10:58:24.274Z"
+    },
+    {
+      "id": 25,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T10:58:54.341Z"
+    },
+    {
+      "id": 26,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T11:09:39.174Z"
+    },
+    {
+      "id": 27,
+      "user_id": 28,
+      "user_email": "732423104036@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 28,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"732423104036@sasurie.edu\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T11:10:20.732Z"
+    },
+    {
+      "id": 28,
+      "user_id": 28,
+      "user_email": "732423104036@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 28,
+      "old_values": null,
+      "new_values": "{\"email\":\"732423104036@sasurie.edu\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T11:13:19.919Z"
+    },
+    {
+      "id": 29,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T11:13:35.069Z"
+    },
+    {
+      "id": 30,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "DEPARTMENT_STATUS_TOGGLED",
+      "entity_type": "DEPARTMENT",
+      "entity_id": 2,
+      "old_values": null,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:204c:5da8:5892:ecde:7aa1:5ded",
+      "created_at": "2026-09-10T11:22:34.253Z"
     }
   ],
   "nextId": {
@@ -1215,6 +1237,6 @@
     "noDueApprovals": 13,
     "certificates": 7,
     "notifications": 8,
-    "auditLogs": 31
+    "auditLogs": 32
   }
 }

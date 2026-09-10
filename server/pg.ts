@@ -80,19 +80,111 @@ export async function testPgConnection(): Promise<boolean> {
   }
 }
 
+// Helper to retry operations on transient concurrency issues like deadlocks (Postgres error 40P01)
+async function executeWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
+  let lastErr: any;
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await fn();
+    } catch (err: any) {
+      lastErr = err;
+      const isDeadlock = err?.code === '40P01' || err?.message?.toLowerCase().includes('deadlock');
+      if (isDeadlock && attempt < maxRetries) {
+        await new Promise((res) => setTimeout(res, 50 * attempt + Math.floor(Math.random() * 80)));
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw lastErr;
+}
+
 // Utility to safely insert or update PostgreSQL records
 export async function syncTableToPostgres(tableName: string, records: any[]): Promise<void> {
   const pool = getPool();
   if (!pool || !records || records.length === 0) return;
-  let client;
-  try {
-    client = await pool.connect();
-    await client.query('BEGIN');
-    for (const record of records) {
-      const keys = Object.keys(record);
-      if (keys.length === 0) continue;
 
-      const values = keys.map(k => {
+  // Enforce deterministic lock ordering: sort records ascending by ID to prevent circular deadlock wait-chains
+  const sortedRecords = [...records]
+    .filter((r) => r && typeof r === 'object' && r.id !== undefined)
+    .sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+
+  if (sortedRecords.length === 0) return;
+  const isAppendOnly = tableName === 'audit_logs';
+
+  try {
+    await executeWithRetry(async () => {
+      let client;
+      try {
+        client = await pool.connect();
+        await client.query('BEGIN');
+        await client.query("SET LOCAL lock_timeout = '4s'");
+
+        for (const record of sortedRecords) {
+          const keys = Object.keys(record);
+          if (keys.length === 0) continue;
+
+          const values = keys.map((k) => {
+            const v = record[k];
+            if (v !== null && typeof v === 'object' && !(v instanceof Date)) {
+              return JSON.stringify(v);
+            }
+            return v;
+          });
+
+          const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
+          const quotedKeys = keys.map((k) => `"${k}"`).join(', ');
+
+          let sql = `INSERT INTO "${tableName}" (${quotedKeys}) VALUES (${placeholders})`;
+
+          if (keys.includes('id')) {
+            if (isAppendOnly) {
+              sql += ` ON CONFLICT ("id") DO NOTHING`;
+            } else {
+              const updateSet = keys
+                .filter((k) => k !== 'id')
+                .map((k) => `"${k}" = EXCLUDED."${k}"`)
+                .join(', ');
+
+              if (updateSet.length > 0) {
+                sql += ` ON CONFLICT ("id") DO UPDATE SET ${updateSet}`;
+              } else {
+                sql += ` ON CONFLICT ("id") DO NOTHING`;
+              }
+            }
+          }
+
+          await client.query(sql, values);
+        }
+
+        await client.query('COMMIT');
+      } catch (err: any) {
+        if (client) {
+          try {
+            await client.query('ROLLBACK');
+          } catch {}
+        }
+        throw err;
+      } finally {
+        if (client) {
+          client.release();
+        }
+      }
+    });
+  } catch (err: any) {
+    console.warn(`[PostgreSQL] Failed syncing table ${tableName}:`, err?.message || err);
+  }
+}
+
+export async function syncSingleRecordToPostgres(tableName: string, record: any): Promise<void> {
+  const pool = getPool();
+  if (!pool || !record || typeof record !== 'object') return;
+  try {
+    await executeWithRetry(async () => {
+      const keys = Object.keys(record);
+      if (keys.length === 0) return;
+
+      const values = keys.map((k) => {
         const v = record[k];
         if (v !== null && typeof v === 'object' && !(v instanceof Date)) {
           return JSON.stringify(v);
@@ -101,74 +193,29 @@ export async function syncTableToPostgres(tableName: string, records: any[]): Pr
       });
 
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-      const updateSet = keys
-        .filter(k => k !== 'id')
-        .map((k) => `"${k}" = EXCLUDED."${k}"`)
-        .join(', ');
+      const quotedKeys = keys.map((k) => `"${k}"`).join(', ');
 
-      const quotedKeys = keys.map(k => `"${k}"`).join(', ');
+      let sql = `INSERT INTO "${tableName}" (${quotedKeys}) VALUES (${placeholders})`;
 
-      let sql = `
-        INSERT INTO "${tableName}" (${quotedKeys})
-        VALUES (${placeholders})
-      `;
+      if (keys.includes('id')) {
+        if (tableName === 'audit_logs') {
+          sql += ` ON CONFLICT ("id") DO NOTHING`;
+        } else {
+          const updateSet = keys
+            .filter((k) => k !== 'id')
+            .map((k) => `"${k}" = EXCLUDED."${k}"`)
+            .join(', ');
 
-      if (keys.includes('id') && updateSet.length > 0) {
-        sql += ` ON CONFLICT ("id") DO UPDATE SET ${updateSet}`;
-      } else if (keys.includes('id')) {
-        sql += ` ON CONFLICT ("id") DO NOTHING`;
+          if (updateSet.length > 0) {
+            sql += ` ON CONFLICT ("id") DO UPDATE SET ${updateSet}`;
+          } else {
+            sql += ` ON CONFLICT ("id") DO NOTHING`;
+          }
+        }
       }
 
-      await client.query(sql, values);
-    }
-    await client.query('COMMIT');
-  } catch (err: any) {
-    if (client) {
-      try { await client.query('ROLLBACK'); } catch {}
-    }
-    console.warn(`[PostgreSQL] Failed syncing table ${tableName}:`, err?.message || err);
-  } finally {
-    if (client) {
-      client.release();
-    }
-  }
-}
-
-export async function syncSingleRecordToPostgres(tableName: string, record: any): Promise<void> {
-  const pool = getPool();
-  if (!pool || !record || typeof record !== 'object') return;
-  try {
-    const keys = Object.keys(record);
-    if (keys.length === 0) return;
-
-    const values = keys.map(k => {
-      const v = record[k];
-      if (v !== null && typeof v === 'object' && !(v instanceof Date)) {
-        return JSON.stringify(v);
-      }
-      return v;
+      await pool.query(sql, values);
     });
-
-    const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-    const updateSet = keys
-      .filter(k => k !== 'id')
-      .map((k) => `"${k}" = EXCLUDED."${k}"`)
-      .join(', ');
-
-    const quotedKeys = keys.map(k => `"${k}"`).join(', ');
-
-    let sql = `
-      INSERT INTO "${tableName}" (${quotedKeys})
-      VALUES (${placeholders})
-    `;
-
-    if (keys.includes('id') && updateSet.length > 0) {
-      sql += ` ON CONFLICT ("id") DO UPDATE SET ${updateSet}`;
-    } else if (keys.includes('id')) {
-      sql += ` ON CONFLICT ("id") DO NOTHING`;
-    }
-
-    await pool.query(sql, values);
   } catch (err: any) {
     console.warn(`[PostgreSQL] Failed upserting single record to ${tableName}:`, err?.message || err);
   }
