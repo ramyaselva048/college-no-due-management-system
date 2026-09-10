@@ -136,6 +136,32 @@ export const AdminCertificatesPage: React.FC = () => {
     }
   }, [activeTab]);
 
+  // Modal accessibility: Escape key and scroll lock
+  useEffect(() => {
+    const isAnyModalOpen = Boolean(qrCert || viewingCert || revokingCert || deletingCert || showIssueModal);
+    if (isAnyModalOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (qrCert) setQrCert(null);
+        if (viewingCert) setViewingCert(null);
+        if (revokingCert) setRevokingCert(null);
+        if (deletingCert) setDeletingCert(null);
+        if (showIssueModal) setShowIssueModal(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.body.style.overflow = 'unset';
+    };
+  }, [qrCert, viewingCert, revokingCert, deletingCert, showIssueModal]);
+
   // Handle Copy to Clipboard
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -1073,10 +1099,19 @@ export const AdminCertificatesPage: React.FC = () => {
       {/* MODAL 1: VIEW CERTIFICATE (Institutional Official Document View)         */}
       {/* ========================================================================= */}
       {viewingCert && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 my-8">
-            {/* Modal Controls Bar */}
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setViewingCert(null);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+        >
+          <div
+            className="bg-white rounded-3xl max-w-2xl w-full shadow-2xl border border-slate-200 my-auto max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Modal Controls Bar (Pinned Header) */}
+            <div className="flex items-center justify-between p-5 sm:p-6 pb-3.5 border-b border-slate-100 shrink-0 bg-white z-10">
               <div className="flex items-center gap-2">
                 <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
                   Institutional Document Preview
@@ -1094,115 +1129,118 @@ export const AdminCertificatesPage: React.FC = () => {
 
               <button
                 onClick={() => setViewingCert(null)}
-                className="p-1 text-slate-400 hover:text-slate-600 rounded-lg"
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                title="Close"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Certificate Body Container */}
-            <div className="border-2 border-indigo-950/15 rounded-2xl p-6 sm:p-8 text-center space-y-6 relative overflow-hidden bg-slate-50/30">
-              {/* College Header */}
-              <div className="border-b-2 border-slate-900/10 pb-5">
-                <div className="w-12 h-12 rounded-xl bg-indigo-900 text-white flex items-center justify-center mx-auto mb-2 shadow-sm">
-                  <GraduationCap className="w-7 h-7" />
+            {/* Scrollable Certificate Body Container */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1">
+              <div className="border-2 border-indigo-950/15 rounded-2xl p-5 sm:p-7 text-center space-y-5 relative overflow-hidden bg-slate-50/30">
+                {/* College Header */}
+                <div className="border-b-2 border-slate-900/10 pb-4">
+                  <div className="w-12 h-12 rounded-xl bg-indigo-900 text-white flex items-center justify-center mx-auto mb-2 shadow-sm">
+                    <GraduationCap className="w-7 h-7" />
+                  </div>
+                  <h3 className="font-display font-black text-xl text-indigo-950 uppercase tracking-tight">
+                    Apex Institute of Technology
+                  </h3>
+                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                    Autonomous Academic Institution • Accredited 'A++'
+                  </p>
+                  <p className="text-[10px] text-slate-400">
+                    Office of Academic Clearances & Institutional Registrar
+                  </p>
                 </div>
-                <h3 className="font-display font-black text-xl text-indigo-950 uppercase tracking-tight">
-                  Apex Institute of Technology
-                </h3>
-                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                  Autonomous Academic Institution • Accredited 'A++'
-                </p>
-                <p className="text-[10px] text-slate-400">
-                  Office of Academic Clearances & Institutional Registrar
-                </p>
-              </div>
 
-              {/* Certificate Title */}
-              <div>
-                <span className="inline-block px-3 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 font-display font-bold text-[11px] uppercase tracking-widest">
-                  Official Institutional Clearance
-                </span>
-                <h4 className="font-display font-black text-lg text-slate-900 uppercase tracking-tight mt-2">
-                  No Due Certificate
-                </h4>
-                <div className="flex items-center justify-center gap-4 text-xs mt-2 font-mono">
-                  <span className="text-slate-500">ID: <strong className="text-slate-900">{viewingCert.certificate_number}</strong></span>
-                  <span className="text-slate-500">CODE: <strong className="text-indigo-700">{viewingCert.verification_code}</strong></span>
-                </div>
-              </div>
-
-              {/* Clearance Statement */}
-              <div className="bg-white/80 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed text-left">
-                This is to formally certify that{' '}
-                <strong className="text-slate-950">{viewingCert.student_name}</strong>, bearing institutional registration number{' '}
-                <strong className="text-slate-950 font-mono">{viewingCert.register_number}</strong> of the Department of{' '}
-                <strong>{viewingCert.department_name}</strong> ({viewingCert.course_name}), has cleared all institutional dues across all academic, laboratory, residential, transport, and library departments. There are no outstanding fees or liabilities pending against the student.
-              </div>
-
-              {/* Metadata Grid */}
-              <div className="grid grid-cols-2 gap-4 text-left text-xs bg-slate-100/70 p-3.5 rounded-xl">
+                {/* Certificate Title */}
                 <div>
-                  <span className="text-[10px] text-slate-400 block uppercase">Issue Date</span>
-                  <span className="font-semibold text-slate-900">
-                    {new Date(viewingCert.issued_at).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric'
-                    })}
+                  <span className="inline-block px-3 py-0.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 font-display font-bold text-[11px] uppercase tracking-widest">
+                    Official Institutional Clearance
                   </span>
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block uppercase">Issued By</span>
-                  <span className="font-semibold text-slate-900">
-                    {viewingCert.issued_by_name || 'Administrator'}
-                  </span>
-                </div>
-              </div>
-
-              {/* QR Code and Signatures */}
-              <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-6 border-t border-slate-200">
-                <div className="flex items-center gap-3 text-left">
-                  <div className="p-1.5 bg-white rounded-lg border border-slate-200 shadow-2xs shrink-0">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(
-                        `${window.location.origin}/verify/${viewingCert.verification_code}`
-                      )}`}
-                      alt="Certificate QR"
-                      className="w-16 h-16"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Tamper-Proof QR
-                    </p>
-                    <p className="text-[10px] text-slate-400 max-w-[140px] leading-tight mt-0.5">
-                      Publicly verifiable credential
-                    </p>
+                  <h4 className="font-display font-black text-lg text-slate-900 uppercase tracking-tight mt-2">
+                    No Due Certificate
+                  </h4>
+                  <div className="flex flex-wrap items-center justify-center gap-3 text-xs mt-2 font-mono">
+                    <span className="text-slate-500">ID: <strong className="text-slate-900">{viewingCert.certificate_number}</strong></span>
+                    <span className="text-slate-500">CODE: <strong className="text-indigo-700">{viewingCert.verification_code}</strong></span>
                   </div>
                 </div>
 
-                <div className="flex items-center gap-6 text-center text-xs">
+                {/* Clearance Statement */}
+                <div className="bg-white/80 p-4 rounded-xl border border-slate-200 text-xs text-slate-700 leading-relaxed text-left">
+                  This is to formally certify that{' '}
+                  <strong className="text-slate-950">{viewingCert.student_name}</strong>, bearing institutional registration number{' '}
+                  <strong className="text-slate-950 font-mono">{viewingCert.register_number}</strong> of the Department of{' '}
+                  <strong>{viewingCert.department_name}</strong> ({viewingCert.course_name}), has cleared all institutional dues across all academic, laboratory, residential, transport, and library departments. There are no outstanding fees or liabilities pending against the student.
+                </div>
+
+                {/* Metadata Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-left text-xs bg-slate-100/70 p-3.5 rounded-xl">
                   <div>
-                    <div className="font-display italic text-indigo-900 font-semibold text-sm">
-                      Dean of Academics
-                    </div>
-                    <div className="w-24 border-t border-slate-400 mt-1"></div>
-                    <p className="text-[9px] text-slate-500 font-semibold mt-0.5">Dean (Academics)</p>
+                    <span className="text-[10px] text-slate-400 block uppercase">Issue Date</span>
+                    <span className="font-semibold text-slate-900">
+                      {new Date(viewingCert.issued_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                      })}
+                    </span>
                   </div>
                   <div>
-                    <div className="font-display italic text-indigo-900 font-semibold text-sm">
-                      Office of Registrar
+                    <span className="text-[10px] text-slate-400 block uppercase">Issued By</span>
+                    <span className="font-semibold text-slate-900">
+                      {viewingCert.issued_by_name || 'Administrator'}
+                    </span>
+                  </div>
+                </div>
+
+                {/* QR Code and Signatures */}
+                <div className="pt-2 flex flex-col sm:flex-row items-center justify-between gap-5 border-t border-slate-200">
+                  <div className="flex items-center gap-3 text-left">
+                    <div className="p-1.5 bg-white rounded-lg border border-slate-200 shadow-2xs shrink-0">
+                      <img
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=70x70&data=${encodeURIComponent(
+                          `${window.location.origin}/verify/${viewingCert.verification_code}`
+                        )}`}
+                        alt="Certificate QR"
+                        className="w-16 h-16 object-contain"
+                      />
                     </div>
-                    <div className="w-24 border-t border-slate-400 mt-1"></div>
-                    <p className="text-[9px] text-slate-500 font-semibold mt-0.5">Registrar</p>
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Tamper-Proof QR
+                      </p>
+                      <p className="text-[10px] text-slate-400 max-w-[140px] leading-tight mt-0.5">
+                        Publicly verifiable credential
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-6 text-center text-xs">
+                    <div>
+                      <div className="font-display italic text-indigo-900 font-semibold text-sm">
+                        Dean of Academics
+                      </div>
+                      <div className="w-24 border-t border-slate-400 mt-1"></div>
+                      <p className="text-[9px] text-slate-500 font-semibold mt-0.5">Dean (Academics)</p>
+                    </div>
+                    <div>
+                      <div className="font-display italic text-indigo-900 font-semibold text-sm">
+                        Office of Registrar
+                      </div>
+                      <div className="w-24 border-t border-slate-400 mt-1"></div>
+                      <p className="text-[9px] text-slate-500 font-semibold mt-0.5">Registrar</p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Modal Actions Footer */}
-            <div className="mt-6 flex flex-wrap items-center justify-between gap-2">
+            {/* Modal Actions Footer (Pinned Footer) */}
+            <div className="p-4 sm:p-5 pt-3 border-t border-slate-100 bg-slate-50/80 shrink-0 flex flex-wrap items-center justify-between gap-2.5 z-10">
               <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
@@ -1210,14 +1248,14 @@ export const AdminCertificatesPage: React.FC = () => {
                     setViewingCert(null);
                     setQrCert(printCert);
                   }}
-                  className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5"
+                  className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <QrCode className="w-3.5 h-3.5" /> Fullscreen QR
                 </button>
                 <Link
                   to={`/verify/${viewingCert.verification_code}`}
                   target="_blank"
-                  className="px-3 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-xl transition-colors inline-flex items-center gap-1.5"
+                  className="px-3.5 py-2 text-xs font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
                 >
                   <ExternalLink className="w-3.5 h-3.5" /> Open Public Verifier
                 </Link>
@@ -1227,9 +1265,15 @@ export const AdminCertificatesPage: React.FC = () => {
                 <button
                   onClick={() => handleDownloadPdf(viewingCert)}
                   disabled={downloadingId === viewingCert.id}
-                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
                 >
                   <Download className="w-3.5 h-3.5" /> Download PDF
+                </button>
+                <button
+                  onClick={() => setViewingCert(null)}
+                  className="px-4 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors cursor-pointer"
+                >
+                  Close
                 </button>
               </div>
             </div>
@@ -1241,11 +1285,21 @@ export const AdminCertificatesPage: React.FC = () => {
       {/* MODAL 2: VERIFY QR MODAL (Requirements 4 & 5)                            */}
       {/* ========================================================================= */}
       {qrCert && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setQrCert(null);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full shadow-2xl border border-slate-200 my-auto max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            {/* Pinned Header */}
+            <div className="flex items-center justify-between p-5 pb-3.5 border-b border-slate-100 shrink-0 bg-white z-10">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0">
                   <QrCode className="w-4 h-4" />
                 </div>
                 <div>
@@ -1253,83 +1307,90 @@ export const AdminCertificatesPage: React.FC = () => {
                   <p className="text-[11px] text-slate-400">Scan using any mobile device camera</p>
                 </div>
               </div>
-              <button onClick={() => setQrCert(null)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setQrCert(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                title="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* High-Res QR Code */}
-            <div className="bg-slate-50 p-6 rounded-2xl border border-slate-200 text-center flex flex-col items-center justify-center">
-              <div className="p-3 bg-white rounded-2xl shadow-sm border border-slate-200">
-                <img
-                  src={`https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(
-                    `${window.location.origin}/verify/${qrCert.verification_code}`
-                  )}`}
-                  alt="QR Code Verification"
-                  className="w-44 h-44"
-                />
+            {/* Scrollable Body */}
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1 space-y-4">
+              {/* High-Res QR Code */}
+              <div className="bg-slate-50 p-5 rounded-2xl border border-slate-200 text-center flex flex-col items-center justify-center">
+                <div className="p-2.5 bg-white rounded-2xl shadow-sm border border-slate-200">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=170x170&data=${encodeURIComponent(
+                      `${window.location.origin}/verify/${qrCert.verification_code}`
+                    )}`}
+                    alt="QR Code Verification"
+                    className="w-36 h-36 sm:w-44 sm:h-44 object-contain"
+                  />
+                </div>
+                <p className="text-xs text-slate-600 font-medium mt-2.5">
+                  Scans directly to institutional verifier
+                </p>
               </div>
-              <p className="text-xs text-slate-600 font-medium mt-3">
-                Scans directly to institutional verifier
-              </p>
+
+              {/* Required QR Details (Requirement 5) */}
+              <div className="p-3.5 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2 text-xs">
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-slate-400">Certificate ID:</span>
+                  <span className="font-mono font-bold text-slate-900">{qrCert.certificate_number}</span>
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-slate-400">Student Name:</span>
+                  <span className="font-bold text-slate-900">{qrCert.student_name}</span>
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-slate-400">Register Number:</span>
+                  <span className="font-mono font-bold text-indigo-700">{qrCert.register_number}</span>
+                </div>
+                <div className="flex justify-between items-start gap-2">
+                  <span className="text-slate-400 shrink-0">Course / Dept:</span>
+                  <span className="font-medium text-slate-800 text-right truncate">
+                    {qrCert.course_name} ({qrCert.department_name})
+                  </span>
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-slate-400">Issue Date:</span>
+                  <span className="font-medium text-slate-800">
+                    {new Date(qrCert.issued_at).toLocaleDateString()}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-slate-400">Current Status:</span>
+                  {qrCert.is_valid ? (
+                    <span className="text-emerald-700 font-bold uppercase text-[10px] bg-emerald-100/70 px-2 py-0.5 rounded">
+                      Authentic & Valid
+                    </span>
+                  ) : (
+                    <span className="text-rose-700 font-bold uppercase text-[10px] bg-rose-100/70 px-2 py-0.5 rounded">
+                      Revoked
+                    </span>
+                  )}
+                </div>
+                <div className="flex justify-between items-center gap-2">
+                  <span className="text-slate-400">Issued By:</span>
+                  <span className="font-medium text-slate-800">{qrCert.issued_by_name || 'Administrator'}</span>
+                </div>
+              </div>
             </div>
 
-            {/* Required QR Details (Requirement 5) */}
-            <div className="mt-4 p-3.5 bg-slate-50/70 rounded-xl border border-slate-200 space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-slate-400">Certificate ID:</span>
-                <span className="font-mono font-bold text-slate-900">{qrCert.certificate_number}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Student Name:</span>
-                <span className="font-bold text-slate-900">{qrCert.student_name}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Register Number:</span>
-                <span className="font-mono font-bold text-indigo-700">{qrCert.register_number}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Course / Dept:</span>
-                <span className="font-medium text-slate-800 text-right max-w-[200px] truncate">
-                  {qrCert.course_name} ({qrCert.department_name})
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Issue Date:</span>
-                <span className="font-medium text-slate-800">
-                  {new Date(qrCert.issued_at).toLocaleDateString()}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Current Status:</span>
-                {qrCert.is_valid ? (
-                  <span className="text-emerald-700 font-bold uppercase text-[10px] bg-emerald-100/60 px-2 py-0.5 rounded">
-                    Authentic & Valid
-                  </span>
-                ) : (
-                  <span className="text-rose-700 font-bold uppercase text-[10px] bg-rose-100/60 px-2 py-0.5 rounded">
-                    Revoked
-                  </span>
-                )}
-              </div>
-              <div className="flex justify-between">
-                <span className="text-slate-400">Issued By:</span>
-                <span className="font-medium text-slate-800">{qrCert.issued_by_name || 'Administrator'}</span>
-              </div>
-            </div>
-
-            {/* Modal Link Button */}
-            <div className="mt-5 flex items-center justify-between gap-2">
+            {/* Pinned Action Buttons Footer */}
+            <div className="p-4 sm:p-5 pt-3 border-t border-slate-100 bg-slate-50/80 shrink-0 flex items-center justify-between gap-2.5 z-10">
               <Link
                 to={`/verify/${qrCert.verification_code}`}
                 target="_blank"
-                className="flex-1 py-2 text-center text-xs font-bold text-indigo-600 hover:bg-indigo-50 border border-indigo-200 rounded-xl transition-colors inline-flex items-center justify-center gap-1.5"
+                className="flex-1 py-2.5 text-center text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
               >
                 <ExternalLink className="w-3.5 h-3.5" /> Open Public Verifier
               </Link>
               <button
                 onClick={() => setQrCert(null)}
-                className="px-4 py-2 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition-colors"
+                className="px-5 py-2.5 text-xs font-bold text-white bg-slate-800 hover:bg-slate-900 rounded-xl transition-colors cursor-pointer shadow-xs"
               >
                 Close
               </button>
@@ -1342,8 +1403,17 @@ export const AdminCertificatesPage: React.FC = () => {
       {/* MODAL 3: REVOKE CERTIFICATE (Requirement 2 & 12 - Admin Only)            */}
       {/* ========================================================================= */}
       {revokingCert && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setRevokingCert(null);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 my-auto max-h-[calc(100vh-2rem)] overflow-y-auto animate-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
@@ -1354,7 +1424,11 @@ export const AdminCertificatesPage: React.FC = () => {
                   <p className="text-[11px] text-slate-400 font-mono">#{revokingCert.certificate_number}</p>
                 </div>
               </div>
-              <button onClick={() => setRevokingCert(null)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setRevokingCert(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                title="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1379,10 +1453,10 @@ export const AdminCertificatesPage: React.FC = () => {
               />
             </div>
 
-            <div className="flex items-center justify-end gap-2">
+            <div className="flex items-center justify-end gap-2 pt-2">
               <button
                 onClick={() => setRevokingCert(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors"
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition-colors cursor-pointer"
               >
                 Cancel
               </button>
@@ -1390,7 +1464,7 @@ export const AdminCertificatesPage: React.FC = () => {
                 id="btn-confirm-revoke"
                 onClick={confirmRevoke}
                 disabled={actionLoading || !revokeReason.trim()}
-                className="px-4 py-2 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 {actionLoading ? 'Revoking...' : 'Confirm Revocation'}
               </button>
@@ -1403,8 +1477,17 @@ export const AdminCertificatesPage: React.FC = () => {
       {/* MODAL 4: DELETE CERTIFICATE RECORD                                       */}
       {/* ========================================================================= */}
       {deletingCert && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setDeletingCert(null);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+        >
+          <div
+            className="bg-white rounded-3xl max-w-md w-full p-6 shadow-xl border border-slate-200 my-auto max-h-[calc(100vh-2rem)] overflow-y-auto animate-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
             <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
               <div className="flex items-center gap-2">
                 <div className="w-9 h-9 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
@@ -1415,7 +1498,11 @@ export const AdminCertificatesPage: React.FC = () => {
                   <p className="text-[11px] text-slate-400 font-mono">#{deletingCert.certificate_number}</p>
                 </div>
               </div>
-              <button onClick={() => setDeletingCert(null)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setDeletingCert(null)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                title="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -1429,7 +1516,7 @@ export const AdminCertificatesPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setDeletingCert(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
@@ -1437,7 +1524,7 @@ export const AdminCertificatesPage: React.FC = () => {
                 id="btn-confirm-delete"
                 onClick={confirmDelete}
                 disabled={actionLoading}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors disabled:opacity-50"
+                className="px-4 py-2.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors disabled:opacity-50 cursor-pointer shadow-xs"
               >
                 {actionLoading ? 'Deleting...' : 'Delete Record'}
               </button>
@@ -1450,64 +1537,79 @@ export const AdminCertificatesPage: React.FC = () => {
       {/* MODAL 5: QUICK ISSUE CERTIFICATE (Eligible Approved Student Requests)   */}
       {/* ========================================================================= */}
       {showIssueModal && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200">
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 mb-4">
+        <div
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowIssueModal(false);
+          }}
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto animate-in fade-in duration-150"
+        >
+          <div
+            className="bg-white rounded-3xl max-w-xl w-full shadow-2xl border border-slate-200 my-auto max-h-[calc(100vh-2rem)] flex flex-col overflow-hidden animate-in zoom-in-95 duration-150"
+            role="dialog"
+            aria-modal="true"
+          >
+            <div className="flex items-center justify-between p-5 sm:p-6 pb-3.5 border-b border-slate-100 shrink-0 bg-white z-10">
               <div>
                 <h4 className="font-bold text-slate-900 text-base">Issue New Certificate</h4>
                 <p className="text-xs text-slate-500">
                   Select an eligible clearance request where all departments have signed off
                 </p>
               </div>
-              <button onClick={() => setShowIssueModal(false)} className="text-slate-400 hover:text-slate-600">
+              <button
+                onClick={() => setShowIssueModal(false)}
+                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+                title="Close"
+              >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            {loadingRequests ? (
-              <div className="py-12 text-center text-xs text-slate-400">
-                Checking pending clearance requests...
-              </div>
-            ) : eligibleRequests.length === 0 ? (
-              <div className="py-12 text-center text-xs text-slate-500 space-y-2">
-                <Award className="w-10 h-10 text-slate-300 mx-auto" />
-                <p className="font-bold text-slate-800">No Eligible Requests Pending Issuance</p>
-                <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                  Certificates can only be issued once all departmental clearance officers approve the student's request.
-                </p>
-              </div>
-            ) : (
-              <div className="max-h-80 overflow-y-auto divide-y divide-slate-100">
-                {eligibleRequests.map((req) => (
-                  <div key={req.id} className="py-3 flex items-center justify-between gap-3">
-                    <div>
-                      <p className="font-bold text-slate-900 text-xs">{req.student_name}</p>
-                      <div className="flex items-center gap-2 mt-0.5 text-[11px]">
-                        <span className="font-mono text-indigo-700 font-semibold">{req.student_reg_no}</span>
-                        <span className="text-slate-400">•</span>
-                        <span className="text-slate-600">{req.department_name}</span>
+            <div className="p-5 sm:p-6 overflow-y-auto flex-1">
+              {loadingRequests ? (
+                <div className="py-12 text-center text-xs text-slate-400">
+                  Checking pending clearance requests...
+                </div>
+              ) : eligibleRequests.length === 0 ? (
+                <div className="py-12 text-center text-xs text-slate-500 space-y-2">
+                  <Award className="w-10 h-10 text-slate-300 mx-auto" />
+                  <p className="font-bold text-slate-800">No Eligible Requests Pending Issuance</p>
+                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                    Certificates can only be issued once all departmental clearance officers approve the student's request.
+                  </p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {eligibleRequests.map((req) => (
+                    <div key={req.id} className="py-3 flex items-center justify-between gap-3">
+                      <div>
+                        <p className="font-bold text-slate-900 text-xs">{req.student_name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 text-[11px]">
+                          <span className="font-mono text-indigo-700 font-semibold">{req.student_reg_no}</span>
+                          <span className="text-slate-400">•</span>
+                          <span className="text-slate-600">{req.department_name}</span>
+                        </div>
+                        <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded">
+                          All Department Approvals Complete
+                        </span>
                       </div>
-                      <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded">
-                        All Department Approvals Complete
-                      </span>
+
+                      <button
+                        onClick={() => handleDirectIssue(req.id)}
+                        disabled={issuingRequestId === req.id}
+                        className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shrink-0 disabled:opacity-50 cursor-pointer shadow-xs"
+                      >
+                        {issuingRequestId === req.id ? 'Minting...' : 'Issue Certificate'}
+                      </button>
                     </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-                    <button
-                      onClick={() => handleDirectIssue(req.id)}
-                      disabled={issuingRequestId === req.id}
-                      className="px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition-colors shrink-0 disabled:opacity-50"
-                    >
-                      {issuingRequestId === req.id ? 'Minting...' : 'Issue Certificate'}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div className="mt-5 pt-3 border-t border-slate-100 flex justify-end">
+            <div className="p-4 sm:p-5 pt-3 border-t border-slate-100 bg-slate-50/80 shrink-0 flex justify-end">
               <button
                 onClick={() => setShowIssueModal(false)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-200 bg-white border border-slate-200 rounded-xl cursor-pointer"
               >
                 Close
               </button>
