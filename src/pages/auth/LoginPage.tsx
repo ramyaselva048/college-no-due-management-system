@@ -109,7 +109,7 @@ export const LoginPage: React.FC = () => {
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              Staff
+              Staff & Officer
             </button>
             <button
               type="button"

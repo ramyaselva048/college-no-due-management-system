@@ -159,9 +159,6 @@ export const LandingPage: React.FC = () => {
                 >
                   Student Login
                 </Link>
-                <p className="text-[11px] text-slate-400 text-center">
-                  Login with Register Number or College Email
-                </p>
               </div>
             </div>
 
@@ -195,7 +192,7 @@ export const LandingPage: React.FC = () => {
                   to="/login?role=staff"
                   className="w-full text-center px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors"
                 >
-                  Staff Sign In
+                  Staff and Officer Sign In
                 </Link>
               </div>
             </div>
