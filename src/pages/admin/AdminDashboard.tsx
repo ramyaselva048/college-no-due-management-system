@@ -238,7 +238,7 @@ export const AdminDashboard: React.FC = () => {
             <Building2 className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-semibold block">Departments</span>
+            <span className="text-[11px] text-slate-400 font-semibold block">Departments & Courses</span>
             <span className="font-display font-bold text-base text-slate-900">{stats.total_departments}</span>
           </div>
         </Link>

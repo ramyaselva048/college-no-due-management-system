@@ -9,6 +9,13 @@ export const LoginPage: React.FC = () => {
   const initialRole = (searchParams.get('role')?.toUpperCase() as UserRole) || 'STUDENT';
 
   const [activeRole, setActiveRole] = useState<UserRole>(initialRole);
+
+  useEffect(() => {
+    const roleParam = searchParams.get('role')?.toUpperCase() as UserRole;
+    if (roleParam && ['STUDENT', 'STAFF', 'ADMIN'].includes(roleParam)) {
+      setActiveRole(roleParam);
+    }
+  }, [searchParams]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);

@@ -25,7 +25,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, re
   }
 
   if (!user) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    const rolesList = (allowedRoles || requiredRoles || []).map((r) => String(r).toUpperCase());
+    const targetRole = rolesList.includes('ADMIN') ? 'admin' : rolesList.includes('STAFF') ? 'staff' : 'student';
+    return <Navigate to={`/login?role=${targetRole}`} state={{ from: location }} replace />;
   }
 
   const checkRoles = (allowedRoles || requiredRoles || []).map((r) => String(r).toUpperCase());

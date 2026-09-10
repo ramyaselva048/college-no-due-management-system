@@ -24,10 +24,10 @@ const processQueue = (error: any, token: string | null = null) => {
   failedQueue = [];
 };
 
-// Request Interceptor: Attach Access Token (localStorage, fallback to sessionStorage)
+// Request Interceptor: Attach Access Token from active sessionStorage only
 api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    const token = sessionStorage.getItem('token');
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -62,7 +62,7 @@ api.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
+      const refreshToken = sessionStorage.getItem('refreshToken');
       const isPublicOrAuthMe =
         originalRequest.url?.includes('/auth/me') ||
         window.location.pathname === '/' ||
@@ -73,9 +73,11 @@ api.interceptors.response.use(
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+        } catch {}
         if (!isPublicOrAuthMe) {
           window.location.href = '/login';
         }
@@ -90,10 +92,8 @@ api.interceptors.response.use(
         const newAccessToken = res.data.access_token;
         const newRefreshToken = res.data.refresh_token;
 
-        localStorage.setItem('token', newAccessToken);
         sessionStorage.setItem('token', newAccessToken);
         if (newRefreshToken) {
-          localStorage.setItem('refreshToken', newRefreshToken);
           sessionStorage.setItem('refreshToken', newRefreshToken);
         }
 
@@ -107,9 +107,11 @@ api.interceptors.response.use(
         sessionStorage.removeItem('token');
         sessionStorage.removeItem('refreshToken');
         sessionStorage.removeItem('user');
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+        } catch {}
         if (!isPublicOrAuthMe) {
           window.location.href = '/login';
         }

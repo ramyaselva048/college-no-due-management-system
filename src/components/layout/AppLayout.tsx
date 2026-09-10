@@ -61,7 +61,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       { label: 'All Students', href: '/admin/students', icon: Users },
       { label: 'Institutional Dues', href: '/admin/dues', icon: Receipt },
       { label: 'Staff & Officers', href: '/admin/staff', icon: UserCheck },
-      { label: 'Departments', href: '/admin/departments', icon: Building2 },
+      { label: 'Departments & Courses', href: '/admin/departments', icon: Building2 },
       { label: 'Courses & Programs', href: '/admin/courses', icon: BookOpen },
       { label: 'Certificates Ledger', href: '/admin/certificates', icon: Award },
       { label: 'Audit Trail', href: '/admin/audit-logs', icon: History },

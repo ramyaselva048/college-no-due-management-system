@@ -1,6 +1,6 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, DueCategoryRecord, CertificateRecord } from './db';
+import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, deleteRecordFromPostgres, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, DueCategoryRecord, CertificateRecord } from './db';
 import { generateCertificatePdf } from './pdf';
 
 export const apiRouter = Router();
@@ -868,6 +868,8 @@ apiRouter.delete('/due-records/:id', authMiddleware, requireRole(['STAFF', 'ADMI
   }
 
   db.dueRecords.splice(idx, 1);
+  deleteRecordFromPostgres('due_records', id).catch(() => {});
+  db.saveToFile();
   db.logAudit(req.user!.id, req.user!.email, 'DUE_DELETED', 'DUE_RECORD', id, null, null, getClientIp(req));
   res.json({ message: 'Due record deleted successfully' });
 });
@@ -2059,6 +2061,8 @@ apiRouter.delete('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), 
   db.notifications = db.notifications.filter(n => n.user_id !== userId);
   db.users = db.users.filter(u => u.id !== userId);
   db.students.splice(stIndex, 1);
+  deleteRecordFromPostgres('students', id).catch(() => {});
+  if (userId) deleteRecordFromPostgres('users', userId).catch(() => {});
   db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'STUDENT_DELETED', 'STUDENT', id, null, { student: st.full_name, reg_no: st.register_number }, getClientIp(req));
@@ -2327,6 +2331,9 @@ apiRouter.delete('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (re
 
   db.users = db.users.filter(u => u.id !== userId);
   db.staff.splice(stIndex, 1);
+  deleteRecordFromPostgres('staff', id).catch(() => {});
+  if (userId) deleteRecordFromPostgres('users', userId).catch(() => {});
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'STAFF_DELETED', 'STAFF', id, null, { staff: st.full_name, emp_id: st.employee_id }, getClientIp(req));
 
@@ -2408,6 +2415,8 @@ apiRouter.delete('/admin/departments/:id', authMiddleware, requireRole(['ADMIN']
 
   const dept = db.departments[deptIdx];
   db.departments.splice(deptIdx, 1);
+  deleteRecordFromPostgres('departments', id).catch(() => {});
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'DEPARTMENT_DELETED', 'DEPARTMENT', id, null, { department: dept.name, code: dept.code }, getClientIp(req));
   res.json({ message: 'Department deleted successfully', id });
@@ -2504,6 +2513,8 @@ apiRouter.delete('/admin/courses/:id', authMiddleware, requireRole(['ADMIN']), (
 
   const c = db.courses[idx];
   db.courses.splice(idx, 1);
+  deleteRecordFromPostgres('courses', id).catch(() => {});
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { course: c.name, code: c.code }, getClientIp(req));
   res.json({ message: 'Course deleted successfully', id });
@@ -2561,6 +2572,8 @@ apiRouter.delete('/admin/due-categories/:id', authMiddleware, requireRole(['ADMI
 
   const cat = db.dueCategories[idx];
   db.dueCategories.splice(idx, 1);
+  deleteRecordFromPostgres('due_categories', id).catch(() => {});
+  db.saveToFile();
 
   db.logAudit(req.user!.id, req.user!.email, 'DUE_CATEGORY_DELETED', 'DUE_CATEGORY', id, null, { category: cat.name, code: cat.code }, getClientIp(req));
   res.json({ message: 'Due category deleted successfully', id });

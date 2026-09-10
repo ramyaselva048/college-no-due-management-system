@@ -248,13 +248,10 @@ class InMemoryDatabase {
     const loaded = this.loadFromFile();
     if (loaded) {
       this.ensureAdminsExist();
-      this.ensureInstitutionalStudents();
-      this.removeDemoData();
       this.deduplicateAll();
       this.saveToFile();
     } else {
       this.seedClean();
-      this.ensureInstitutionalStudents();
       this.saveToFile();
     }
 
@@ -274,10 +271,8 @@ class InMemoryDatabase {
       if (ok) {
         this.isPgConnected = true;
         await this.loadFromPostgres();
-        // Keep institutional admin & students guaranteed
+        // Keep institutional admin guaranteed
         this.ensureAdminsExist();
-        this.ensureInstitutionalStudents();
-        this.removeDemoData();
         this.deduplicateAll();
         // Sync current state to PostgreSQL to ensure complete parity
         await this.syncToPostgres();
@@ -467,97 +462,11 @@ class InMemoryDatabase {
 
 
   ensureInstitutionalStudents() {
-    // Institutional student records that must never be lost across restarts or re-logins
-    const coreStudents = [
-      {
-        register_number: '732423104036',
-        full_name: 'Ramya S',
-        email: 'ramyacse2327@sasurie.com',
-        phone: '+918825641424',
-        dept_code: 'CSE',
-        course_code: 'BE_CSE',
-        year: 1,
-        section: 'A',
-        admission_year: 2026,
-        password: 'RamyaSasurie@123'
-      },
-      {
-        register_number: '732921104001',
-        full_name: 'Aravindhan R',
-        email: 'aravindh@sasurie.edu',
-        phone: '+91 98450 11223',
-        dept_code: 'CSE',
-        course_code: 'BE_CSE',
-        year: 4,
-        section: 'A',
-        admission_year: 2021,
-        password: 'StudentPassword@123'
-      }
-    ];
+    // Zero demo students. Only real students entered by admin/staff will exist in database.
+  }
 
-    const now = new Date().toISOString();
-    for (const cs of coreStudents) {
-      let st = this.students.find(
-        s => s.register_number?.toUpperCase() === cs.register_number.toUpperCase() ||
-             s.email?.toLowerCase() === cs.email.toLowerCase()
-      );
-
-      const dept = this.departments.find(d => d.code === cs.dept_code) || this.departments[0];
-      const course = this.courses.find(c => c.code === cs.course_code) || this.courses[0];
-
-      if (!st) {
-        const nextUserId = Math.max(0, ...this.users.map(u => u.id)) + 1;
-        const newUser: UserRecord = {
-          id: nextUserId,
-          email: cs.email.toLowerCase(),
-          password_hash: hashPassword(cs.password),
-          role: 'STUDENT',
-          is_active: true,
-          is_registered: true,
-          created_at: now
-        };
-        this.users.push(newUser);
-
-        const nextStudentId = Math.max(0, ...this.students.map(s => s.id)) + 1;
-        st = {
-          id: nextStudentId,
-          user_id: newUser.id,
-          register_number: cs.register_number,
-          full_name: cs.full_name,
-          email: cs.email.toLowerCase(),
-          phone: cs.phone,
-          department_id: dept ? dept.id : 1,
-          course_id: course ? course.id : 1,
-          year: cs.year,
-          section: cs.section,
-          admission_year: cs.admission_year,
-          created_at: now
-        };
-        this.students.push(st);
-      } else {
-        // Ensure student has active user login
-        let user = this.users.find(u => u.id === st!.user_id || u.email.toLowerCase() === st!.email.toLowerCase());
-        if (!user) {
-          const nextUserId = Math.max(0, ...this.users.map(u => u.id)) + 1;
-          user = {
-            id: nextUserId,
-            email: st.email.toLowerCase(),
-            password_hash: hashPassword(cs.password),
-            role: 'STUDENT',
-            is_active: true,
-            is_registered: true,
-            created_at: now
-          };
-          this.users.push(user);
-          st.user_id = user.id;
-        } else {
-          user.role = 'STUDENT';
-          user.is_active = true;
-          user.is_registered = true;
-          user.password_hash = hashPassword(cs.password);
-        }
-      }
-    }
+  removeDemoData() {
+    // Zero demo data
   }
 
   ensureAdminsExist() {
@@ -584,39 +493,6 @@ class InMemoryDatabase {
         });
       }
     }
-  }
-
-  removeDemoData() {
-    // 1. Purge demo student 2022BCSE042 / student@college.edu / Aditya Sharma
-    const demoStudentIds = this.students
-      .filter(s =>
-        s.register_number?.toUpperCase() === '2022BCSE042' ||
-        s.email?.toLowerCase() === 'student@college.edu' ||
-        s.full_name?.toLowerCase().includes('aditya sharma')
-      )
-      .map(s => s.id);
-
-    if (demoStudentIds.length > 0) {
-      this.students = this.students.filter(s => !demoStudentIds.includes(s.id));
-      this.dueRecords = this.dueRecords.filter(d => !demoStudentIds.includes(d.student_id));
-      this.duePayments = this.duePayments.filter(p => !demoStudentIds.includes(p.student_id));
-      this.noDueRequests = this.noDueRequests.filter(r => !demoStudentIds.includes(r.student_id));
-      this.certificates = this.certificates.filter(c => !demoStudentIds.includes(c.student_id));
-    }
-
-    // Purge fake student user
-    this.users = this.users.filter(u => u.email.toLowerCase() !== 'student@college.edu');
-
-    // Purge fake dues
-    this.dueRecords = this.dueRecords.filter(d =>
-      !d.description?.toLowerCase().includes('operating systems concepts') &&
-      !d.description?.toLowerCase().includes('semester 8 exam form')
-    );
-
-    // Purge fake notifications
-    this.notifications = this.notifications.filter(n =>
-      !n.title?.toLowerCase().includes('welcome to no due portal')
-    );
   }
 
   deduplicateAll() {
@@ -785,228 +661,28 @@ class InMemoryDatabase {
       notifications: 1,
       auditLogs: 1,
     };
-    this.seedClean();
     this.ensureAdminsExist();
-    this.ensureInstitutionalStudents();
     this.deduplicateAll();
     this.saveToFile();
     return {
-      message: 'System reset to clean institutional state with baseline departments, courses, staff, and enrolled students.'
+      message: 'System reset to clean state with zero demo data. Ready for fresh configuration.'
     };
   }
 
   seedClean() {
-    const now = new Date().toISOString();
-
-    // 1. Comprehensive Engineering Departments & Institutional Clearance Units
-    const deptData = [
-      { name: 'Central Library', code: 'LIB', description: 'Library book returns, journal access, and fine clearance.' },
-      { name: 'Accounts & Finance', code: 'ACC', description: 'Tuition, examination fees, library deposits, and scholarship audits.' },
-      { name: 'Computer Science Laboratory', code: 'CSL', description: 'Lab equipment, computer hardware, robotics kits, and apparatus check.' },
-      { name: 'Department of Computer Science & Engineering', code: 'CSE', description: 'Departmental project clearances, symposium dues, and seminar records.' },
-      { name: 'Department of Information Technology', code: 'IT', description: 'IT departmental laboratory, project submissions, and symposium clearances.' },
-      { name: 'Department of Artificial Intelligence & Data Science', code: 'AIDS', description: 'AI & Data Science lab components, projects, and departmental records.' },
-      { name: 'Department of Electronics & Communication Engineering', code: 'ECE', description: 'ECE microelectronics, signal lab, and project approvals.' },
-      { name: 'Department of Electrical & Electronics Engineering', code: 'EEE', description: 'EEE machines lab, power electronics hardware, and project clearances.' },
-      { name: 'Department of Mechanical Engineering', code: 'MECH', description: 'Workshop, CAD lab, manufacturing tools, and machinery clearances.' },
-      { name: 'Department of Civil Engineering', code: 'CIVIL', description: 'Surveying lab, structural testing equipment, and civil project returns.' },
-      { name: 'Department of Biomedical Engineering', code: 'BME', description: 'Biomedical instrumentation, sensor kits, and lab clearance.' },
-      { name: 'Department of Mechatronics Engineering', code: 'MTE', description: 'Robotics automation, hydraulics, pneumatics, and embedded kits.' },
-      { name: 'Department of Automobile Engineering', code: 'AUTO', description: 'Automotive chassis lab, engine testing equipment, and fabrication dues.' },
-      { name: 'Department of Chemical Engineering', code: 'CHEM', description: 'Chemical reaction engineering lab, process instrumentation, and glassware dues.' },
-      { name: 'Department of Biotechnology', code: 'BIO', description: 'Bioprocess lab, molecular biology kits, and culture room clearances.' },
-      { name: 'Department of Science & Humanities', code: 'S&H', description: 'Physics, Chemistry, and English communication language lab clearances.' },
-      { name: 'Department of Management Studies', code: 'MBA', description: 'MBA case study library, corporate projects, and departmental dues.' },
-      { name: 'Department of Computer Applications', code: 'MCA', description: 'MCA software project repositories, lab stations, and seminar dues.' },
-      { name: 'Hostel & Student Housing', code: 'HST', description: 'Room inventory, mess bill dues, electricity meters, and caution return.' },
-      { name: 'Transport Services', code: 'TRN', description: 'College bus pass, parking tags, and transport clearance.' },
-      { name: 'Sports & Physical Education', code: 'SPT', description: 'Sports kit, tournament gear, gym membership, and athletics return.' },
-      { name: 'Training & Placement Cell', code: 'TPO', description: 'Placement training fee, company drive clearance, and offer verification.' },
-      { name: 'Office of Controller of Examinations', code: 'COE', description: 'Grade sheet dues, exam hall clearance, and graduation approvals.' },
-      { name: 'NSS, Red Cross & Student Welfare', code: 'NSS', description: 'Student club inventory, community project dues, and welfare approvals.' }
-    ];
-
-    deptData.forEach(d => {
-      this.departments.push({
-        id: this.nextId.departments++,
-        name: d.name,
-        code: d.code,
-        description: d.description,
-        is_active: true,
-        created_at: now
-      });
-    });
-
-    // 2. Comprehensive Engineering Courses & Degrees
-    const getDeptId = (code: string) => {
-      const d = this.departments.find(dept => dept.code === code);
-      return d ? d.id : (this.departments.find(dept => dept.code === 'CSE')?.id || 1);
-    };
-
-    const coursesData = [
-      { name: 'B.E. Computer Science and Engineering', code: 'BE_CSE', dept_code: 'CSE', duration: 4 },
-      { name: 'B.Tech Artificial Intelligence and Data Science', code: 'BTECH_AIDS', dept_code: 'AIDS', duration: 4 },
-      { name: 'B.Tech Information Technology', code: 'BTECH_IT', dept_code: 'IT', duration: 4 },
-      { name: 'B.Tech Artificial Intelligence and Machine Learning', code: 'BTECH_AIML', dept_code: 'AIDS', duration: 4 },
-      { name: 'B.Tech Cyber Security', code: 'BTECH_CS', dept_code: 'CSE', duration: 4 },
-      { name: 'B.Tech Computer Science and Business Systems', code: 'BTECH_CSBS', dept_code: 'CSE', duration: 4 },
-      { name: 'B.E. Electronics and Communication Engineering', code: 'BE_ECE', dept_code: 'ECE', duration: 4 },
-      { name: 'B.E. Electrical and Electronics Engineering', code: 'BE_EEE', dept_code: 'EEE', duration: 4 },
-      { name: 'B.E. Mechanical Engineering', code: 'BE_MECH', dept_code: 'MECH', duration: 4 },
-      { name: 'B.E. Civil Engineering', code: 'BE_CIVIL', dept_code: 'CIVIL', duration: 4 },
-      { name: 'B.E. Mechatronics Engineering', code: 'BE_MTE', dept_code: 'MECH', duration: 4 },
-      { name: 'B.E. Biomedical Engineering', code: 'BE_BME', dept_code: 'BME', duration: 4 },
-      { name: 'B.E. Automobile Engineering', code: 'BE_AUTO', dept_code: 'MECH', duration: 4 },
-      { name: 'B.Tech Chemical Engineering', code: 'BTECH_CHEM', dept_code: 'CSE', duration: 4 },
-      { name: 'B.Tech Biotechnology', code: 'BTECH_BIO', dept_code: 'BME', duration: 4 },
-      { name: 'M.E. Computer Science and Engineering', code: 'ME_CSE', dept_code: 'CSE', duration: 2 },
-      { name: 'M.E. VLSI Design', code: 'ME_VLSI', dept_code: 'ECE', duration: 2 },
-      { name: 'M.E. Embedded System Technologies', code: 'ME_EST', dept_code: 'ECE', duration: 2 },
-      { name: 'M.E. Power Electronics and Drives', code: 'ME_PED', dept_code: 'EEE', duration: 2 },
-      { name: 'M.E. Structural Engineering', code: 'ME_STR', dept_code: 'CIVIL', duration: 2 },
-      { name: 'M.E. CAD / CAM', code: 'ME_CAD', dept_code: 'MECH', duration: 2 },
-      { name: 'M.Tech Data Science', code: 'MTECH_DS', dept_code: 'AIDS', duration: 2 },
-      { name: 'Master of Business Administration (MBA)', code: 'MBA', dept_code: 'MBA', duration: 2 },
-      { name: 'Master of Computer Applications (MCA)', code: 'MCA', dept_code: 'MCA', duration: 2 }
-    ];
-
-    coursesData.forEach(c => {
-      this.courses.push({
-        id: this.nextId.courses++,
-        name: c.name,
-        code: c.code,
-        department_id: getDeptId(c.dept_code),
-        duration: c.duration,
-        is_active: true,
-        created_at: now
-      });
-    });
-
-    // 3. Due Categories
-    const catData = [
-      { name: 'Library Book Overdue Fine', code: 'LIB_BOOK', description: 'Late book return fine per library regulations.' },
-      { name: 'Tuition & Term Fee', code: 'FEE_TUITION', description: 'Pending semester tuition or registration fee.' },
-      { name: 'Laboratory Equipment Replacement', code: 'LAB_EQUIP', description: 'Damaged or unreturned lab components.' },
-      { name: 'Hostel Mess Dues', code: 'HST_MESS', description: 'Unpaid monthly mess bill balance.' },
-      { name: 'Transport Pass Renewal', code: 'TRN_PASS', description: 'Bus pass semester balance.' },
-      { name: 'Sports Uniform & Gear', code: 'SPT_GEAR', description: 'College sports jersey or gear unreturned.' },
-      { name: 'Department Association Dues', code: 'DEPT_ASSOC', description: 'Student symposium or technical chapter dues.' }
-    ];
-
-    catData.forEach(cat => {
-      this.dueCategories.push({
-        id: this.nextId.dueCategories++,
-        name: cat.name,
-        code: cat.code,
-        description: cat.description,
-        is_active: true,
-        created_at: now
-      });
-    });
-
-    // 4. Administrator Account - Strictly only ONE institutional admin
-    const adminAccounts = [
-      { email: 'ramya@sasurie.edu', pass: 'RamyaSasurie@123' }
-    ];
-
-    adminAccounts.forEach(acc => {
-      this.users.push({
-        id: this.nextId.users++,
-        email: acc.email,
-        password_hash: hashPassword(acc.pass),
-        role: 'ADMIN',
-        is_active: true,
-        created_at: now
-      });
-    });
-
-    // 5. Staff Users (Official Departmental Clearance Officers)
-    const seedStaffMembers = [
-      {
-        email: 'staff.library@college.edu',
-        emp_id: 'EMP-LIB-101',
-        name: 'Prof. Rajesh Kumar',
-        phone: '+91 98765 43210',
-        dept_code: 'LIB',
-        designation: 'Chief Librarian & Clearance Officer'
-      },
-      {
-        email: 'staff.cse@college.edu',
-        emp_id: 'EMP-CSE-201',
-        name: 'Dr. Ananya Sundaram',
-        phone: '+91 98401 22334',
-        dept_code: 'CSE',
-        designation: 'HOD & Departmental Clearance Incharge'
-      },
-      {
-        email: 'staff.accounts@college.edu',
-        emp_id: 'EMP-ACC-301',
-        name: 'Mr. K. Murugesan',
-        phone: '+91 94432 55667',
-        dept_code: 'ACC',
-        designation: 'Senior Accounts Superintendent'
-      },
-      {
-        email: 'staff.hostel@college.edu',
-        emp_id: 'EMP-HST-401',
-        name: 'Prof. Vigneshwaran',
-        phone: '+91 97890 11223',
-        dept_code: 'HST',
-        designation: 'Chief Hostel Warden'
-      },
-      {
-        email: 'staff.lab@college.edu',
-        emp_id: 'EMP-CSL-501',
-        name: 'Er. S. Prakash',
-        phone: '+91 99420 33445',
-        dept_code: 'CSL',
-        designation: 'Central Computing Systems Administrator'
-      }
-    ];
-
-    seedStaffMembers.forEach(sm => {
-      const dept = this.departments.find(d => d.code === sm.dept_code) || this.departments[0];
-      const sUser: UserRecord = {
-        id: this.nextId.users++,
-        email: sm.email,
-        password_hash: hashPassword('StaffPassword@123'),
-        role: 'STAFF',
-        is_active: true,
-        created_at: now
-      };
-      this.users.push(sUser);
-
-      this.staff.push({
-        id: this.nextId.staff++,
-        user_id: sUser.id,
-        employee_id: sm.emp_id,
-        full_name: sm.name,
-        email: sm.email,
-        phone: sm.phone,
-        department_id: dept.id,
-        designation: sm.designation,
-        created_at: now
-      });
-    });
-
-    // NOTE: ZERO FAKE DEMO STUDENTS!
-    // Students and dues are only created when real administrator or staff enters them.
+    this.departments = [];
+    this.courses = [];
+    this.dueCategories = [];
     this.students = [];
+    this.staff = [];
     this.dueRecords = [];
+    this.duePayments = [];
+    this.noDueRequests = [];
+    this.noDueApprovals = [];
+    this.certificates = [];
     this.notifications = [];
-
-    // Initial Audit Log
-    this.auditLogs.push({
-      id: this.nextId.auditLogs++,
-      user_id: 1,
-      user_email: 'ramya@sasurie.edu',
-      action: 'SYSTEM_INITIALIZED',
-      entity_type: 'SYSTEM',
-      entity_id: 1,
-      new_values: { message: 'College No Due System initialized with clean institutional datasets' },
-      ip_address: '127.0.0.1',
-      created_at: now
-    });
+    this.auditLogs = [];
+    this.ensureAdminsExist();
   }
 
   logAudit(userId?: number, userEmail?: string, action?: string, entityType?: string, entityId?: number, oldValues?: any, newValues?: any, ip = '127.0.0.1') {

@@ -25,8 +25,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState<boolean>(true);
 
   const fetchCurrentUser = async () => {
-    // Check localStorage first, fallback to sessionStorage
-    const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+    // Clear any residual tokens from localStorage to prevent automatic background logins across sessions
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+    } catch {}
+
+    // Only read token from the active browser tab sessionStorage
+    const token = sessionStorage.getItem('token');
 
     if (!token) {
       setUser(null);
@@ -45,7 +52,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setStudentProfile(data.student_profile || (userObj.role === 'STUDENT' ? (data as any) : null));
       setStaffProfile(data.staff_profile || (userObj.role === 'STAFF' ? (data as any) : null));
 
-      localStorage.setItem('user', JSON.stringify(userObj));
       sessionStorage.setItem('user', JSON.stringify(userObj));
     } catch (err: any) {
       if (err?.response?.status !== 401) {
@@ -54,9 +60,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('refreshToken');
       sessionStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
       setUser(null);
       setStudentProfile(null);
       setStaffProfile(null);
@@ -73,15 +76,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await api.post('/auth/login', { email, password, role });
     const { access_token, refresh_token, user: loggedUser } = res.data;
 
-    // Persist securely in both localStorage and sessionStorage for full cross-tab and reload stability
-    localStorage.setItem('token', access_token);
+    // Securely persist ONLY in sessionStorage for the active session (closing the browser/tab requires fresh login)
     sessionStorage.setItem('token', access_token);
     if (refresh_token) {
-      localStorage.setItem('refreshToken', refresh_token);
       sessionStorage.setItem('refreshToken', refresh_token);
     }
-    localStorage.setItem('user', JSON.stringify(loggedUser));
     sessionStorage.setItem('user', JSON.stringify(loggedUser));
+
+    // Clear localStorage to prevent any persistent direct auto-login
+    try {
+      localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+    } catch {}
 
     setUser(loggedUser);
     await fetchCurrentUser();
@@ -92,9 +99,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const res = await api.post('/auth/signup', payload);
     const { access_token, refresh_token, user: newUser } = res.data;
 
-    localStorage.setItem('token', access_token);
-    localStorage.setItem('refreshToken', refresh_token);
-    localStorage.setItem('user', JSON.stringify(newUser));
+    sessionStorage.setItem('token', access_token);
+    if (refresh_token) {
+      sessionStorage.setItem('refreshToken', refresh_token);
+    }
+    sessionStorage.setItem('user', JSON.stringify(newUser));
 
     setUser(newUser);
     await fetchCurrentUser();
@@ -102,7 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    const refreshToken = sessionStorage.getItem('refreshToken') || localStorage.getItem('refreshToken');
+    const refreshToken = sessionStorage.getItem('refreshToken');
     try {
       if (refreshToken) {
         await api.post('/auth/logout', { refresh_token: refreshToken });
@@ -113,9 +122,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       sessionStorage.removeItem('token');
       sessionStorage.removeItem('refreshToken');
       sessionStorage.removeItem('user');
-      localStorage.removeItem('token');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('user');
+      try {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+      } catch {}
       setUser(null);
       setStudentProfile(null);
       setStaffProfile(null);
