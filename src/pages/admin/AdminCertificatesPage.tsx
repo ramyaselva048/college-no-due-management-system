@@ -560,21 +560,38 @@ export const AdminCertificatesPage: React.FC = () => {
                 ))}
               </div>
 
-              {/* Department Dropdown */}
+              {/* Department Filter (Type Option) */}
               <div className="relative">
-                <select
-                  id="filter-department-select"
-                  value={selectedDeptId}
-                  onChange={(e) => setSelectedDeptId(e.target.value)}
-                  className="text-xs px-3 py-1.5 pr-8 border border-slate-200 rounded-xl bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                >
-                  <option value="ALL">All Departments</option>
+                <input
+                  id="filter-department-input"
+                  type="text"
+                  list="filter-departments-datalist"
+                  placeholder="Type department..."
+                  value={selectedDeptId === 'ALL' ? '' : (departments.find((d) => String(d.id) === selectedDeptId)?.name || selectedDeptId)}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (!val || val.toLowerCase() === 'all' || val.toLowerCase() === 'all departments') {
+                      setSelectedDeptId('ALL');
+                    } else {
+                      const matched = departments.find(
+                        (d) =>
+                          d.name.toLowerCase().includes(val.toLowerCase()) ||
+                          (d.code && d.code.toLowerCase().includes(val.toLowerCase())) ||
+                          String(d.id) === val
+                      );
+                      setSelectedDeptId(matched ? String(matched.id) : val);
+                    }
+                  }}
+                  className="text-xs px-3 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 w-40"
+                />
+                <datalist id="filter-departments-datalist">
+                  <option value="All Departments" />
                   {departments.map((d) => (
-                    <option key={d.id} value={d.id}>
-                      {d.name}
+                    <option key={d.id} value={d.name}>
+                      {d.code}
                     </option>
                   ))}
-                </select>
+                </datalist>
               </div>
 
               {/* Issue Date Filter */}

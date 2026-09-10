@@ -46,7 +46,10 @@ export const AdminAuditLogsPage: React.FC = () => {
       l.action?.toLowerCase().includes(search.toLowerCase()) ||
       l.user_email?.toLowerCase().includes(search.toLowerCase()) ||
       l.entity_type?.toLowerCase().includes(search.toLowerCase());
-    const matchesEntity = entityFilter === 'all' || l.entity_type === entityFilter;
+    const matchesEntity =
+      entityFilter === 'all' ||
+      !entityFilter ||
+      l.entity_type?.toLowerCase().includes(entityFilter.toLowerCase());
     return matchesSearch && matchesEntity;
   });
 
@@ -65,18 +68,22 @@ export const AdminAuditLogsPage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
-          <select
-            value={entityFilter}
-            onChange={(e) => setEntityFilter(e.target.value)}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800"
-          >
-            <option value="all">All Entity Types</option>
-            {uniqueEntities.map((e) => (
-              <option key={e} value={e}>
-                {e}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              list="audit-entity-list"
+              placeholder="Type entity type..."
+              value={entityFilter === 'all' ? '' : entityFilter}
+              onChange={(e) => setEntityFilter(e.target.value || 'all')}
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44"
+            />
+            <datalist id="audit-entity-list">
+              <option value="all">All Entity Types</option>
+              {uniqueEntities.map((e) => (
+                <option key={e} value={e} />
+              ))}
+            </datalist>
+          </div>
 
           <div className="relative">
             <input

@@ -25,7 +25,9 @@ export const AddDueModal: React.FC<AddDueModalProps> = ({
   const [categories, setCategories] = useState<DueCategory[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [departmentId, setDepartmentId] = useState<number>(defaultDepartmentId || 0);
+  const [deptText, setDeptText] = useState<string>('');
   const [categoryId, setCategoryId] = useState<number>(0);
+  const [catText, setCatText] = useState<string>('');
   const [amount, setAmount] = useState<string>('');
   const [description, setDescription] = useState<string>('');
   const [remarks, setRemarks] = useState<string>('');
@@ -37,13 +39,19 @@ export const AddDueModal: React.FC<AddDueModalProps> = ({
       // Fetch categories
       api.get('/student/due-categories').then((res) => {
         setCategories(res.data);
-        if (res.data.length > 0) setCategoryId(res.data[0].id);
+        if (res.data.length > 0) {
+          setCategoryId(res.data[0].id);
+          setCatText(res.data[0].name);
+        }
       });
       // Fetch departments if admin
       if (!defaultDepartmentId) {
         api.get('/student/departments').then((res) => {
           setDepartments(res.data);
-          if (res.data.length > 0) setDepartmentId(res.data[0].id);
+          if (res.data.length > 0) {
+            setDepartmentId(res.data[0].id);
+            setDeptText(res.data[0].name);
+          }
         });
       } else {
         setDepartmentId(defaultDepartmentId);
@@ -66,10 +74,29 @@ export const AddDueModal: React.FC<AddDueModalProps> = ({
     }
 
     try {
+      let finalDeptId = departmentId || defaultDepartmentId;
+      if (!finalDeptId && deptText) {
+        const d = departments.find(
+          (item) =>
+            item.name.toLowerCase() === deptText.toLowerCase() ||
+            item.code.toLowerCase() === deptText.toLowerCase()
+        );
+        if (d) finalDeptId = d.id;
+      }
+      let finalCatId = categoryId;
+      if (!finalCatId && catText) {
+        const c = categories.find(
+          (item) =>
+            item.name.toLowerCase() === catText.toLowerCase() ||
+            (item.code && item.code.toLowerCase() === catText.toLowerCase())
+        );
+        if (c) finalCatId = c.id;
+      }
+
       await api.post('/due-records', {
         student_id: studentId,
-        department_id: departmentId || defaultDepartmentId,
-        category_id: categoryId,
+        department_id: finalDeptId,
+        category_id: finalCatId,
         amount: parsedAmount,
         description,
         remarks: remarks || undefined
@@ -122,35 +149,61 @@ export const AddDueModal: React.FC<AddDueModalProps> = ({
           {!defaultDepartmentId && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-              <select
-                value={departmentId}
-                onChange={(e) => setDepartmentId(Number(e.target.value))}
+              <input
+                type="text"
+                list="add-due-departments-list"
+                placeholder="Type department name or code..."
+                value={deptText}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setDeptText(val);
+                  const matched = departments.find(
+                    (d) =>
+                      d.name.toLowerCase() === val.toLowerCase() ||
+                      d.code.toLowerCase() === val.toLowerCase() ||
+                      String(d.id) === val
+                  );
+                  if (matched) setDepartmentId(matched.id);
+                }}
                 className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
                 required
-              >
+              />
+              <datalist id="add-due-departments-list">
                 {departments.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.name} ({d.code})
+                  <option key={d.id} value={d.name}>
+                    {d.code}
                   </option>
                 ))}
-              </select>
+              </datalist>
             </div>
           )}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Due Category</label>
-            <select
-              value={categoryId}
-              onChange={(e) => setCategoryId(Number(e.target.value))}
+            <input
+              type="text"
+              list="add-due-categories-list"
+              placeholder="Type due category..."
+              value={catText}
+              onChange={(e) => {
+                const val = e.target.value;
+                setCatText(val);
+                const matched = categories.find(
+                  (c) =>
+                    c.name.toLowerCase() === val.toLowerCase() ||
+                    (c.code && c.code.toLowerCase() === val.toLowerCase()) ||
+                    String(c.id) === val
+                );
+                if (matched) setCategoryId(matched.id);
+              }}
               className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
               required
-            >
+            />
+            <datalist id="add-due-categories-list">
               {categories.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
+                <option key={c.id} value={c.name} />
               ))}
-            </select>
+            </datalist>
           </div>
 
           <div>

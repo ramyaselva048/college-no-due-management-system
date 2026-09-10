@@ -278,7 +278,10 @@ export const AdminStudentsPage: React.FC = () => {
       s.email?.toLowerCase().includes(search.toLowerCase()) ||
       s.department_name?.toLowerCase().includes(search.toLowerCase()) ||
       s.course_name?.toLowerCase().includes(search.toLowerCase());
-    const matchesCourse = filterCourse === 'all' || s.course_name === filterCourse;
+    const matchesCourse =
+      filterCourse === 'all' ||
+      !filterCourse ||
+      s.course_name?.toLowerCase().includes(filterCourse.toLowerCase());
     return matchesSearch && matchesCourse;
   });
 
@@ -305,18 +308,22 @@ export const AdminStudentsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3">
-          <select
-            value={filterCourse}
-            onChange={(e) => setFilterCourse(e.target.value)}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All Degree Programs ({courses.length})</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.name}>
-                {c.name}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <input
+              type="text"
+              list="students-filter-course-list"
+              placeholder="Type degree / course..."
+              value={filterCourse === 'all' ? '' : filterCourse}
+              onChange={(e) => setFilterCourse(e.target.value || 'all')}
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 w-52"
+            />
+            <datalist id="students-filter-course-list">
+              <option value="all">All Degree Programs</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.name} />
+              ))}
+            </datalist>
+          </div>
 
           <div className="relative">
             <input
@@ -564,17 +571,33 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department *</label>
-                  <select
-                    value={formData.department_id}
-                    onChange={(e) => setFormData({ ...formData, department_id: Number(e.target.value) })}
+                  <input
+                    type="text"
+                    list="student-departments-datalist"
+                    placeholder="Type department..."
+                    value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = departments.find(
+                        (d) =>
+                          d.name.toLowerCase() === val.toLowerCase() ||
+                          d.code.toLowerCase() === val.toLowerCase() ||
+                          String(d.id) === val
+                      );
+                      if (matched) {
+                        setFormData({ ...formData, department_id: matched.id });
+                      }
+                    }}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
+                    required
+                  />
+                  <datalist id="student-departments-datalist">
                     {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.code})
+                      <option key={d.id} value={d.name}>
+                        {d.code}
                       </option>
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div>
@@ -590,42 +613,56 @@ export const AdminStudentsPage: React.FC = () => {
                   </div>
 
                   {!isCustomCourse ? (
-                    <select
-                      value={formData.course_id}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          setIsCustomCourse(true);
-                        } else {
-                          setFormData({ ...formData, course_id: Number(e.target.value) });
-                        }
-                      }}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                    >
-                      {courses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.code})
-                        </option>
-                      ))}
-                      <option value="custom">✏️ + Type New / Custom Degree Course...</option>
-                    </select>
+                    <div>
+                      <input
+                        type="text"
+                        list="student-courses-datalist"
+                        placeholder="Type degree course..."
+                        value={courses.find((c) => c.id === formData.course_id)?.name || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const matched = courses.find(
+                            (c) =>
+                              c.name.toLowerCase() === val.toLowerCase() ||
+                              c.code.toLowerCase() === val.toLowerCase() ||
+                              String(c.id) === val
+                          );
+                          if (matched) {
+                            setFormData({ ...formData, course_id: matched.id });
+                          }
+                        }}
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                      />
+                      <datalist id="student-courses-datalist">
+                        {courses.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.code}
+                          </option>
+                        ))}
+                      </datalist>
+                    </div>
                   ) : (
                     <div className="p-3 bg-slate-50 border border-indigo-200 rounded-xl space-y-2">
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Prefix</label>
-                          <select
+                          <input
+                            type="text"
+                            list="student-degree-prefixes-datalist"
+                            placeholder="e.g. B.E."
                             value={customDegreePrefix}
                             onChange={(e) => handleCustomTitleChange(e.target.value, customCourseTitle)}
                             className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
-                          >
-                            <option value="B.E.">B.E.</option>
-                            <option value="B.Tech">B.Tech</option>
-                            <option value="M.E.">M.E.</option>
-                            <option value="M.Tech">M.Tech</option>
-                            <option value="MBA">MBA</option>
-                            <option value="MCA">MCA</option>
-                            <option value="None">None</option>
-                          </select>
+                          />
+                          <datalist id="student-degree-prefixes-datalist">
+                            <option value="B.E." />
+                            <option value="B.Tech" />
+                            <option value="M.E." />
+                            <option value="M.Tech" />
+                            <option value="MBA" />
+                            <option value="MCA" />
+                            <option value="None" />
+                          </datalist>
                         </div>
                         <div className="col-span-2">
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Type Course Name *</label>
@@ -649,16 +686,15 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year</label>
-                  <select
+                  <input
+                    type="number"
+                    min={1}
+                    max={6}
+                    placeholder="e.g. 1"
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) || 1 })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    <option value={1}>1st Year</option>
-                    <option value={2}>2nd Year</option>
-                    <option value={3}>3rd Year</option>
-                    <option value={4}>4th Year</option>
-                  </select>
+                  />
                 </div>
 
                 <div>
@@ -794,17 +830,32 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-                  <select
-                    value={formData.department_id}
-                    onChange={(e) => setFormData({ ...formData, department_id: Number(e.target.value) })}
+                  <input
+                    type="text"
+                    list="student-edit-departments-datalist"
+                    placeholder="Type department..."
+                    value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = departments.find(
+                        (d) =>
+                          d.name.toLowerCase() === val.toLowerCase() ||
+                          d.code.toLowerCase() === val.toLowerCase() ||
+                          String(d.id) === val
+                      );
+                      if (matched) {
+                        setFormData({ ...formData, department_id: matched.id });
+                      }
+                    }}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
+                  />
+                  <datalist id="student-edit-departments-datalist">
                     {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.code})
+                      <option key={d.id} value={d.name}>
+                        {d.code}
                       </option>
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div>
@@ -820,42 +871,56 @@ export const AdminStudentsPage: React.FC = () => {
                   </div>
 
                   {!isCustomCourse ? (
-                    <select
-                      value={formData.course_id}
-                      onChange={(e) => {
-                        if (e.target.value === 'custom') {
-                          setIsCustomCourse(true);
-                        } else {
-                          setFormData({ ...formData, course_id: Number(e.target.value) });
-                        }
-                      }}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                    >
-                      {courses.map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.name} ({c.code})
-                        </option>
-                      ))}
-                      <option value="custom">✏️ + Type New / Custom Degree...</option>
-                    </select>
+                    <div>
+                      <input
+                        type="text"
+                        list="student-edit-courses-datalist"
+                        placeholder="Type degree course..."
+                        value={courses.find((c) => c.id === formData.course_id)?.name || ''}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const matched = courses.find(
+                            (c) =>
+                              c.name.toLowerCase() === val.toLowerCase() ||
+                              c.code.toLowerCase() === val.toLowerCase() ||
+                              String(c.id) === val
+                          );
+                          if (matched) {
+                            setFormData({ ...formData, course_id: matched.id });
+                          }
+                        }}
+                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                      />
+                      <datalist id="student-edit-courses-datalist">
+                        {courses.map((c) => (
+                          <option key={c.id} value={c.name}>
+                            {c.code}
+                          </option>
+                        ))}
+                      </datalist>
+                    </div>
                   ) : (
                     <div className="p-3 bg-slate-50 border border-indigo-200 rounded-xl space-y-2">
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Prefix</label>
-                          <select
+                          <input
+                            type="text"
+                            list="student-edit-prefixes-datalist"
+                            placeholder="e.g. B.E."
                             value={customDegreePrefix}
                             onChange={(e) => handleCustomTitleChange(e.target.value, customCourseTitle)}
                             className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
-                          >
-                            <option value="B.E.">B.E.</option>
-                            <option value="B.Tech">B.Tech</option>
-                            <option value="M.E.">M.E.</option>
-                            <option value="M.Tech">M.Tech</option>
-                            <option value="MBA">MBA</option>
-                            <option value="MCA">MCA</option>
-                            <option value="None">None</option>
-                          </select>
+                          />
+                          <datalist id="student-edit-prefixes-datalist">
+                            <option value="B.E." />
+                            <option value="B.Tech" />
+                            <option value="M.E." />
+                            <option value="M.Tech" />
+                            <option value="MBA" />
+                            <option value="MCA" />
+                            <option value="None" />
+                          </datalist>
                         </div>
                         <div className="col-span-2">
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Type Course Name</label>
@@ -876,16 +941,15 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year</label>
-                  <select
+                  <input
+                    type="number"
+                    min={1}
+                    max={6}
+                    placeholder="e.g. 1"
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) })}
+                    onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) || 1 })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    <option value={1}>1st Year</option>
-                    <option value={2}>2nd Year</option>
-                    <option value={3}>3rd Year</option>
-                    <option value={4}>4th Year</option>
-                  </select>
+                  />
                 </div>
 
                 <div>

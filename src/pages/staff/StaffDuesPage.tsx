@@ -510,18 +510,40 @@ export const StaffDuesPage: React.FC = () => {
                     No students currently enrolled in the college. Please contact the Administrator to enroll students first.
                   </div>
                 ) : (
-                  <select
-                    value={addForm.student_id}
-                    onChange={(e) => setAddForm({ ...addForm, student_id: Number(e.target.value) })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
-                    required
-                  >
-                    {students.map((s) => (
-                      <option key={s.id} value={s.id}>
-                        {s.full_name} ({s.register_number}) — Year {s.year || 1}
-                      </option>
-                    ))}
-                  </select>
+                  <>
+                    <input
+                      type="text"
+                      list="staff-add-students-datalist"
+                      placeholder="Type student name or reg no..."
+                      value={
+                        students.find((s) => s.id === addForm.student_id)
+                          ? `${students.find((s) => s.id === addForm.student_id)?.full_name} (${students.find((s) => s.id === addForm.student_id)?.register_number})`
+                          : ''
+                      }
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        const matched = students.find(
+                          (s) =>
+                            `${s.full_name} (${s.register_number})`.toLowerCase() === val.toLowerCase() ||
+                            s.full_name.toLowerCase() === val.toLowerCase() ||
+                            s.register_number.toLowerCase() === val.toLowerCase() ||
+                            String(s.id) === val
+                        );
+                        if (matched) {
+                          setAddForm({ ...addForm, student_id: matched.id });
+                        }
+                      }}
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                      required
+                    />
+                    <datalist id="staff-add-students-datalist">
+                      {students.map((s) => (
+                        <option key={s.id} value={`${s.full_name} (${s.register_number})`}>
+                          {s.course_name || `Year ${s.year || 1}`}
+                        </option>
+                      ))}
+                    </datalist>
+                  </>
                 )}
               </div>
 
@@ -530,18 +552,33 @@ export const StaffDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Due Category <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={addForm.category_id}
-                  onChange={(e) => setAddForm({ ...addForm, category_id: Number(e.target.value) })}
+                <input
+                  type="text"
+                  list="staff-add-categories-datalist"
+                  placeholder="Type due category..."
+                  value={categories.find((c) => c.id === addForm.category_id)?.name || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matched = categories.find(
+                      (c) =>
+                        c.name.toLowerCase() === val.toLowerCase() ||
+                        c.code.toLowerCase() === val.toLowerCase() ||
+                        String(c.id) === val
+                    );
+                    if (matched) {
+                      setAddForm({ ...addForm, category_id: matched.id });
+                    }
+                  }}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
                   required
-                >
+                />
+                <datalist id="staff-add-categories-datalist">
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.code})
+                    <option key={c.id} value={c.name}>
+                      {c.code}
                     </option>
                   ))}
-                </select>
+                </datalist>
               </div>
 
               {/* Amount */}
@@ -654,18 +691,33 @@ export const StaffDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Due Category <span className="text-rose-500">*</span>
                 </label>
-                <select
-                  value={editForm.category_id}
-                  onChange={(e) => setEditForm({ ...editForm, category_id: Number(e.target.value) })}
+                <input
+                  type="text"
+                  list="staff-edit-categories-datalist"
+                  placeholder="Type due category..."
+                  value={categories.find((c) => c.id === editForm.category_id)?.name || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matched = categories.find(
+                      (c) =>
+                        c.name.toLowerCase() === val.toLowerCase() ||
+                        c.code.toLowerCase() === val.toLowerCase() ||
+                        String(c.id) === val
+                    );
+                    if (matched) {
+                      setEditForm({ ...editForm, category_id: matched.id });
+                    }
+                  }}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
                   required
-                >
+                />
+                <datalist id="staff-edit-categories-datalist">
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name} ({c.code})
+                    <option key={c.id} value={c.name}>
+                      {c.code}
                     </option>
                   ))}
-                </select>
+                </datalist>
               </div>
 
               {/* Amount */}
@@ -716,15 +768,19 @@ export const StaffDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Due Status
                 </label>
-                <select
+                <input
+                  type="text"
+                  list="staff-edit-status-datalist"
+                  placeholder="Type status (pending / cleared / waived)..."
                   value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value.toLowerCase() })}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 font-semibold"
-                >
+                />
+                <datalist id="staff-edit-status-datalist">
                   <option value="pending">Pending (Unpaid)</option>
                   <option value="cleared">Cleared (Paid)</option>
                   <option value="waived">Waived (Discharged)</option>
-                </select>
+                </datalist>
               </div>
 
               {/* Actions */}

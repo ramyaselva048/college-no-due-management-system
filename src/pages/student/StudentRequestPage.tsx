@@ -261,18 +261,22 @@ export const StudentRequestPage: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 Reason / Purpose of Clearance
               </label>
-              <select
+              <input
+                type="text"
+                list="student-clearance-purpose-list"
+                placeholder="Type reason or purpose of clearance..."
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
                 disabled={hasPendingDues}
                 className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-              >
-                <option value="Graduation & Final Course Completion">Graduation & Final Course Completion</option>
-                <option value="Semester End Clearance">Semester End Clearance</option>
-                <option value="College Transfer / Migration">College Transfer / Migration</option>
-                <option value="Course Discontinuation">Course Discontinuation</option>
-                <option value="Hostel Vacating & Final Exit">Hostel Vacating & Final Exit</option>
-              </select>
+              />
+              <datalist id="student-clearance-purpose-list">
+                <option value="Graduation & Final Course Completion" />
+                <option value="Semester End Clearance" />
+                <option value="College Transfer / Migration" />
+                <option value="Course Discontinuation" />
+                <option value="Hostel Vacating & Final Exit" />
+              </datalist>
             </div>
 
             <div>

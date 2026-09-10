@@ -360,48 +360,99 @@ export const AdminDuesPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Target Student *</label>
-                <select
-                  value={formData.student_id}
-                  onChange={(e) => setFormData({ ...formData, student_id: Number(e.target.value) })}
+                <input
+                  type="text"
+                  list="admin-dues-students-list"
+                  placeholder="Type student name or reg no..."
+                  value={
+                    students.find((s) => s.id === formData.student_id)
+                      ? `${students.find((s) => s.id === formData.student_id)?.full_name} (${students.find((s) => s.id === formData.student_id)?.register_number})`
+                      : ''
+                  }
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    const matched = students.find(
+                      (s) =>
+                        `${s.full_name} (${s.register_number})`.toLowerCase() === val.toLowerCase() ||
+                        s.full_name.toLowerCase() === val.toLowerCase() ||
+                        s.register_number.toLowerCase() === val.toLowerCase() ||
+                        String(s.id) === val
+                    );
+                    if (matched) {
+                      setFormData({ ...formData, student_id: matched.id });
+                    }
+                  }}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                >
+                  required
+                />
+                <datalist id="admin-dues-students-list">
                   {students.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.full_name} ({s.register_number})
+                    <option key={s.id} value={`${s.full_name} (${s.register_number})`}>
+                      {s.course_name || 'Student'}
                     </option>
                   ))}
-                </select>
+                </datalist>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
-                  <select
-                    value={formData.department_id}
-                    onChange={(e) => setFormData({ ...formData, department_id: Number(e.target.value) })}
+                  <input
+                    type="text"
+                    list="admin-dues-depts-list"
+                    placeholder="Type department..."
+                    value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = departments.find(
+                        (d) =>
+                          d.name.toLowerCase() === val.toLowerCase() ||
+                          d.code.toLowerCase() === val.toLowerCase() ||
+                          String(d.id) === val
+                      );
+                      if (matched) {
+                        setFormData({ ...formData, department_id: matched.id });
+                      }
+                    }}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
+                    required
+                  />
+                  <datalist id="admin-dues-depts-list">
                     {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name}
+                      <option key={d.id} value={d.name}>
+                        {d.code}
                       </option>
                     ))}
-                  </select>
+                  </datalist>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Category *</label>
-                  <select
-                    value={formData.category_id}
-                    onChange={(e) => setFormData({ ...formData, category_id: Number(e.target.value) })}
+                  <input
+                    type="text"
+                    list="admin-dues-cats-list"
+                    placeholder="Type category..."
+                    value={categories.find((c) => c.id === formData.category_id)?.name || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      const matched = categories.find(
+                        (c) =>
+                          c.name.toLowerCase() === val.toLowerCase() ||
+                          (c.code && c.code.toLowerCase() === val.toLowerCase()) ||
+                          String(c.id) === val
+                      );
+                      if (matched) {
+                        setFormData({ ...formData, category_id: matched.id });
+                      }
+                    }}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
+                    required
+                  />
+                  <datalist id="admin-dues-cats-list">
                     {categories.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.name}
-                      </option>
+                      <option key={c.id} value={c.name} />
                     ))}
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
@@ -502,15 +553,19 @@ export const AdminDuesPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Clearance Status *</label>
-                  <select
+                  <input
+                    type="text"
+                    list="admin-dues-status-list"
+                    placeholder="Type status (pending / cleared / waived)..."
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, status: e.target.value.toLowerCase() })}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold"
-                  >
+                  />
+                  <datalist id="admin-dues-status-list">
                     <option value="pending">PENDING</option>
                     <option value="cleared">CLEARED (Paid)</option>
                     <option value="waived">WAIVED (Exempted)</option>
-                  </select>
+                  </datalist>
                 </div>
               </div>
 
