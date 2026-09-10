@@ -13,6 +13,7 @@ import {
   TrendingUp,
   AlertTriangle,
   History,
+  GraduationCap,
   BookOpen,
   RotateCcw,
   RefreshCw,
@@ -238,7 +239,7 @@ export const AdminDashboard: React.FC = () => {
             <Building2 className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-semibold block">Departments & Courses</span>
+            <span className="text-[11px] text-slate-400 font-semibold block">Departments</span>
             <span className="font-display font-bold text-base text-slate-900">{stats.total_departments}</span>
           </div>
         </Link>
@@ -248,10 +249,10 @@ export const AdminDashboard: React.FC = () => {
           className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs hover:border-indigo-300 transition-all flex items-center gap-3"
         >
           <div className="p-2.5 rounded-lg bg-amber-50 text-amber-600">
-            <BookOpen className="w-4 h-4" />
+            <GraduationCap className="w-4 h-4" />
           </div>
           <div>
-            <span className="text-[11px] text-slate-400 font-semibold block">Degree Programs</span>
+            <span className="text-[11px] text-slate-400 font-semibold block">Degrees & Branches</span>
             <span className="font-display font-bold text-base text-slate-900">{stats.total_courses}</span>
           </div>
         </Link>
