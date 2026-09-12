@@ -81,6 +81,7 @@ export interface StudentProfile {
   course_id: number;
   course_name?: string;
   year: number;
+  semester?: number;
   section: string;
   admission_year: number;
   created_at?: string;

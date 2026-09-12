@@ -46,7 +46,7 @@ export function generateCertificatePdf(
     '0.12 0.25 0.69 rg',
     '/F1 16 Tf',
     '1 0 0 1 120 710 Tm',
-    `(${escapePdf('OFFICIAL NO DUE CLEARANCE CERTIFICATE')}) Tj`,
+    `(${escapePdf('DIGITAL NO DUE CLEARANCE CERTIFICATE')}) Tj`,
     '0 0 0 rg',
     '/F3 9 Tf',
     '1 0 0 1 140 695 Tm',

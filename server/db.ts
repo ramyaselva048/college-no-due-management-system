@@ -377,6 +377,11 @@ class InMemoryDatabase {
   private isSyncing: boolean = false;
   private syncPending: boolean = false;
   private syncDebounceTimer: NodeJS.Timeout | null = null;
+  private subjectCoursesDirty: boolean = true;
+
+  markSubjectCoursesDirty() {
+    this.subjectCoursesDirty = true;
+  }
 
   constructor() {
     const loaded = this.loadFromFile();
@@ -443,8 +448,8 @@ class InMemoryDatabase {
         this.ensureHODsExist();
         this.ensureDefaultSubjectCourses();
         this.deduplicateAll();
-        // Sync current state to PostgreSQL to ensure complete parity
-        await this.syncToPostgres();
+        // Sync current state to PostgreSQL with forceAll to guarantee complete parity on startup
+        await this.syncToPostgres(true);
         console.log('[PostgreSQL] Successfully synchronized live PostgreSQL database with College No Due System');
       }
     } catch (err) {
@@ -560,6 +565,7 @@ class InMemoryDatabase {
   }
 
   queueSyncToPostgres(delayMs = 300) {
+    if (!this.isPgConnected) return;
     if (this.syncDebounceTimer) {
       clearTimeout(this.syncDebounceTimer);
     }
@@ -572,26 +578,18 @@ class InMemoryDatabase {
   }
 
   private async executeSyncToPostgres(): Promise<void> {
-    if (!this.isPgConnected && !process.env.DATABASE_URL) return;
+    if (!this.isPgConnected) return;
+    await this.syncToPostgres();
+  }
+
+  async syncToPostgres(forceAll = false): Promise<void> {
+    if (!this.isPgConnected) return;
     if (this.isSyncing) {
       this.syncPending = true;
       return;
     }
     this.isSyncing = true;
     this.syncPending = false;
-    try {
-      await this.syncToPostgres();
-    } finally {
-      this.isSyncing = false;
-      if (this.syncPending) {
-        this.syncPending = false;
-        this.queueSyncToPostgres(150);
-      }
-    }
-  }
-
-  async syncToPostgres(): Promise<void> {
-    if (!this.isPgConnected && !process.env.DATABASE_URL) return;
     try {
       // Sync parent tables first to avoid foreign key / dependency locks and deadlock conflicts
       await syncTableToPostgres('users', this.users);
@@ -605,11 +603,20 @@ class InMemoryDatabase {
       await syncTableToPostgres('no_due_requests', this.noDueRequests);
       await syncTableToPostgres('no_due_approvals', this.noDueApprovals);
       await syncTableToPostgres('certificates', this.certificates);
-      await syncTableToPostgres('subject_courses', this.subjectCourses);
+      if (forceAll || this.subjectCoursesDirty) {
+        await syncTableToPostgres('subject_courses', this.subjectCourses);
+        this.subjectCoursesDirty = false;
+      }
       await syncTableToPostgres('notifications', this.notifications.slice(0, 100));
       await syncTableToPostgres('audit_logs', this.auditLogs.slice(0, 200));
     } catch (err) {
       console.error('[PostgreSQL] syncToPostgres error:', err);
+    } finally {
+      this.isSyncing = false;
+      if (this.syncPending) {
+        this.syncPending = false;
+        this.queueSyncToPostgres(150);
+      }
     }
   }
 

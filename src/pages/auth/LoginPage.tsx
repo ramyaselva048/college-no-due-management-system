@@ -100,13 +100,13 @@ export const LoginPage: React.FC = () => {
               id="tab-role-hod"
               onClick={() => {
                 setActiveRole('HOD');
-                setEmail('hod.cse@college.edu');
-                setPassword('College@123');
+                setEmail('');
+                setPassword('');
                 setError(null);
               }}
               className={`py-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                 activeRole === 'HOD'
-                  ? 'bg-white text-amber-600 shadow-xs ring-1 ring-amber-200'
+                  ? 'bg-white text-indigo-600 shadow-xs ring-1 ring-indigo-200'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -124,7 +124,7 @@ export const LoginPage: React.FC = () => {
               }}
               className={`py-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                 activeRole === 'STAFF'
-                  ? 'bg-white text-emerald-600 shadow-xs'
+                  ? 'bg-white text-emerald-600 shadow-xs ring-1 ring-emerald-200'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -152,39 +152,36 @@ export const LoginPage: React.FC = () => {
           </div>
 
           {activeRole === 'HOD' && (
-            <div className="mb-4 p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-[11px] flex flex-col gap-1.5">
-              <div className="flex items-center justify-between font-semibold">
+            <div className="mb-4 p-3 bg-indigo-50/80 border border-indigo-200/80 rounded-xl text-indigo-950 text-xs flex flex-col gap-1.5">
+              <div className="flex items-center justify-between font-bold text-indigo-900">
                 <span className="flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-amber-600" />
+                  <ShieldCheck className="w-4 h-4 text-indigo-600" />
                   Head of Department (HOD) Portal
                 </span>
-                <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono">CSE / ECE / MECH / CIVIL</span>
+                <span className="text-[10px] bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full font-semibold border border-indigo-200">
+                  Admin Allocated
+                </span>
               </div>
-              <p className="text-amber-800/80 text-[10px] leading-tight">
-                Log in to configure year-wise & semester-wise subject clearance nodes and assign staff for due clearance.
+              <p className="text-indigo-800/90 text-[11px] leading-relaxed">
+                Only department HODs allocated by the College Administrator can log in with their designated email and password.
               </p>
-              <div className="flex items-center gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('hod.cse@college.edu');
-                    setPassword('College@123');
-                  }}
-                  className="px-2 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-semibold text-amber-800 hover:bg-amber-100 transition-colors shadow-2xs"
-                >
-                  CSE HOD Demo
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEmail('hod.ece@college.edu');
-                    setPassword('College@123');
-                  }}
-                  className="px-2 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-semibold text-amber-800 hover:bg-amber-100 transition-colors shadow-2xs"
-                >
-                  ECE HOD Demo
-                </button>
+            </div>
+          )}
+
+          {activeRole === 'STAFF' && (
+            <div className="mb-4 p-3 bg-emerald-50/80 border border-emerald-200/80 rounded-xl text-emerald-950 text-xs flex flex-col gap-1.5">
+              <div className="flex items-center justify-between font-bold text-emerald-900">
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="w-4 h-4 text-emerald-600" />
+                  Department Faculty & Staff Portal
+                </span>
+                <span className="text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-semibold border border-emerald-200">
+                  HOD Allocated
+                </span>
               </div>
+              <p className="text-emerald-800/90 text-[11px] leading-relaxed">
+                Only faculty members allocated by the Head of Department (HOD) can sign in to evaluate subject dues and clearance requests.
+              </p>
             </div>
           )}
 

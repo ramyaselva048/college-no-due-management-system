@@ -661,6 +661,7 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
       course_id: student.course_id,
       course_name: course ? course.name : '',
       year: student.year,
+      semester: student.semester || (student.year ? student.year * 2 - 1 : 1),
       section: student.section,
       admission_year: student.admission_year,
       created_at: student.created_at
@@ -2245,6 +2246,7 @@ apiRouter.get('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: A
       course_id: s.course_id,
       course_name: course ? course.name : '',
       year: s.year,
+      semester: s.semester || (s.year ? s.year * 2 - 1 : 1),
       section: s.section,
       admission_year: s.admission_year,
       is_active: user ? user.is_active : true,
@@ -2282,6 +2284,7 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
     custom_course_code,
     custom_course_duration,
     year,
+    semester,
     section,
     admission_year
   } = req.body;
@@ -2348,43 +2351,50 @@ apiRouter.post('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: 
   };
   db.users.push(newUser);
 
-  const nextStudentId = Math.max(...db.students.map(s => s.id), 0) + 1;
-  const newStudent: StudentRecord = {
-    id: nextStudentId,
-    user_id: newUser.id,
-    register_number: upperReg,
-    full_name: (full_name || '').trim(),
-    email: lowerEmail,
-    phone: phone || '',
-    department_id: dept ? dept.id : 1,
-    course_id: course.id,
-    year: Number(year) || 1,
-    section: (section || 'A').toUpperCase().trim(),
-    admission_year: Number(admission_year) || new Date().getFullYear(),
-    created_at: now
-  };
-  db.students.push(newStudent);
-  db.saveToFile();
+    const targetYr = Number(year) || 1;
+    const targetSem = semester !== undefined && semester !== null && Number(semester) > 0
+      ? Number(semester)
+      : (targetYr * 2 - 1);
 
-  db.logAudit(req.user!.id, req.user!.email, 'STUDENT_CREATED', 'STUDENT', newStudent.id, null, req.body, getClientIp(req));
+    const nextStudentId = Math.max(...db.students.map(s => s.id), 0) + 1;
+    const newStudent: StudentRecord = {
+      id: nextStudentId,
+      user_id: newUser.id,
+      register_number: upperReg,
+      full_name: (full_name || '').trim(),
+      email: lowerEmail,
+      phone: phone || '',
+      department_id: dept ? dept.id : 1,
+      course_id: course.id,
+      year: targetYr,
+      semester: targetSem,
+      section: (section || 'A').toUpperCase().trim(),
+      admission_year: Number(admission_year) || new Date().getFullYear(),
+      created_at: now
+    };
+    db.students.push(newStudent);
+    db.saveToFile();
 
-  res.json({
-    id: newStudent.id,
-    user_id: newStudent.user_id,
-    register_number: newStudent.register_number,
-    full_name: newStudent.full_name,
-    email: newStudent.email,
-    phone: newStudent.phone,
-    department_id: newStudent.department_id,
-    department_name: dept ? dept.name : '',
-    course_id: newStudent.course_id,
-    course_name: course.name,
-    year: newStudent.year,
-    section: newStudent.section,
-    admission_year: newStudent.admission_year,
-    is_active: true,
-    created_at: newStudent.created_at
-  });
+    db.logAudit(req.user!.id, req.user!.email, 'STUDENT_CREATED', 'STUDENT', newStudent.id, null, req.body, getClientIp(req));
+
+    res.json({
+      id: newStudent.id,
+      user_id: newStudent.user_id,
+      register_number: newStudent.register_number,
+      full_name: newStudent.full_name,
+      email: newStudent.email,
+      phone: newStudent.phone,
+      department_id: newStudent.department_id,
+      department_name: dept ? dept.name : '',
+      course_id: newStudent.course_id,
+      course_name: course.name,
+      year: newStudent.year,
+      semester: newStudent.semester,
+      section: newStudent.section,
+      admission_year: newStudent.admission_year,
+      is_active: true,
+      created_at: newStudent.created_at
+    });
 });
 
 apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
@@ -2406,6 +2416,7 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
     custom_course_code,
     custom_course_duration,
     year,
+    semester,
     section,
     admission_year,
     is_active
@@ -2480,6 +2491,12 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
   }
 
   if (year !== undefined) st.year = Number(year);
+  if (semester !== undefined) {
+    st.semester = Number(semester);
+    if (year === undefined && st.semester > 0) {
+      st.year = Math.ceil(st.semester / 2);
+    }
+  }
   if (section !== undefined) st.section = section.toUpperCase().trim();
   if (admission_year !== undefined) st.admission_year = Number(admission_year);
   if (is_active !== undefined && u) u.is_active = is_active;
@@ -2502,6 +2519,7 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
     course_id: st.course_id,
     course_name: course ? course.name : '',
     year: st.year,
+    semester: st.semester || (st.year ? st.year * 2 - 1 : 1),
     section: st.section,
     admission_year: st.admission_year,
     is_active: u ? u.is_active : true,
@@ -2635,13 +2653,16 @@ apiRouter.post('/admin/staff', authMiddleware, requireRole(['ADMIN']), (req: Aut
     finalDeptId = dept.id;
   }
 
+  const isHodDesignation = (designation || '').toLowerCase().includes('hod') || (designation || '').toLowerCase().includes('head of department');
+  const userRole: 'HOD' | 'STAFF' = isHodDesignation ? 'HOD' : 'STAFF';
+
   const now = new Date().toISOString();
   const nextUserId = Math.max(...db.users.map(u => u.id), 0) + 1;
   const newUser: UserRecord = {
     id: nextUserId,
     email: lowerEmail,
     password_hash: hashPassword(password || 'StaffPassword@123'),
-    role: 'STAFF',
+    role: userRole,
     is_active: true,
     created_at: now
   };
@@ -2746,10 +2767,19 @@ apiRouter.patch('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (req
     st.department_id = Number(department_id);
   }
 
-  if (designation !== undefined) st.designation = designation.trim();
+  if (designation !== undefined) {
+    st.designation = designation.trim();
+    if (u) {
+      const isHod = st.designation.toLowerCase().includes('hod') || st.designation.toLowerCase().includes('head of department');
+      u.role = isHod ? 'HOD' : 'STAFF';
+    }
+  }
   if (is_active !== undefined && u) u.is_active = is_active;
 
   const dept = db.departments.find(d => d.id === st.department_id);
+
+  db.saveToFile();
+  db.queueSyncToPostgres();
 
   db.logAudit(req.user!.id, req.user!.email, 'STAFF_UPDATED', 'STAFF', st.id, null, req.body, getClientIp(req));
 
@@ -2908,6 +2938,7 @@ apiRouter.post('/admin/departments/:id/allocate-hod', authMiddleware, requireRol
   }
 
   db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'HOD_ALLOCATED', 'DEPARTMENT', deptId, null, {
     department: dept.name,
     hod_name: cleanName,
@@ -2947,6 +2978,7 @@ apiRouter.patch('/admin/departments/:id/hod-status', authMiddleware, requireRole
   hodStaff.is_active = newStatus;
 
   db.saveToFile();
+  db.queueSyncToPostgres();
   res.json({
     message: `HOD account ${newStatus ? 'activated' : 'deactivated'} successfully`,
     is_active: newStatus
@@ -3875,6 +3907,7 @@ apiRouter.get('/staff/students', authMiddleware, requireRole(['STAFF']), (req: A
       course_name: course ? course.name : '',
       department_name: dept ? dept.name : '',
       year: s.year,
+      semester: s.semester || (s.year ? s.year * 2 - 1 : 1),
       section: s.section,
       pending_due_amount: pendingAmt,
       has_pending_dues: pendingDues.length > 0,
@@ -4184,6 +4217,7 @@ apiRouter.post('/hod/faculty', authMiddleware, requireRole(['HOD', 'ADMIN']), (r
 
   db.staff.push(newStaff);
   db.saveToFile();
+  db.queueSyncToPostgres();
 
   db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_CREATED', 'STAFF', newStaff.id, null, {
     staff_name: cleanName,
@@ -4235,6 +4269,7 @@ apiRouter.patch('/hod/faculty/:id', authMiddleware, requireRole(['HOD', 'ADMIN']
   }
 
   db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_UPDATED', 'STAFF', staff.id, null, req.body, getClientIp(req));
 
   const assignedNodes = db.subjectCourses.filter(c => c.department_id === deptId && (c.faculty_id === staff.id || c.faculty_email?.toLowerCase() === staff.email.toLowerCase()));
@@ -4273,6 +4308,7 @@ apiRouter.patch('/hod/faculty/:id/status', authMiddleware, requireRole(['HOD', '
   }
 
   db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_STATUS_TOGGLED', 'STAFF', staff.id, null, { is_active: newStatus }, getClientIp(req));
 
   res.json({
@@ -4307,7 +4343,9 @@ apiRouter.delete('/hod/faculty/:id', authMiddleware, requireRole(['HOD', 'ADMIN'
   }
 
   db.staff.splice(staffIdx, 1);
+  deleteRecordFromPostgres('staff', staffId).catch(() => {});
   db.saveToFile();
+  db.queueSyncToPostgres();
 
   db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_DELETED', 'STAFF', staffId, null, { staff_name: staff.full_name, emp_id: staff.employee_id }, getClientIp(req));
 

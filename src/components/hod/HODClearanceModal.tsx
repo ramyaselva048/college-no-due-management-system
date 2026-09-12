@@ -9,12 +9,9 @@ import {
   AlertTriangle,
   BookOpen,
   UserCheck,
-  Printer,
-  FileText,
   Building2
 } from 'lucide-react';
 import api from '../../services/api';
-import { SasurieDueFormView } from '../SasurieDueFormView';
 
 interface HODClearanceModalProps {
   request: any | null;
@@ -29,7 +26,6 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
   onClose,
   onUpdated
 }) => {
-  const [activeTab, setActiveTab] = useState<'manage' | 'form'>('manage');
   const [currentRequest, setCurrentRequest] = useState<any>(request);
   const [actionLoading, setActionLoading] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
@@ -157,32 +153,6 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Tab switch */}
-            <div className="inline-flex rounded-xl bg-slate-100 p-1 border border-slate-200">
-              <button
-                type="button"
-                onClick={() => setActiveTab('manage')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'manage'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Clearance Sign-off
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('form')}
-                className={`px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'form'
-                    ? 'bg-white text-slate-900 shadow-2xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                Official Form Sheet
-              </button>
-            </div>
-
             {/* Quick Exit X button */}
             <button
               type="button"
@@ -214,25 +184,8 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
             </div>
           )}
 
-          {activeTab === 'form' ? (
-            <div className="space-y-4">
-              <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                <p className="text-xs text-slate-500 font-medium">
-                  Official College No Due Certificate Form replica (Tamil Nadu Regulation format).
-                </p>
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5" /> Print Form
-                </button>
-              </div>
-              <SasurieDueFormView request={currentRequest} />
-            </div>
-          ) : (
-            <div className="space-y-5">
-              {/* Theory Subjects Section */}
+          <div className="space-y-5">
+            {/* Theory Subjects Section */}
               <div>
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide flex items-center gap-1.5">
@@ -442,7 +395,6 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                 )}
               </div>
             </div>
-          )}
         </div>
 
         {/* Sticky Footer with Clear Exit & Action Controls */}

@@ -26,6 +26,7 @@ export const AdminStudentsPage: React.FC = () => {
   const [filterCourse, setFilterCourse] = useState('all');
   const [filterDept, setFilterDept] = useState('all');
   const [filterYear, setFilterYear] = useState('all');
+  const [filterSem, setFilterSem] = useState('all');
   const [courses, setCourses] = useState<Course[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
 
@@ -53,6 +54,7 @@ export const AdminStudentsPage: React.FC = () => {
     department_id: 0,
     course_id: 0,
     year: 1,
+    semester: 1,
     section: 'A',
     admission_year: new Date().getFullYear()
   };
@@ -130,7 +132,9 @@ export const AdminStudentsPage: React.FC = () => {
     setFormData({
       ...initialForm,
       department_id: departments[0]?.id || 1,
-      course_id: courses[0]?.id || 1
+      course_id: courses[0]?.id || 1,
+      year: 1,
+      semester: 1
     });
     setIsCreateOpen(true);
   };
@@ -143,6 +147,8 @@ export const AdminStudentsPage: React.FC = () => {
     setCustomCourseCode('');
     setCustomCourseDuration(4);
     setEditingStudent(student);
+    const yr = Number(student.year) || 1;
+    const sem = Number(student.semester) || (yr * 2 - 1);
     setFormData({
       full_name: student.full_name || '',
       register_number: student.register_number || '',
@@ -151,7 +157,8 @@ export const AdminStudentsPage: React.FC = () => {
       phone: student.phone || '',
       department_id: student.department_id || departments[0]?.id || 1,
       course_id: student.course_id || courses[0]?.id || 1,
-      year: student.year || 1,
+      year: yr,
+      semester: sem,
       section: student.section || 'A',
       admission_year: student.admission_year || new Date().getFullYear()
     });
@@ -293,7 +300,12 @@ export const AdminStudentsPage: React.FC = () => {
       filterYear === 'all' ||
       !filterYear ||
       String(s.year) === filterYear;
-    return matchesSearch && matchesCourse && matchesDept && matchesYear;
+    const studentSem = s.semester || (s.year ? s.year * 2 - 1 : 1);
+    const matchesSem =
+      filterSem === 'all' ||
+      !filterSem ||
+      String(studentSem) === filterSem;
+    return matchesSearch && matchesCourse && matchesDept && matchesYear && matchesSem;
   });
 
   return (
@@ -344,6 +356,23 @@ export const AdminStudentsPage: React.FC = () => {
             <option value="2">2nd Year</option>
             <option value="3">3rd Year</option>
             <option value="4">4th Year</option>
+          </select>
+
+          {/* Semester Filter */}
+          <select
+            value={filterSem}
+            onChange={(e) => setFilterSem(e.target.value)}
+            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="all">All Semesters</option>
+            <option value="1">Sem 1</option>
+            <option value="2">Sem 2</option>
+            <option value="3">Sem 3</option>
+            <option value="4">Sem 4</option>
+            <option value="5">Sem 5</option>
+            <option value="6">Sem 6</option>
+            <option value="7">Sem 7</option>
+            <option value="8">Sem 8</option>
           </select>
 
           <div className="relative">
@@ -451,7 +480,7 @@ export const AdminStudentsPage: React.FC = () => {
                   <th className="py-3.5 px-4">Student Profile</th>
                   <th className="py-3.5 px-4">Register Number</th>
                   <th className="py-3.5 px-4">Degree & Department</th>
-                  <th className="py-3.5 px-4">Year / Sec</th>
+                  <th className="py-3.5 px-4">Year / Sem / Sec</th>
                   <th className="py-3.5 px-4">Batch</th>
                   <th className="py-3.5 px-4">Account Status</th>
                   <th className="py-3.5 px-4 text-right">Actions</th>
@@ -484,7 +513,12 @@ export const AdminStudentsPage: React.FC = () => {
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-600">
-                      Year {student.year} ({student.section || 'A'})
+                      <div className="font-semibold text-slate-900">
+                        Year {student.year} • Sem {student.semester || (student.year ? student.year * 2 - 1 : 1)}
+                      </div>
+                      <div className="text-[11px] text-slate-400">
+                        Section {student.section || 'A'}
+                      </div>
                     </td>
 
                     <td className="py-3.5 px-4 text-slate-600">
@@ -742,18 +776,46 @@ export const AdminStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={6}
-                    placeholder="e.g. 1"
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year *</label>
+                  <select
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) || 1 })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  />
+                    onChange={(e) => {
+                      const yr = Number(e.target.value) || 1;
+                      const validSems = [yr * 2 - 1, yr * 2];
+                      const newSem = validSems.includes(formData.semester) ? formData.semester : yr * 2 - 1;
+                      setFormData({ ...formData, year: yr, semester: newSem });
+                    }}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value={1}>1st Year</option>
+                    <option value={2}>2nd Year</option>
+                    <option value={3}>3rd Year</option>
+                    <option value={4}>4th Year</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Semester *</label>
+                  <select
+                    value={formData.semester}
+                    onChange={(e) => {
+                      const sem = Number(e.target.value) || 1;
+                      const calculatedYear = Math.ceil(sem / 2);
+                      setFormData({ ...formData, semester: sem, year: calculatedYear });
+                    }}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value={1}>Sem 1 (1st Yr)</option>
+                    <option value={2}>Sem 2 (1st Yr)</option>
+                    <option value={3}>Sem 3 (2nd Yr)</option>
+                    <option value={4}>Sem 4 (2nd Yr)</option>
+                    <option value={5}>Sem 5 (3rd Yr)</option>
+                    <option value={6}>Sem 6 (3rd Yr)</option>
+                    <option value={7}>Sem 7 (4th Yr)</option>
+                    <option value={8}>Sem 8 (4th Yr)</option>
+                  </select>
                 </div>
 
                 <div>
@@ -997,18 +1059,46 @@ export const AdminStudentsPage: React.FC = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year</label>
-                  <input
-                    type="number"
-                    min={1}
-                    max={6}
-                    placeholder="e.g. 1"
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year *</label>
+                  <select
                     value={formData.year}
-                    onChange={(e) => setFormData({ ...formData, year: Number(e.target.value) || 1 })}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  />
+                    onChange={(e) => {
+                      const yr = Number(e.target.value) || 1;
+                      const validSems = [yr * 2 - 1, yr * 2];
+                      const newSem = validSems.includes(formData.semester) ? formData.semester : yr * 2 - 1;
+                      setFormData({ ...formData, year: yr, semester: newSem });
+                    }}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value={1}>1st Year</option>
+                    <option value={2}>2nd Year</option>
+                    <option value={3}>3rd Year</option>
+                    <option value={4}>4th Year</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">Semester *</label>
+                  <select
+                    value={formData.semester}
+                    onChange={(e) => {
+                      const sem = Number(e.target.value) || 1;
+                      const calculatedYear = Math.ceil(sem / 2);
+                      setFormData({ ...formData, semester: sem, year: calculatedYear });
+                    }}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
+                  >
+                    <option value={1}>Sem 1 (1st Yr)</option>
+                    <option value={2}>Sem 2 (1st Yr)</option>
+                    <option value={3}>Sem 3 (2nd Yr)</option>
+                    <option value={4}>Sem 4 (2nd Yr)</option>
+                    <option value={5}>Sem 5 (3rd Yr)</option>
+                    <option value={6}>Sem 6 (3rd Yr)</option>
+                    <option value={7}>Sem 7 (4th Yr)</option>
+                    <option value={8}>Sem 8 (4th Yr)</option>
+                  </select>
                 </div>
 
                 <div>

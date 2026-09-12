@@ -243,7 +243,7 @@ export const LandingPage: React.FC = () => {
                 </div>
                 <h4 className="font-display font-bold text-base text-slate-900">Institutional Admin</h4>
                 <p className="text-xs text-slate-500 mt-2 leading-relaxed">
-                  College-wide oversight. Manage departments, staff accounts, due categories, review overall requests, and issue official No Due certificates.
+                  College-wide oversight. Manage departments, staff accounts, due categories, review overall requests, and issue digital No Due certificates.
                 </p>
                 <ul className="mt-4 space-y-2 text-xs text-slate-600">
                   <li className="flex items-center gap-2">

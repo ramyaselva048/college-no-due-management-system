@@ -246,7 +246,7 @@
       "id": 24,
       "email": "hod.cse@sasurie.edu",
       "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
-      "role": "STAFF",
+      "role": "HOD",
       "is_active": true,
       "is_registered": true,
       "created_at": "2026-09-10T09:00:37.006Z",
@@ -931,7 +931,9 @@
       "role": "ADMIN",
       "is_active": true,
       "is_registered": true,
-      "created_at": "2026-09-12T07:42:09.871Z"
+      "created_at": "2026-09-12T07:42:09.871Z",
+      "updated_at": null,
+      "department_id": null
     },
     {
       "id": 90,
@@ -940,7 +942,86 @@
       "role": "ADMIN",
       "is_active": true,
       "is_registered": true,
-      "created_at": "2026-09-12T07:42:09.914Z"
+      "created_at": "2026-09-12T07:42:09.914Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 91,
+      "email": "hod.cse@college.edu",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:24.779Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 92,
+      "email": "hod.cse@college.ac.in",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:24.827Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 93,
+      "email": "hod.cse@sasurie.com",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:24.873Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 94,
+      "email": "hod.ece@college.edu",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:24.917Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 95,
+      "email": "hod.mech@college.edu",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:24.960Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 96,
+      "email": "hod.eee@college.edu",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:25.007Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 97,
+      "email": "hod.eee@sasurie.edu",
+      "password_hash": "0799662e21c5cf2789dd898fe78fc5af8305d48ff11429b37a35ac7dd12bd5f7",
+      "role": "HOD",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-12T11:00:25.054Z",
+      "updated_at": null,
+      "department_id": null
     }
   ],
   "departments": [
@@ -2352,14 +2433,15 @@
   "staff": [
     {
       "id": 1,
-      "user_id": 3,
+      "user_id": 93,
       "employee_id": "EMP-CSE-001",
       "full_name": "Dr. K. Senthil Kumar, M.E., Ph.D.",
       "email": "hod.cse@sasurie.com",
       "phone": "9842100101",
       "department_id": 1,
       "designation": "Professor & Head of Department (CSE)",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": true
     },
     {
       "id": 2,
@@ -2370,7 +2452,8 @@
       "phone": "9842100102",
       "department_id": 2,
       "designation": "Professor & Head of Department (ECE)",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": false
     },
     {
       "id": 3,
@@ -2381,7 +2464,8 @@
       "phone": "9842100103",
       "department_id": 3,
       "designation": "Professor & Head of Department (MECH)",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": false
     },
     {
       "id": 4,
@@ -2481,6 +2565,54 @@
       "department_id": 1,
       "designation": "HOD & Clearance Incharge",
       "created_at": "2026-09-10T15:07:56.020Z"
+    },
+    {
+      "id": 13,
+      "user_id": 91,
+      "employee_id": "HOD-CSE-001",
+      "full_name": "Dr. K. Senthil Kumar, M.E., Ph.D.",
+      "email": "hod.cse@college.edu",
+      "phone": "9842100000",
+      "department_id": 1,
+      "designation": "Professor & Head of Department (CSE)",
+      "created_at": "2026-09-12T08:05:47.870Z",
+      "is_active": true
+    },
+    {
+      "id": 16,
+      "user_id": 94,
+      "employee_id": "HOD-ECE-001",
+      "full_name": "Dr. M. Lakshmi, M.E., Ph.D.",
+      "email": "hod.ece@college.edu",
+      "phone": "9842100000",
+      "department_id": 2,
+      "designation": "Professor & Head of Department (ECE)",
+      "created_at": "2026-09-12T08:05:48.048Z",
+      "is_active": true
+    },
+    {
+      "id": 17,
+      "user_id": 95,
+      "employee_id": "HOD-MECH-001",
+      "full_name": "Dr. R. Vijayakumar, M.E., Ph.D.",
+      "email": "hod.mech@college.edu",
+      "phone": "9842100000",
+      "department_id": 3,
+      "designation": "Professor & Head of Department (MECH)",
+      "created_at": "2026-09-12T08:05:48.139Z",
+      "is_active": true
+    },
+    {
+      "id": 18,
+      "user_id": 96,
+      "employee_id": "HOD-EEE-001",
+      "full_name": "Dr. S. R. Murugan, M.E., Ph.D.",
+      "email": "hod.eee@college.edu",
+      "phone": "9842100000",
+      "department_id": 4,
+      "designation": "Professor & Head of Department (EEE)",
+      "created_at": "2026-09-12T08:05:48.228Z",
+      "is_active": true
     }
   ],
   "dueRecords": [],
@@ -2792,62 +2924,87 @@
       "student_id": 9,
       "status": "under_review",
       "submitted_at": "2026-09-12T07:44:43.433Z",
+      "reviewed_at": null,
+      "reviewed_by": null,
       "remarks": "End Semester Examinations Hall Ticket -",
       "created_at": "2026-09-12T07:44:43.433Z",
-      "exam_type": "CIAT - I",
-      "form_date": "12/09/2026",
+      "department_id": null,
+      "course_name": null,
       "academic_year": "2025-26",
       "year": 4,
       "semester": 6,
       "student_type": "day_scholar",
-      "attendance_percentage": 85,
-      "attendance_month": "August",
+      "attendance_percentage": "85",
       "undertaking_status": "Exempted",
+      "current_stage": "chief_mentor",
+      "chief_mentor_verified_by": null,
+      "chief_mentor_name": null,
+      "chief_mentor_verified_at": null,
+      "chief_mentor_remarks": null,
+      "chief_mentor_status": "pending",
+      "hod_approved_by": null,
+      "hod_name": null,
+      "hod_approved_at": null,
+      "hod_remarks": null,
+      "hod_status": "pending",
+      "coe_verified_by": null,
+      "coe_name": null,
+      "coe_verified_at": null,
+      "coe_remarks": null,
+      "coe_status": "pending",
+      "principal_approved_by": null,
+      "principal_name": null,
+      "principal_approved_at": null,
+      "principal_remarks": null,
+      "principal_status": "pending",
+      "exam_type": "CIAT - I",
+      "form_date": "12/09/2026",
+      "attendance_month": "August",
       "subjects": [
         {
-          "slot": "Sub 1",
-          "name": "Compiler Design",
           "code": "CS3601",
+          "name": "Compiler Design",
+          "slot": "Sub 1",
           "dues_status": "No Dues",
           "faculty_name": "Staff In-charge",
           "signature_date": "12/09/2026"
         },
         {
-          "slot": "Sub 2",
-          "name": "Artificial Intelligence and Machine Learning",
           "code": "CS3691",
+          "name": "Artificial Intelligence and Machine Learning",
+          "slot": "Sub 2",
           "dues_status": "No Dues",
           "faculty_name": "Prof. P. Vijay",
           "signature_date": "12/09/2026"
         },
         {
-          "slot": "Sub 1",
-          "name": "Mobile Application Development",
           "code": "CCS341",
+          "name": "Mobile Application Development",
+          "slot": "Sub 1",
           "dues_status": "No Dues",
           "faculty_name": "Dr. K. Ramesh",
           "signature_date": "12/09/2026"
         },
         {
-          "slot": "Sub 3",
-          "name": "Open Elective - I (Sensors & Actuators)",
           "code": "OE3601",
+          "name": "Open Elective - I (Sensors & Actuators)",
+          "slot": "Sub 3",
           "dues_status": "No Dues",
           "faculty_name": "Prof. M. Selvam",
           "signature_date": "12/09/2026"
         },
         {
-          "slot": "Sub 4",
-          "name": "Professional Elective - II (Big Data)",
           "code": "PE3601",
+          "name": "Professional Elective - II (Big Data)",
+          "slot": "Sub 4",
           "dues_status": "No Dues",
           "faculty_name": "Dr. S. Rajesh",
           "signature_date": "12/09/2026"
         },
         {
-          "slot": "Sub 5",
-          "name": "Professional Elective - III (Blockchain)",
           "code": "PE3602",
+          "name": "Professional Elective - III (Blockchain)",
+          "slot": "Sub 5",
           "dues_status": "No Dues",
           "faculty_name": "Prof. S. Vignesh",
           "signature_date": "12/09/2026"
@@ -2855,69 +3012,69 @@
       ],
       "labs": [
         {
-          "slot": "Lab 1",
-          "name": "Mobile Application Development Lab",
           "code": "CS3661",
+          "name": "Mobile Application Development Lab",
+          "slot": "Lab 1",
           "dues_status": "No Dues",
           "faculty_name": "Dr. K. Ramesh",
           "signature_date": "12/09/2026"
         },
         {
-          "slot": "Lab 2",
-          "name": "Internet of Things Laboratory",
           "code": "CS3681",
+          "name": "Internet of Things Laboratory",
+          "slot": "Lab 2",
           "dues_status": "No Dues",
           "faculty_name": "Prof. P. Vijay",
           "signature_date": "12/09/2026"
         }
       ],
       "signatories": {
-        "chief_mentor": {
-          "signed": true,
-          "name": "S. Rajesh",
+        "coe": {
           "date": "10/8/26",
+          "name": "Dr. H. Sasipal CoE",
+          "signed": true,
           "status": "approved"
         },
         "hod": {
-          "signed": true,
+          "date": "10/8/26",
           "name": "Dr. S. R. Murugan",
-          "date": "10/8/26",
-          "status": "approved"
-        },
-        "coe": {
           "signed": true,
-          "name": "Dr. H. Sasipal CoE",
-          "date": "10/8/26",
           "status": "approved"
-        },
-        "principal": {
-          "signed": true,
-          "name": "Dr. T. Senthilvel",
-          "date": "10/8/26",
-          "status": "approved"
-        },
-        "library": {
-          "signed": true,
-          "name": "D. Vinoth",
-          "date": "10/8/26",
-          "status": "No Due"
-        },
-        "transport": {
-          "signed": false,
-          "name": "-",
-          "date": "-",
-          "status": "-"
         },
         "hostel": {
-          "signed": false,
-          "name": "-",
           "date": "-",
+          "name": "-",
+          "signed": false,
           "status": "-"
         },
-        "office_accounts": {
+        "library": {
+          "date": "10/8/26",
+          "name": "D. Vinoth",
           "signed": true,
-          "name": "S. Accounts",
+          "status": "No Due"
+        },
+        "principal": {
+          "date": "10/8/26",
+          "name": "Dr. T. Senthilvel",
+          "signed": true,
+          "status": "approved"
+        },
+        "transport": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "-"
+        },
+        "chief_mentor": {
+          "date": "10/8/26",
+          "name": "S. Rajesh",
+          "signed": true,
+          "status": "approved"
+        },
+        "office_accounts": {
           "date": "10/08/2026",
+          "name": "S. Accounts",
+          "signed": true,
           "status": "No Dues"
         }
       }
@@ -3388,63 +3545,90 @@
       "id": 47,
       "request_id": 5,
       "department_id": 1,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 48,
       "request_id": 5,
       "department_id": 8,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 49,
       "request_id": 5,
       "department_id": 9,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 50,
       "request_id": 5,
       "department_id": 10,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 51,
       "request_id": 5,
       "department_id": 11,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 52,
       "request_id": 5,
       "department_id": 12,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 53,
       "request_id": 5,
       "department_id": 13,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 54,
       "request_id": 5,
       "department_id": 14,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     },
     {
       "id": 55,
       "request_id": 5,
       "department_id": 15,
+      "approved_by": null,
       "status": "pending",
+      "remarks": null,
+      "approved_at": null,
       "created_at": "2026-09-12T07:44:43.433Z"
     }
   ],
@@ -3570,15 +3754,6 @@
     }
   ],
   "notifications": [
-    {
-      "id": 24,
-      "user_id": 35,
-      "title": "Official No Due Request Submitted",
-      "message": "Your CIAT - I No Due Form has been initiated with 14 clearance sections and routed for verification.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-12T07:44:43.462Z"
-    },
     {
       "id": 1,
       "user_id": 28,
@@ -3785,52 +3960,28 @@
       "notification_type": "danger",
       "is_read": false,
       "created_at": "2026-09-10T16:27:25.461Z"
+    },
+    {
+      "id": 24,
+      "user_id": 35,
+      "title": "Official No Due Request Submitted",
+      "message": "Your CIAT - I No Due Form has been initiated with 14 clearance sections and routed for verification.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-12T07:44:43.462Z"
     }
   ],
   "auditLogs": [
     {
-      "id": 217,
-      "user_id": 35,
-      "user_email": "divya23@sasurie.com",
-      "action": "NO_DUE_REQUEST_CREATED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 5,
-      "new_values": "{\"departments_count\":9,\"exam_type\":\"CIAT - I\"}",
-      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
-      "created_at": "2026-09-12T07:44:43.456Z"
-    },
-    {
-      "id": 216,
-      "user_id": 35,
-      "user_email": "divya23@sasurie.com",
+      "id": 221,
+      "user_id": 2,
+      "user_email": "ramyacse23@sasurie.com",
       "action": "USER_LOGIN",
       "entity_type": "USER",
-      "entity_id": 35,
-      "new_values": "{\"identifier\":\"732423104001\",\"role\":\"STUDENT\"}",
-      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
-      "created_at": "2026-09-12T07:44:14.739Z"
-    },
-    {
-      "id": 215,
-      "user_id": 31,
-      "user_email": "kavipriya@sasurie.edu",
-      "action": "USER_LOGOUT",
-      "entity_type": "USER",
-      "entity_id": 31,
-      "new_values": "{\"email\":\"kavipriya@sasurie.edu\"}",
-      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
-      "created_at": "2026-09-12T07:44:09.329Z"
-    },
-    {
-      "id": 214,
-      "user_id": 31,
-      "user_email": "kavipriya@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 31,
-      "new_values": "{\"identifier\":\"EMP-OFF-338\",\"role\":\"STAFF\"}",
-      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
-      "created_at": "2026-09-12T07:42:50.203Z"
+      "entity_id": 2,
+      "new_values": "{\"identifier\":\"ramyacse23@sasurie.com\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-12T11:12:03.354Z"
     },
     {
       "id": 1,
@@ -6387,6 +6538,90 @@
       "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
       "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
       "created_at": "2026-09-12T07:41:31.430Z"
+    },
+    {
+      "id": 214,
+      "user_id": 31,
+      "user_email": "kavipriya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 31,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"EMP-OFF-338\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
+      "created_at": "2026-09-12T07:42:50.203Z"
+    },
+    {
+      "id": 215,
+      "user_id": 31,
+      "user_email": "kavipriya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 31,
+      "old_values": null,
+      "new_values": "{\"email\":\"kavipriya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
+      "created_at": "2026-09-12T07:44:09.329Z"
+    },
+    {
+      "id": 216,
+      "user_id": 35,
+      "user_email": "divya23@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 35,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"732423104001\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
+      "created_at": "2026-09-12T07:44:14.739Z"
+    },
+    {
+      "id": 217,
+      "user_id": 35,
+      "user_email": "divya23@sasurie.com",
+      "action": "NO_DUE_REQUEST_CREATED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 5,
+      "old_values": null,
+      "new_values": "{\"departments_count\":9,\"exam_type\":\"CIAT - I\"}",
+      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
+      "created_at": "2026-09-12T07:44:43.456Z"
+    },
+    {
+      "id": 218,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "157.51.55.145",
+      "created_at": "2026-09-12T08:02:36.546Z"
+    },
+    {
+      "id": 219,
+      "user_id": 35,
+      "user_email": "divya23@sasurie.com",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 35,
+      "old_values": null,
+      "new_values": "{\"email\":\"divya23@sasurie.com\"}",
+      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
+      "created_at": "2026-09-12T08:07:17.281Z"
+    },
+    {
+      "id": 220,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"hod.cse@college.edu\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:204a:d354:4bf:e1dd:bae2:7b0d",
+      "created_at": "2026-09-12T08:07:29.892Z"
     }
   ],
   "subjectCourses": [
@@ -19874,19 +20109,19 @@
     }
   ],
   "nextId": {
-    "users": 91,
+    "users": 98,
     "departments": 17,
     "courses": 11,
     "dueCategories": 6,
     "students": 61,
-    "staff": 13,
+    "staff": 19,
     "dueRecords": 1,
     "duePayments": 1,
     "noDueRequests": 6,
     "noDueApprovals": 56,
     "certificates": 8,
     "notifications": 25,
-    "auditLogs": 218,
+    "auditLogs": 222,
     "subjectCourses": 964
   }
 }

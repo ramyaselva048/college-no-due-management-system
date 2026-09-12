@@ -15,7 +15,15 @@ import {
   Filter,
   Check,
   GraduationCap,
-  Landmark
+  Landmark,
+  UserCheck,
+  KeyRound,
+  Eye,
+  EyeOff,
+  Mail,
+  Phone,
+  ShieldCheck,
+  Users
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department } from '../../types';
@@ -215,6 +223,20 @@ export const AdminDepartmentsPage: React.FC = () => {
   const [description, setDescription] = useState('');
   const [selectedPresetCode, setSelectedPresetCode] = useState<string>('');
 
+  // Allocate HOD Modal State
+  const [allocatingHodDept, setAllocatingHodDept] = useState<Department | null>(null);
+  const [submittingHod, setSubmittingHod] = useState(false);
+  const [hodError, setHodError] = useState<string | null>(null);
+  const [showHodPassword, setShowHodPassword] = useState(false);
+  const [hodFormData, setHodFormData] = useState({
+    full_name: '',
+    employee_id: '',
+    email: '',
+    password: '',
+    phone: '',
+    is_active: true
+  });
+
   const showToast = (msg: string) => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
@@ -352,6 +374,71 @@ export const AdminDepartmentsPage: React.FC = () => {
       await fetchDepts();
     } catch (err: any) {
       alert(err.response?.data?.detail || 'Failed to delete department');
+    }
+  };
+
+  const openAllocateHodModal = (dept: Department) => {
+    setHodError(null);
+    setShowHodPassword(false);
+    setAllocatingHodDept(dept);
+    if (dept.hod_info) {
+      setHodFormData({
+        full_name: dept.hod_info.full_name,
+        employee_id: dept.hod_info.employee_id,
+        email: dept.hod_info.email,
+        password: '',
+        phone: dept.hod_info.phone || '9842100000',
+        is_active: dept.hod_info.is_active !== false
+      });
+    } else {
+      const codeLower = dept.code.toLowerCase().replace(/[^a-z0-9]/g, '');
+      setHodFormData({
+        full_name: `Dr. Head of ${dept.code}, M.E., Ph.D.`,
+        employee_id: `HOD-${dept.code.toUpperCase()}-001`,
+        email: `hod.${codeLower}@college.edu`,
+        password: 'College@123',
+        phone: '9842100000',
+        is_active: true
+      });
+    }
+  };
+
+  const handleAllocateHodSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!allocatingHodDept) return;
+    if (!hodFormData.full_name.trim() || !hodFormData.employee_id.trim() || !hodFormData.email.trim()) {
+      setHodError('Full Name, Employee ID, and Login Email are required.');
+      return;
+    }
+    if (!allocatingHodDept.hod_info && !hodFormData.password.trim()) {
+      setHodError('Please provide an initial login password for this HOD.');
+      return;
+    }
+
+    setSubmittingHod(true);
+    setHodError(null);
+    try {
+      const res = await api.post(`/admin/departments/${allocatingHodDept.id}/allocate-hod`, hodFormData);
+      showToast(res.data?.message || `HOD allocated successfully for ${allocatingHodDept.name}!`);
+      setAllocatingHodDept(null);
+      await fetchDepts();
+    } catch (err: any) {
+      setHodError(err.response?.data?.detail || 'Failed to allocate HOD.');
+    } finally {
+      setSubmittingHod(false);
+    }
+  };
+
+  const handleToggleHodStatus = async (dept: Department) => {
+    if (!dept.hod_info) return;
+    try {
+      const res = await api.patch(`/admin/departments/${dept.id}/hod-status`, {
+        is_active: !dept.hod_info.is_active
+      });
+      showToast(res.data?.message || 'HOD login status updated');
+      await fetchDepts();
+    } catch (err: any) {
+      alert(err.response?.data?.detail || 'Failed to toggle HOD status');
     }
   };
 
@@ -557,6 +644,72 @@ export const AdminDepartmentsPage: React.FC = () => {
                   <p className="text-xs text-slate-500 mt-1.5 leading-relaxed line-clamp-3">
                     {dept.description || 'Mandatory clearance node for student No Due verification and certificate generation.'}
                   </p>
+
+                  {/* Department HOD Allocation Section */}
+                  {dept.hod_info ? (
+                    <div className="mt-3.5 p-3 rounded-xl bg-slate-50 border border-slate-200/90 text-slate-800">
+                      <div className="flex items-center justify-between gap-1 mb-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-indigo-700 flex items-center gap-1">
+                          <ShieldCheck className="w-3.5 h-3.5 text-indigo-600" />
+                          Allocated HOD
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                            dept.hod_info.is_active !== false
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-rose-50 text-rose-700 border-rose-200'
+                          }`}
+                        >
+                          {dept.hod_info.is_active !== false ? 'Active (Can Log in)' : 'Deactivated (Blocked)'}
+                        </span>
+                      </div>
+                      <div className="font-bold text-xs text-slate-900">{dept.hod_info.full_name}</div>
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-slate-600 font-mono mt-1">
+                        <span className="bg-white px-1.5 py-0.5 rounded border border-slate-200 font-semibold text-slate-700">
+                          {dept.hod_info.employee_id}
+                        </span>
+                        <span className="text-indigo-600 font-medium">{dept.hod_info.email}</span>
+                      </div>
+                      <div className="flex items-center justify-between gap-2 mt-2.5 pt-2 border-t border-slate-200/70 text-[11px]">
+                        <button
+                          type="button"
+                          onClick={() => handleToggleHodStatus(dept)}
+                          className="text-[11px] font-semibold text-slate-700 hover:text-slate-900 inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          {dept.hod_info.is_active !== false ? (
+                            <>
+                              <ToggleRight className="w-4 h-4 text-emerald-600" /> Disable Login
+                            </>
+                          ) : (
+                            <>
+                              <ToggleLeft className="w-4 h-4 text-slate-400" /> Enable Login
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => openAllocateHodModal(dept)}
+                          className="text-[11px] font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1 cursor-pointer"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" /> Edit / Password
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3.5 p-3 rounded-xl bg-amber-50/70 border border-dashed border-amber-300 text-amber-900 flex items-center justify-between gap-2">
+                      <div className="flex items-center gap-1.5 text-xs text-amber-800">
+                        <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                        <span>No HOD allocated yet</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => openAllocateHodModal(dept)}
+                        className="px-2.5 py-1 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer shrink-0"
+                      >
+                        <UserCheck className="w-3.5 h-3.5" /> Allocate HOD
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div className="mt-4 pt-3 border-t border-slate-100">
@@ -887,6 +1040,185 @@ export const AdminDepartmentsPage: React.FC = () => {
                   className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors disabled:opacity-50"
                 >
                   {submitting ? 'Saving...' : 'Save Changes'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Allocate / Edit Department HOD Modal */}
+      {allocatingHodDept && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-display font-bold text-slate-900 text-base">
+                    {allocatingHodDept.hod_info ? 'Edit HOD Login & Allocation' : 'Allocate Head of Department (HOD)'}
+                  </h3>
+                  <p className="text-xs text-slate-500 font-medium">
+                    {allocatingHodDept.name} ({allocatingHodDept.code})
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setAllocatingHodDept(null)}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleAllocateHodSubmit} className="p-6 space-y-4 overflow-y-auto">
+              <div className="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-indigo-900 text-xs flex items-start gap-2.5">
+                <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0 mt-0.5" />
+                <div className="leading-relaxed">
+                  <strong>Strict HOD Authentication:</strong> Only the email and password allocated here will grant access to the department HOD clearance portal.
+                </div>
+              </div>
+
+              {hodError && (
+                <div className="p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <span>{hodError}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  HOD Full Name & Degree *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. Dr. K. Senthil Kumar, M.E., Ph.D."
+                  value={hodFormData.full_name}
+                  onChange={(e) => setHodFormData({ ...hodFormData, full_name: e.target.value })}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Employee ID *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. HOD-CSE-001"
+                    value={hodFormData.employee_id}
+                    onChange={(e) => setHodFormData({ ...hodFormData, employee_id: e.target.value.toUpperCase() })}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                    Contact Phone
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="e.g. 9842100000"
+                    value={hodFormData.phone}
+                    onChange={(e) => setHodFormData({ ...hodFormData, phone: e.target.value })}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Institutional Login Email (HOD Username) *
+                </label>
+                <div className="relative">
+                  <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="email"
+                    required
+                    placeholder="e.g. hod.cse@college.edu"
+                    value={hodFormData.email}
+                    onChange={(e) => setHodFormData({ ...hodFormData, email: e.target.value.toLowerCase().trim() })}
+                    className="w-full text-xs pl-9 pr-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-slate-700">
+                    {allocatingHodDept.hod_info ? 'Reset Login Password (optional)' : 'Login Password *'}
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setHodFormData({ ...hodFormData, password: 'College@' + Math.floor(100 + Math.random() * 900) })}
+                    className="text-[11px] font-semibold text-indigo-600 hover:text-indigo-800"
+                  >
+                    Generate Random
+                  </button>
+                </div>
+                <div className="relative">
+                  <KeyRound className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type={showHodPassword ? 'text' : 'password'}
+                    placeholder={allocatingHodDept.hod_info ? 'Leave empty to retain current password' : 'Enter login password'}
+                    value={hodFormData.password}
+                    onChange={(e) => setHodFormData({ ...hodFormData, password: e.target.value })}
+                    className="w-full text-xs pl-9 pr-10 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowHodPassword(!showHodPassword)}
+                    className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                  >
+                    {showHodPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+                {allocatingHodDept.hod_info && (
+                  <p className="text-[11px] text-slate-400 mt-1">
+                    Fill in a new password only if the HOD needs credentials reset.
+                  </p>
+                )}
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-slate-800">Account Login Status</div>
+                  <div className="text-[11px] text-slate-500">
+                    {hodFormData.is_active ? 'HOD is permitted to sign in.' : 'Login is blocked immediately.'}
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setHodFormData({ ...hodFormData, is_active: !hodFormData.is_active })}
+                  className="cursor-pointer"
+                >
+                  {hodFormData.is_active ? (
+                    <ToggleRight className="w-6 h-6 text-emerald-600" />
+                  ) : (
+                    <ToggleLeft className="w-6 h-6 text-slate-400" />
+                  )}
+                </button>
+              </div>
+
+              <div className="pt-3 border-t border-slate-100 flex justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setAllocatingHodDept(null)}
+                  className="px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={submittingHod}
+                  className="px-5 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-xs transition-colors disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer"
+                >
+                  <UserCheck className="w-4 h-4" />
+                  {submittingHod ? 'Saving Allocation...' : allocatingHodDept.hod_info ? 'Save HOD Credentials' : 'Save & Allocate HOD'}
                 </button>
               </div>
             </form>

@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { NoDueRequest, StudentDuesSummary } from '../../types';
-import { SasurieDueFormView } from '../../components/SasurieDueFormView';
 import { useAuth } from '../../context/AuthContext';
 
 export const StudentRequestPage: React.FC = () => {
@@ -37,7 +36,6 @@ export const StudentRequestPage: React.FC = () => {
     studentProfile?.attendance_percentage ?? 98
   );
   const [attendanceMonth, setAttendanceMonth] = useState('August');
-  const [activeTab, setActiveTab] = useState<'matrix' | 'sasurie_form'>('sasurie_form');
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -118,7 +116,7 @@ export const StudentRequestPage: React.FC = () => {
         </div>
       )}
 
-      {/* If Active Request Exists -> Display Live Progress Tracker & Official Form */}
+      {/* If Active Request Exists -> Display Live Progress Tracker & Digital Clearance Matrix */}
       {activeRequest ? (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
@@ -160,118 +158,92 @@ export const StudentRequestPage: React.FC = () => {
               </div>
             </div>
 
-            {/* View Switcher Tabs */}
-            <div className="flex items-center gap-2 border-b border-slate-100 pb-2">
-              <button
-                type="button"
-                onClick={() => setActiveTab('sasurie_form')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'sasurie_form'
-                    ? 'bg-indigo-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 bg-slate-100'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5" />
-                Official No Due Form
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('matrix')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer ${
-                  activeTab === 'matrix'
-                    ? 'bg-indigo-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 bg-slate-100'
-                }`}
-              >
-                <Building2 className="w-3.5 h-3.5" />
-                Department Sign-off Matrix ({activeRequest.approvals.filter((a) => a.status === 'approved').length}/{activeRequest.approvals.length})
-              </button>
+            {/* Digital Department Sign-off Matrix */}
+            <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+                <Building2 className="w-4 h-4 text-indigo-600" />
+                <span>Digital Department Clearance Matrix</span>
+              </div>
+              <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
+                Cleared: {activeRequest.approvals.filter((a) => a.status === 'approved').length} of {activeRequest.approvals.length} Departments
+              </span>
             </div>
 
-            {/* Content for Matrix Tab */}
-            {activeTab === 'matrix' && (
-              <div className="space-y-4 pt-2">
-                {activeRequest.remarks && (
-                  <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 border border-slate-200">
-                    <span className="font-semibold text-slate-500">Application Remarks: </span>
-                    {activeRequest.remarks}
-                  </div>
-                )}
+            {/* Matrix Content */}
+            <div className="space-y-4 pt-2">
+              {activeRequest.remarks && (
+                <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 border border-slate-200">
+                  <span className="font-semibold text-slate-500">Application Remarks: </span>
+                  {activeRequest.remarks}
+                </div>
+              )}
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {activeRequest.approvals.map((app) => (
-                    <div
-                      key={app.id}
-                      className={`p-4 rounded-xl border flex items-start justify-between transition-all ${
-                        app.status === 'approved'
-                          ? 'bg-emerald-50/50 border-emerald-200'
-                          : app.status === 'rejected'
-                          ? 'bg-rose-50/50 border-rose-200'
-                          : 'bg-slate-50 border-slate-200'
-                      }`}
-                    >
-                      <div className="flex items-start gap-3">
-                        <div
-                          className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {activeRequest.approvals.map((app) => (
+                  <div
+                    key={app.id}
+                    className={`p-4 rounded-xl border flex items-start justify-between transition-all ${
+                      app.status === 'approved'
+                        ? 'bg-emerald-50/50 border-emerald-200'
+                        : app.status === 'rejected'
+                        ? 'bg-rose-50/50 border-rose-200'
+                        : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
+                          app.status === 'approved'
+                            ? 'bg-emerald-100 text-emerald-700'
+                            : app.status === 'rejected'
+                            ? 'bg-rose-100 text-rose-700'
+                            : 'bg-white text-slate-400 border border-slate-200'
+                        }`}
+                      >
+                        <Building2 className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold text-slate-900">{app.department_name}</p>
+                        <p
+                          className={`text-[11px] font-semibold mt-0.5 capitalize ${
                             app.status === 'approved'
-                              ? 'bg-emerald-100 text-emerald-700'
+                              ? 'text-emerald-700'
                               : app.status === 'rejected'
-                              ? 'bg-rose-100 text-rose-700'
-                              : 'bg-white text-slate-400 border border-slate-200'
+                              ? 'text-rose-700'
+                              : 'text-slate-500'
                           }`}
                         >
-                          <Building2 className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">{app.department_name}</p>
-                          <p
-                            className={`text-[11px] font-semibold mt-0.5 capitalize ${
-                              app.status === 'approved'
-                                ? 'text-emerald-700'
-                                : app.status === 'rejected'
-                                ? 'text-rose-700'
-                                : 'text-slate-500'
-                            }`}
-                          >
-                            {app.status === 'approved'
-                              ? 'Clearance Granted'
-                              : app.status === 'rejected'
-                              ? 'Rejected'
-                              : 'Pending Review'}
-                          </p>
-                          {app.remarks && (
-                            <p className="text-[10px] text-slate-500 italic mt-1">"{app.remarks}"</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="shrink-0">
-                        {app.status === 'approved' ? (
-                          <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-                            <Check className="w-3 h-3 stroke-[3]" />
-                          </span>
-                        ) : app.status === 'rejected' ? (
-                          <span className="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center">
-                            <AlertTriangle className="w-3 h-3" />
-                          </span>
-                        ) : (
-                          <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
-                            <Clock className="w-3 h-3" />
-                          </span>
+                          {app.status === 'approved'
+                            ? 'Clearance Granted'
+                            : app.status === 'rejected'
+                            ? 'Rejected'
+                            : 'Pending Review'}
+                        </p>
+                        {app.remarks && (
+                          <p className="text-[10px] text-slate-500 italic mt-1">"{app.remarks}"</p>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
-            {/* Content for Sasurie Form Tab */}
-            {activeTab === 'sasurie_form' && (
-              <div className="pt-2">
-                <SasurieDueFormView request={activeRequest} student={studentProfile} />
+                    <div className="shrink-0">
+                      {app.status === 'approved' ? (
+                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
+                          <Check className="w-3 h-3 stroke-[3]" />
+                        </span>
+                      ) : app.status === 'rejected' ? (
+                        <span className="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center">
+                          <AlertTriangle className="w-3 h-3" />
+                        </span>
+                      ) : (
+                        <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
+                          <Clock className="w-3 h-3" />
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+            </div>
           </div>
         </div>
       ) : (
@@ -292,7 +264,7 @@ export const StudentRequestPage: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-rose-800">Clearance Application Blocked</h4>
                   <p className="text-xs text-rose-700 mt-1">
-                    You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues. You must settle all dues before your official No Due Form can be dispatched to faculty and department heads.
+                    You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues. You must settle all dues before your digital No Due Form can be dispatched to faculty and department heads.
                   </p>
                   <div className="mt-3">
                     <Link
@@ -310,7 +282,7 @@ export const StudentRequestPage: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-emerald-800">Pre-requisites Satisfied</h4>
                   <p className="text-xs text-emerald-700 mt-0.5">
-                    Zero outstanding dues recorded! You are fully eligible to apply for your official No Due Form.
+                    Zero outstanding dues recorded! You are fully eligible to apply for your digital No Due Form.
                   </p>
                 </div>
               </div>
@@ -458,7 +430,7 @@ export const StudentRequestPage: React.FC = () => {
                   'Dispatching Application...'
                 ) : (
                   <>
-                    <Send className="w-4 h-4" /> Submit Official No Due Form
+                    <Send className="w-4 h-4" /> Submit Digital No Due Form
                   </>
                 )}
               </button>

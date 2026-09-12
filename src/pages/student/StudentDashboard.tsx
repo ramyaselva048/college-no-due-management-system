@@ -72,10 +72,13 @@ export const StudentDashboard: React.FC = () => {
             {summary.student.full_name?.charAt(0)}
           </div>
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h2 className="font-display font-bold text-lg text-slate-900">
                 {summary.student.full_name}
               </h2>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">
+                Year {summary.student.year} • Sem {summary.student.semester || (summary.student.year ? summary.student.year * 2 - 1 : 1)}
+              </span>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
                 Batch {summary.student.admission_year}
               </span>

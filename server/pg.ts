@@ -81,7 +81,7 @@ export async function testPgConnection(): Promise<boolean> {
   }
 }
 
-// Helper to retry operations on transient concurrency issues like deadlocks (Postgres error 40P01)
+// Helper to retry operations on transient concurrency issues like deadlocks (Postgres error 40P01) or lock timeouts (55P03)
 async function executeWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promise<T> {
   let lastErr: any;
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -89,9 +89,14 @@ async function executeWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promis
       return await fn();
     } catch (err: any) {
       lastErr = err;
-      const isDeadlock = err?.code === '40P01' || err?.message?.toLowerCase().includes('deadlock');
-      if (isDeadlock && attempt < maxRetries) {
-        await new Promise((res) => setTimeout(res, 50 * attempt + Math.floor(Math.random() * 80)));
+      const msg = (err?.message || '').toLowerCase();
+      const isDeadlock = err?.code === '40P01' || msg.includes('deadlock');
+      const isLockTimeout = err?.code === '55P03' || msg.includes('lock timeout');
+      const isConnIssue = msg.includes('connection terminated') || msg.includes('client has been closed');
+
+      if ((isDeadlock || isLockTimeout || isConnIssue) && attempt < maxRetries) {
+        const delay = 120 * attempt + Math.floor(Math.random() * 180);
+        await new Promise((res) => setTimeout(res, delay));
         continue;
       }
       throw err;
@@ -128,7 +133,7 @@ export function clearTableColumnCache() {
   tableColumnCache.clear();
 }
 
-// Utility to safely insert or update PostgreSQL records
+// Utility to safely insert or update PostgreSQL records in fast, low-lock batches
 export async function syncTableToPostgres(tableName: string, records: any[]): Promise<void> {
   const pool = getPool();
   if (!pool || !records || records.length === 0) return;
@@ -143,65 +148,69 @@ export async function syncTableToPostgres(tableName: string, records: any[]): Pr
 
   try {
     const validColumns = await getTableColumns(tableName);
+    const BATCH_SIZE = 50;
 
-    await executeWithRetry(async () => {
-      let client;
-      try {
-        client = await pool.connect();
-        await client.query('BEGIN');
-        await client.query("SET LOCAL lock_timeout = '4s'");
+    for (let i = 0; i < sortedRecords.length; i += BATCH_SIZE) {
+      const batch = sortedRecords.slice(i, i + BATCH_SIZE);
 
-        for (const record of sortedRecords) {
-          const keys = Object.keys(record).filter((k) => !validColumns || validColumns.has(k));
-          if (keys.length === 0) continue;
-
-          const values = keys.map((k) => {
-            const v = record[k];
-            if (v !== null && typeof v === 'object' && !(v instanceof Date)) {
-              return JSON.stringify(v);
-            }
-            return v;
-          });
-
-          const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
-          const quotedKeys = keys.map((k) => `"${k}"`).join(', ');
-
-          let sql = `INSERT INTO "${tableName}" (${quotedKeys}) VALUES (${placeholders})`;
-
-          if (keys.includes('id')) {
-            if (isAppendOnly) {
-              sql += ` ON CONFLICT ("id") DO NOTHING`;
-            } else {
-              const updateSet = keys
-                .filter((k) => k !== 'id')
-                .map((k) => `"${k}" = EXCLUDED."${k}"`)
-                .join(', ');
-
-              if (updateSet.length > 0) {
-                sql += ` ON CONFLICT ("id") DO UPDATE SET ${updateSet}`;
-              } else {
-                sql += ` ON CONFLICT ("id") DO NOTHING`;
-              }
-            }
+      // Collect all keys present across records in this batch that match validColumns
+      const keySet = new Set<string>();
+      for (const record of batch) {
+        for (const k of Object.keys(record)) {
+          if (!validColumns || validColumns.has(k)) {
+            keySet.add(k);
           }
-
-          await client.query(sql, values);
-        }
-
-        await client.query('COMMIT');
-      } catch (err: any) {
-        if (client) {
-          try {
-            await client.query('ROLLBACK');
-          } catch {}
-        }
-        throw err;
-      } finally {
-        if (client) {
-          client.release();
         }
       }
-    });
+
+      const allKeys = Array.from(keySet);
+      if (allKeys.length === 0) continue;
+
+      const quotedCols = allKeys.map((k) => `"${k}"`).join(', ');
+      const updateKeys = allKeys.filter((k) => k !== 'id');
+
+      const values: any[] = [];
+      const rowPlaceholders: string[] = [];
+      let paramIndex = 1;
+
+      for (const record of batch) {
+        const rowParams: string[] = [];
+        for (const k of allKeys) {
+          let v = record[k];
+          if (v !== undefined && v !== null && typeof v === 'object' && !(v instanceof Date)) {
+            v = JSON.stringify(v);
+          } else if (v === undefined) {
+            v = null;
+          }
+          values.push(v);
+          rowParams.push(`$${paramIndex++}`);
+        }
+        rowPlaceholders.push(`(${rowParams.join(', ')})`);
+      }
+
+      let sql = `INSERT INTO "${tableName}" (${quotedCols}) VALUES ${rowPlaceholders.join(', ')}`;
+      if (allKeys.includes('id')) {
+        if (isAppendOnly) {
+          sql += ` ON CONFLICT ("id") DO NOTHING`;
+        } else if (updateKeys.length > 0) {
+          const updateSet = updateKeys.map((k) => `"${k}" = EXCLUDED."${k}"`).join(', ');
+          sql += ` ON CONFLICT ("id") DO UPDATE SET ${updateSet}`;
+        } else {
+          sql += ` ON CONFLICT ("id") DO NOTHING`;
+        }
+      }
+
+      try {
+        await executeWithRetry(async () => {
+          await pool.query(sql, values);
+        });
+      } catch (batchErr: any) {
+        console.warn(`[PostgreSQL] Batch upsert error on ${tableName} (falling back to single rows):`, batchErr?.message || batchErr);
+        for (const record of batch) {
+          await syncSingleRecordToPostgres(tableName, record);
+        }
+      }
+    }
   } catch (err: any) {
     console.warn(`[PostgreSQL] Failed syncing table ${tableName}:`, err?.message || err);
   }

@@ -9,12 +9,10 @@ import {
   ExternalLink,
   GraduationCap,
   QrCode,
-  AlertCircle,
-  FileText
+  AlertCircle
 } from 'lucide-react';
 import api from '../../services/api';
 import { Certificate } from '../../types';
-import { SasurieDueFormView } from '../../components/SasurieDueFormView';
 import { useAuth } from '../../context/AuthContext';
 
 export const StudentCertificatePage: React.FC = () => {
@@ -23,7 +21,6 @@ export const StudentCertificatePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [viewFormat, setViewFormat] = useState<'sasurie_form' | 'digital_cert'>('sasurie_form');
 
   const fetchCerts = async () => {
     try {
@@ -69,50 +66,21 @@ export const StudentCertificatePage: React.FC = () => {
   }
 
   const activeCert = certificates.find((c) => c.is_valid) || certificates[0];
-  const linkedRequest = (activeCert as any)?.request;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="font-display font-bold text-xl text-slate-900">
-            Official No Due Clearance & Form
+            Digital No Due Certificate & Clearance
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            College of Engineering (Autonomous) — CIAT / End Sem Clearance Document
+            College of Engineering (Autonomous) — Digital Verified Clearance Certificate
           </p>
         </div>
 
         {activeCert && (
           <div className="flex flex-wrap items-center gap-2.5">
-            {/* View format switcher */}
-            <div className="p-1 bg-slate-200/80 rounded-xl flex items-center text-xs font-semibold">
-              <button
-                type="button"
-                onClick={() => setViewFormat('sasurie_form')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  viewFormat === 'sasurie_form'
-                    ? 'bg-white text-indigo-900 font-bold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                Official Form
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewFormat('digital_cert')}
-                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
-                  viewFormat === 'digital_cert'
-                    ? 'bg-white text-indigo-900 font-bold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Award className="w-3.5 h-3.5 text-indigo-600" />
-                Digital Certificate
-              </button>
-            </div>
-
             <button
               onClick={() => window.print()}
               className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
@@ -148,7 +116,7 @@ export const StudentCertificatePage: React.FC = () => {
             No Due Certificate Not Yet Issued
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-            Your certificate and official clearance form will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
+            Your digital certificate will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
@@ -159,9 +127,6 @@ export const StudentCertificatePage: React.FC = () => {
             </Link>
           </div>
         </div>
-      ) : viewFormat === 'sasurie_form' ? (
-        /* The Authentic Institutional Paper Replica */
-        <SasurieDueFormView request={linkedRequest} student={studentProfile} />
       ) : (
         /* Digital Verifiable Certificate View */
         <div className="bg-white rounded-3xl p-8 sm:p-12 border-2 border-indigo-900/20 shadow-xl print:shadow-none print:border-none relative overflow-hidden">

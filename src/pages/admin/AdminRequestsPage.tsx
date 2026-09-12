@@ -13,13 +13,10 @@ import {
   ChevronUp,
   AlertCircle,
   Trash2,
-  X,
-  FileText,
-  Printer
+  X
 } from 'lucide-react';
 import api from '../../services/api';
 import { NoDueRequest } from '../../types';
-import { SasurieDueFormView } from '../../components/SasurieDueFormView';
 
 export const AdminRequestsPage: React.FC = () => {
   const [requests, setRequests] = useState<NoDueRequest[]>([]);
@@ -38,7 +35,6 @@ export const AdminRequestsPage: React.FC = () => {
   const [rejectingReq, setRejectingReq] = useState<NoDueRequest | null>(null);
   const [rejectRemarks, setRejectRemarks] = useState('Requirement unfulfilled or pending administrative verification');
   const [deletingReq, setDeletingReq] = useState<NoDueRequest | null>(null);
-  const [previewFormReq, setPreviewFormReq] = useState<NoDueRequest | null>(null);
 
   const fetchRequests = async () => {
     try {
@@ -278,15 +274,6 @@ export const AdminRequestsPage: React.FC = () => {
                     >
                       {isExpanded ? 'Hide Details' : 'View Approvals'}{' '}
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                    </button>
-
-                    <button
-                      onClick={() => setPreviewFormReq(req)}
-                      className="px-3 py-1.5 text-xs font-bold rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title="Inspect Official No Due Form"
-                    >
-                      <FileText className="w-3.5 h-3.5 text-indigo-700" />
-                      Official Form
                     </button>
 
                     {req.status !== 'completed' && req.status !== 'rejected' && (
@@ -582,65 +569,6 @@ export const AdminRequestsPage: React.FC = () => {
                 className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
               >
                 {actionLoading === deletingReq.id ? 'Deleting...' : 'Delete Application'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Sasurie Due Form Full Preview Modal */}
-      {previewFormReq && (
-        <div className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-6 overflow-y-auto">
-          <div className="bg-slate-100 rounded-2xl max-w-4xl w-full max-h-[92vh] flex flex-col shadow-2xl border border-slate-300">
-            {/* Modal Header */}
-            <div className="p-4 bg-white border-b border-slate-200 rounded-t-2xl flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-lg bg-indigo-900 text-white flex items-center justify-center">
-                  <FileText className="w-4 h-4" />
-                </div>
-                <div>
-                  <h4 className="font-bold text-slate-900 text-sm">
-                    College of Engineering - Official No Due Form
-                  </h4>
-                  <p className="text-[11px] text-slate-500">
-                    Application #{previewFormReq.id} • {previewFormReq.student_name} ({previewFormReq.student_reg_no})
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => window.print()}
-                  className="px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 inline-flex items-center gap-1.5 cursor-pointer"
-                >
-                  <Printer className="w-3.5 h-3.5" />
-                  Print Form
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewFormReq(null)}
-                  className="p-1.5 rounded-lg hover:bg-slate-100 text-slate-400 hover:text-slate-700 cursor-pointer"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-
-            {/* Modal Scrollable Body */}
-            <div className="p-4 sm:p-6 overflow-y-auto flex-1">
-              <SasurieDueFormView request={previewFormReq} />
-            </div>
-
-            {/* Modal Footer */}
-            <div className="p-3 bg-white border-t border-slate-200 rounded-b-2xl flex items-center justify-between text-xs text-slate-500">
-              <span>Form replica matches official physical paper sheet</span>
-              <button
-                type="button"
-                onClick={() => setPreviewFormReq(null)}
-                className="px-4 py-1.5 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg cursor-pointer"
-              >
-                Close Preview
               </button>
             </div>
           </div>

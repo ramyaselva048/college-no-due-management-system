@@ -117,7 +117,7 @@ export const StaffStudentsPage: React.FC = () => {
                       </td>
 
                       <td className="py-3.5 px-4 text-slate-600">
-                        Year {student.year} (Sec {student.section})
+                        Year {student.year} • Sem {student.semester || (student.year ? student.year * 2 - 1 : 1)} (Sec {student.section || 'A'})
                       </td>
 
                       <td className="py-3.5 px-4">
