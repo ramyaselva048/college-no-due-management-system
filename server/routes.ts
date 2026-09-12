@@ -1,6 +1,7 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
-import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, deleteRecordFromPostgres, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, SubjectCourseRecord, DueCategoryRecord, CertificateRecord } from './db';
+import { db, hashPassword, verifyPassword, createToken, verifyToken, testPgConnection, pgQuery, deleteRecordFromPostgres, UserRecord, StudentRecord, StaffRecord, DepartmentRecord, CourseRecord, SubjectCourseRecord, DueCategoryRecord, CertificateRecord, DueRecord, isAcademicDepartment, getApplicableDepartmentsForStudent } from './db';
+import { DEPARTMENT_CURRICULUM_CATALOG, generateGenericSemesterSubjects } from './curriculum_catalog';
 import { generateCertificatePdf } from './pdf';
 
 export const apiRouter = Router();
@@ -478,8 +479,8 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
   const student = req.studentProfile;
   if (!student) return res.status(404).json({ detail: 'Student profile not found' });
 
-  const activeDepartments = db.departments.filter(d => d.is_active);
   const studentDues = db.dueRecords.filter(d => d.student_id === student.id);
+  const activeDepartments = getApplicableDepartmentsForStudent(student, db.departments, studentDues, db.courses);
 
   const totalAmount = studentDues.reduce((sum, d) => sum + d.amount, 0);
   const pendingAmount = studentDues.filter(d => d.status === 'pending').reduce((sum, d) => sum + d.amount, 0);
@@ -697,6 +698,8 @@ apiRouter.get('/due-records', authMiddleware, (req: AuthRequest, res: Response) 
 
   const result = paginated.map(r => {
     const student = db.students.find(s => s.id === r.student_id);
+    const studentDept = student ? db.departments.find(d => d.id === student.department_id) : null;
+    const studentCourse = student ? db.courses.find(c => c.id === student.course_id) : null;
     const dept = db.departments.find(d => d.id === r.department_id);
     const cat = db.dueCategories.find(c => c.id === r.category_id);
     return {
@@ -705,8 +708,15 @@ apiRouter.get('/due-records', authMiddleware, (req: AuthRequest, res: Response) 
       student_name: student ? student.full_name : '',
       student_reg_no: student ? student.register_number : '',
       student_email: student ? student.email : '',
+      student_department_id: student ? student.department_id : null,
+      student_department_name: studentDept ? studentDept.name : '',
+      student_department_code: studentDept ? studentDept.code : '',
+      student_course: studentCourse ? (studentCourse.code || studentCourse.name) : '',
+      student_year: student ? student.year : null,
+      student_section: student ? student.section : '',
       department_id: r.department_id,
       department_name: dept ? dept.name : '',
+      department_code: dept ? dept.code : '',
       category_id: r.category_id,
       category_name: cat ? cat.name : '',
       amount: r.amount,
@@ -793,6 +803,180 @@ apiRouter.post('/due-records', authMiddleware, requireRole(['STAFF', 'ADMIN']), 
     remarks: newDue.remarks,
     created_at: newDue.created_at,
     updated_at: newDue.updated_at
+  });
+});
+
+apiRouter.get('/admin/dues/preview-department-target', authMiddleware, requireRole(['STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const { department_id, year, section, course_id } = req.query;
+  const deptId = Number(department_id);
+  if (!deptId) return res.status(400).json({ detail: 'department_id is required' });
+
+  const dept = db.departments.find(d => d.id === deptId);
+  if (!dept) return res.status(404).json({ detail: 'Department not found' });
+
+  let targetStudents = db.students.filter(s => s.department_id === deptId);
+  if (year !== undefined && year !== 'ALL' && year !== '') {
+    targetStudents = targetStudents.filter(s => s.year === Number(year));
+  }
+  if (section && section !== 'ALL' && section !== '') {
+    targetStudents = targetStudents.filter(s => (s.section || '').toUpperCase() === String(section).toUpperCase());
+  }
+  if (course_id !== undefined && course_id !== 'ALL' && course_id !== '') {
+    targetStudents = targetStudents.filter(s => s.course_id === Number(course_id));
+  }
+
+  res.json({
+    count: targetStudents.length,
+    department: {
+      id: dept.id,
+      name: dept.name,
+      code: dept.code
+    },
+    students: targetStudents.map(s => {
+      const course = db.courses.find(c => c.id === s.course_id);
+      return {
+        id: s.id,
+        full_name: s.full_name,
+        register_number: s.register_number,
+        email: s.email,
+        year: s.year,
+        section: s.section,
+        course_name: course ? course.name : ''
+      };
+    })
+  });
+});
+
+apiRouter.post(['/admin/dues/allocate-department', '/admin/dues/bulk-allocate-department'], authMiddleware, requireRole(['STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const { department_id, year, section, course_id, category_id, amount, description, remarks } = req.body;
+
+  const deptId = Number(department_id);
+  if (!deptId) {
+    return res.status(400).json({ detail: 'Valid department_id is required' });
+  }
+
+  const dept = db.departments.find(d => d.id === deptId);
+  if (!dept) {
+    return res.status(404).json({ detail: 'Department not found' });
+  }
+
+  // If STAFF, verify staff belongs to this department
+  if (req.user!.role === 'STAFF' && req.staffProfile && req.staffProfile.department_id !== deptId) {
+    return res.status(403).json({ detail: 'Staff can only allocate dues for their assigned department' });
+  }
+
+  const numAmount = Number(amount);
+  if (isNaN(numAmount) || numAmount <= 0) {
+    return res.status(400).json({ detail: 'Amount must be a positive number' });
+  }
+
+  const trimmedDesc = (description || '').trim();
+  if (!trimmedDesc) {
+    return res.status(400).json({ detail: 'Due description is required' });
+  }
+
+  const catId = Number(category_id);
+  const category = db.dueCategories.find(c => c.id === catId);
+  if (!category) {
+    return res.status(400).json({ detail: 'Valid due category is required' });
+  }
+
+  // Filter target students by department, year, section, course
+  let targetStudents = db.students.filter(s => s.department_id === deptId);
+
+  if (year !== undefined && year !== 'ALL' && year !== '') {
+    targetStudents = targetStudents.filter(s => s.year === Number(year));
+  }
+  if (section && section !== 'ALL' && section !== '') {
+    targetStudents = targetStudents.filter(s => (s.section || '').toUpperCase() === String(section).toUpperCase());
+  }
+  if (course_id !== undefined && course_id !== 'ALL' && course_id !== '') {
+    targetStudents = targetStudents.filter(s => s.course_id === Number(course_id));
+  }
+
+  if (targetStudents.length === 0) {
+    return res.status(400).json({
+      detail: `No students found matching Department: ${dept.name} (Year: ${year || 'All'}, Section: ${section || 'All'})`
+    });
+  }
+
+  const now = new Date().toISOString();
+  let baseDueId = Math.max(0, ...db.dueRecords.map(d => d.id));
+  const newRecords: any[] = [];
+
+  for (const student of targetStudents) {
+    baseDueId++;
+    const dueRecord: any = {
+      id: baseDueId,
+      student_id: student.id,
+      department_id: deptId,
+      category_id: catId,
+      amount: numAmount,
+      status: 'pending',
+      description: trimmedDesc,
+      remarks: remarks ? String(remarks).trim() : `Allocated to ${dept.code || dept.name} batch`,
+      created_by: req.user!.id,
+      updated_by: req.user!.id,
+      created_at: now,
+      updated_at: now
+    };
+    db.dueRecords.push(dueRecord);
+    newRecords.push(dueRecord);
+
+    // Create in-app notification for the student
+    db.createNotification(
+      student.user_id,
+      `New ${dept.code || 'Dept'} Due Allocated: ₹${numAmount.toFixed(2)}`,
+      `A due of ₹${numAmount.toFixed(2)} for "${trimmedDesc}" (${category.name}) has been allocated by ${dept.name}.`,
+      'warning'
+    );
+  }
+
+  db.recalculateNextIds();
+  db.saveToFile();
+
+  db.logAudit(
+    req.user!.id,
+    req.user!.email,
+    'DEPARTMENT_DUES_BULK_ALLOCATED',
+    'DUE_RECORD',
+    deptId,
+    null,
+    {
+      department_name: dept.name,
+      department_code: dept.code,
+      category_name: category.name,
+      amount: numAmount,
+      student_count: targetStudents.length,
+      total_allocated_amount: numAmount * targetStudents.length,
+      year: year || 'ALL',
+      section: section || 'ALL',
+      description: trimmedDesc
+    },
+    getClientIp(req)
+  );
+
+  res.json({
+    success: true,
+    message: `Successfully allocated ₹${numAmount.toFixed(2)} dues to ${targetStudents.length} students of ${dept.name}`,
+    allocated_count: targetStudents.length,
+    total_amount: numAmount * targetStudents.length,
+    department: {
+      id: dept.id,
+      name: dept.name,
+      code: dept.code
+    },
+    category: {
+      id: category.id,
+      name: category.name
+    },
+    students: targetStudents.map(s => ({
+      id: s.id,
+      full_name: s.full_name,
+      register_number: s.register_number,
+      year: s.year,
+      section: s.section
+    }))
   });
 });
 
@@ -904,6 +1088,122 @@ apiRouter.post('/due-records/:id/pay', authMiddleware, (req: AuthRequest, res: R
 });
 
 // ----------------------------------------------------
+// Sasurie Official No Due Form Helpers (Dynamic by Department & Semester)
+// ----------------------------------------------------
+function defaultSubjectsForStudent(student?: any, semester?: number): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string }> {
+  const deptId = student?.department_id || 1;
+  const targetSem = Number(semester) || student?.semester || (student?.year ? student.year * 2 - 1 : 7);
+  const targetYear = student?.year || Math.ceil(targetSem / 2);
+  const dateStr = new Date().toLocaleDateString('en-GB');
+
+  // Query db.subjectCourses for theory subjects
+  const dbSubjects = db.subjectCourses.filter(c =>
+    c.department_id === deptId &&
+    c.semester === targetSem &&
+    (!c.course_type || c.course_type === 'theory') &&
+    !c.slot?.toLowerCase().includes('lab') &&
+    !c.title.toLowerCase().includes('lab')
+  );
+
+  if (dbSubjects.length > 0) {
+    return dbSubjects.slice(0, 6).map((c, idx) => ({
+      slot: c.slot || `Sub ${idx + 1}`,
+      name: c.title,
+      code: c.code,
+      dues_status: 'No Dues',
+      faculty_name: c.faculty_name || 'Faculty In-Charge',
+      signature_date: dateStr
+    }));
+  }
+
+  // Fallback to curriculum catalog if database not yet seeded for this sem
+  const dept = db.departments.find(d => d.id === deptId);
+  const catalog = DEPARTMENT_CURRICULUM_CATALOG[dept?.code?.toUpperCase() || 'CSE'] || [];
+  const semCatalog = catalog.filter(c => c.semester === targetSem && c.course_type === 'theory');
+  if (semCatalog.length > 0) {
+    return semCatalog.slice(0, 6).map((c, idx) => ({
+      slot: c.slot || `Sub ${idx + 1}`,
+      name: c.title,
+      code: c.code,
+      dues_status: 'No Dues',
+      faculty_name: c.faculty_name,
+      signature_date: dateStr
+    }));
+  }
+
+  // Generic fallback
+  const generic = generateGenericSemesterSubjects(dept?.code || 'ENGG', targetYear, targetSem)
+    .filter(c => c.course_type === 'theory');
+  return generic.slice(0, 6).map((c, idx) => ({
+    slot: c.slot || `Sub ${idx + 1}`,
+    name: c.title,
+    code: c.code,
+    dues_status: 'No Dues',
+    faculty_name: c.faculty_name,
+    signature_date: dateStr
+  }));
+}
+
+function defaultLabsForStudent(student?: any, semester?: number): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string }> {
+  const deptId = student?.department_id || 1;
+  const targetSem = Number(semester) || student?.semester || (student?.year ? student.year * 2 - 1 : 7);
+  const targetYear = student?.year || Math.ceil(targetSem / 2);
+  const dateStr = new Date().toLocaleDateString('en-GB');
+
+  // Query db.subjectCourses for lab courses
+  const dbLabs = db.subjectCourses.filter(c =>
+    c.department_id === deptId &&
+    c.semester === targetSem &&
+    (c.course_type === 'lab' || c.slot?.toLowerCase().includes('lab') || c.title.toLowerCase().includes('lab'))
+  );
+
+  if (dbLabs.length > 0) {
+    return dbLabs.slice(0, 4).map((c, idx) => ({
+      slot: c.slot || `Lab ${idx + 1}`,
+      name: c.title,
+      code: c.code,
+      dues_status: 'No Dues',
+      faculty_name: c.faculty_name || 'Lab In-Charge',
+      signature_date: dateStr
+    }));
+  }
+
+  const dept = db.departments.find(d => d.id === deptId);
+  const catalog = DEPARTMENT_CURRICULUM_CATALOG[dept?.code?.toUpperCase() || 'CSE'] || [];
+  const semCatalog = catalog.filter(c => c.semester === targetSem && c.course_type === 'lab');
+  if (semCatalog.length > 0) {
+    return semCatalog.slice(0, 4).map((c, idx) => ({
+      slot: c.slot || `Lab ${idx + 1}`,
+      name: c.title,
+      code: c.code,
+      dues_status: 'No Dues',
+      faculty_name: c.faculty_name,
+      signature_date: dateStr
+    }));
+  }
+
+  return [
+    { slot: 'Lab 1', name: '-', dues_status: '-', faculty_name: '', signature_date: '' },
+    { slot: 'Lab 2', name: '-', dues_status: '-', faculty_name: '', signature_date: '' },
+    { slot: 'Lab 3', name: '-', dues_status: '-', faculty_name: '', signature_date: '' },
+    { slot: 'Lab 4', name: '-', dues_status: '-', faculty_name: '', signature_date: '' }
+  ];
+}
+
+function defaultSignatoriesForStudent(reqObj?: any) {
+  return {
+    chief_mentor: { signed: true, name: 'S. Rajesh', date: '10/8/26', status: 'approved' },
+    hod: { signed: true, name: 'Dr. S. R. Murugan', date: '10/8/26', status: 'approved' },
+    coe: { signed: true, name: 'Dr. H. Sasipal CoE', date: '10/8/26', status: 'approved' },
+    principal: { signed: true, name: 'Dr. T. Senthilvel', date: '10/8/26', status: 'approved' },
+    library: { signed: true, name: 'D. Vinoth', date: '10/8/26', status: 'No Due' },
+    transport: { signed: false, name: '-', date: '-', status: '-' },
+    hostel: { signed: false, name: '-', date: '-', status: '-' },
+    office_accounts: { signed: true, name: 'S. Accounts', date: '10/08/2026', status: 'No Dues' }
+  };
+}
+
+// ----------------------------------------------------
 // No Due Requests (/api/no-due-requests)
 // ----------------------------------------------------
 apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (req: AuthRequest, res: Response) => {
@@ -923,18 +1223,37 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
 
   const now = new Date().toISOString();
   const reqId = Math.max(0, ...db.noDueRequests.map(r => r.id)) + 1;
+  const attendancePct = req.body.attendance_percentage ?? (student.attendance_percentage ?? 98);
+  const undertakingStatus = req.body.undertaking_status || (Number(attendancePct) >= 80 ? 'Exempted' : 'Submitted');
+
+  const targetYear = req.body.year || student.year || 4;
+  const targetSemester = req.body.semester || student.semester || (student.year === 4 ? 7 : student.year * 2 - 1);
+
   const newReq: any = {
     id: reqId,
     student_id: student.id,
     status: 'under_review',
     submitted_at: now,
-    remarks: req.body.remarks || '',
-    created_at: now
+    remarks: req.body.remarks || 'CIAT / End Sem Clearance Form',
+    created_at: now,
+    exam_type: req.body.exam_type || 'CIAT - I',
+    form_date: req.body.form_date || new Date().toLocaleDateString('en-GB'),
+    academic_year: req.body.academic_year || '2025-26',
+    year: targetYear,
+    semester: targetSemester,
+    student_type: req.body.student_type || student.student_type || 'day_scholar',
+    attendance_percentage: attendancePct,
+    attendance_month: req.body.attendance_month || 'August',
+    undertaking_status: undertakingStatus,
+    subjects: req.body.subjects && req.body.subjects.length > 0 ? req.body.subjects : defaultSubjectsForStudent(student, targetSemester),
+    labs: req.body.labs && req.body.labs.length > 0 ? req.body.labs : defaultLabsForStudent(student, targetSemester),
+    signatories: req.body.signatories || defaultSignatoriesForStudent()
   };
   db.noDueRequests.push(newReq);
 
-  // Auto-generate approval for every active department
-  const activeDepts = db.departments.filter(d => d.is_active);
+  // Auto-generate approval for departments applicable to this student
+  const studentDues = db.dueRecords.filter(d => d.student_id === student.id);
+  const activeDepts = getApplicableDepartmentsForStudent(student, db.departments, studentDues, db.courses);
   const baseAppId = Math.max(0, ...db.noDueApprovals.map(a => a.id));
   const approvals = activeDepts.map((d, index) => {
     const appRecord: any = {
@@ -952,11 +1271,11 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
   });
   db.saveToFile();
 
-  db.logAudit(req.user!.id, req.user!.email, 'NO_DUE_REQUEST_CREATED', 'NO_DUE_REQUEST', newReq.id, null, { departments_count: activeDepts.length }, getClientIp(req));
+  db.logAudit(req.user!.id, req.user!.email, 'NO_DUE_REQUEST_CREATED', 'NO_DUE_REQUEST', newReq.id, null, { departments_count: activeDepts.length, exam_type: newReq.exam_type }, getClientIp(req));
   db.createNotification(
     student.user_id,
-    'No Due Request Submitted',
-    'Your No Due Clearance request has been initiated and routed to all departments for verification.',
+    'Sasurie No Due Request Submitted',
+    `Your ${newReq.exam_type} No Due Form has been initiated with 14 clearance sections and routed for verification.`,
     'info'
   );
 
@@ -974,7 +1293,19 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
     submitted_at: newReq.submitted_at,
     remarks: newReq.remarks,
     approvals,
-    created_at: newReq.created_at
+    created_at: newReq.created_at,
+    exam_type: newReq.exam_type,
+    form_date: newReq.form_date,
+    academic_year: newReq.academic_year,
+    year: newReq.year,
+    semester: newReq.semester,
+    student_type: newReq.student_type,
+    attendance_percentage: newReq.attendance_percentage,
+    attendance_month: newReq.attendance_month,
+    undertaking_status: newReq.undertaking_status,
+    subjects: newReq.subjects,
+    labs: newReq.labs,
+    signatories: newReq.signatories
   });
 });
 
@@ -1012,14 +1343,26 @@ apiRouter.get('/no-due-requests/my', authMiddleware, requireRole(['STUDENT']), (
       reviewed_by: r.reviewed_by,
       remarks: r.remarks,
       approvals,
-      created_at: r.created_at
+      created_at: r.created_at,
+      exam_type: r.exam_type || 'CIAT - I',
+      form_date: r.form_date || (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '10/08/2026'),
+      academic_year: r.academic_year || '2025-26',
+      year: r.year || student.year || 4,
+      semester: r.semester || (student.semester || (student.year === 4 ? 7 : student.year * 2 - 1)),
+      student_type: r.student_type || student.student_type || 'day_scholar',
+      attendance_percentage: r.attendance_percentage ?? (student.attendance_percentage ?? 98),
+      attendance_month: r.attendance_month || 'August',
+      undertaking_status: r.undertaking_status || ((Number(r.attendance_percentage ?? student.attendance_percentage ?? 98) >= 80) ? 'Exempted' : 'Submitted'),
+      subjects: r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(student),
+      labs: r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(student),
+      signatories: r.signatories || defaultSignatoriesForStudent(r)
     };
   });
 
   res.json(result);
 });
 
-apiRouter.get(['/no-due-requests', '/no-due-requests/all', '/no-due-requests/my'], authMiddleware, requireRole(['STUDENT', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.get(['/no-due-requests', '/no-due-requests/all'], authMiddleware, requireRole(['STUDENT', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
   let requests = db.noDueRequests;
   if (req.user!.role === 'STUDENT') {
     const student = req.studentProfile;
@@ -1078,11 +1421,62 @@ apiRouter.get(['/no-due-requests', '/no-due-requests/all', '/no-due-requests/my'
       reviewed_by: r.reviewed_by,
       remarks: r.remarks,
       approvals,
-      created_at: r.created_at
+      created_at: r.created_at,
+      exam_type: r.exam_type || 'CIAT - I',
+      form_date: r.form_date || (r.submitted_at ? new Date(r.submitted_at).toLocaleDateString('en-GB') : '10/08/2026'),
+      academic_year: r.academic_year || '2025-26',
+      year: r.year || (st ? st.year : 4),
+      semester: r.semester || (st ? (st.semester || (st.year === 4 ? 7 : st.year * 2 - 1)) : 7),
+      student_type: r.student_type || (st ? st.student_type : 'day_scholar'),
+      attendance_percentage: r.attendance_percentage ?? (st ? st.attendance_percentage : 98),
+      attendance_month: r.attendance_month || 'August',
+      undertaking_status: r.undertaking_status || ((Number(r.attendance_percentage ?? st?.attendance_percentage ?? 98) >= 80) ? 'Exempted' : 'Submitted'),
+      subjects: r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(st),
+      labs: r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(st),
+      signatories: r.signatories || defaultSignatoriesForStudent(r)
     };
   });
 
   res.json(result);
+});
+
+// Update specific signatory or subject on a physical form
+apiRouter.patch('/no-due-requests/:id/sign-role', authMiddleware, requireRole(['STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const r = db.noDueRequests.find(reqItem => reqItem.id === id);
+  if (!r) return res.status(404).json({ detail: 'Request not found' });
+
+  const { role_key, signer_name, dues_status, remarks, date_str } = req.body;
+  const nowStr = date_str || new Date().toLocaleDateString('en-GB');
+
+  if (!r.signatories) {
+    r.signatories = defaultSignatoriesForStudent(r);
+  }
+
+  if (role_key && r.signatories && (r.signatories as any)[role_key] !== undefined) {
+    (r.signatories as any)[role_key] = {
+      signed: true,
+      name: signer_name || req.user!.full_name,
+      date: nowStr,
+      status: dues_status || 'approved',
+      remarks: remarks || ''
+    };
+  }
+
+  // If role_key is a subject slot (e.g., 'Sub 1', 'Sub 2')
+  if (role_key && role_key.startsWith('Sub ') && r.subjects) {
+    const sub = r.subjects.find(s => s.slot === role_key);
+    if (sub) {
+      sub.dues_status = dues_status || 'No Dues';
+      sub.faculty_name = signer_name || req.user!.full_name;
+      sub.signature_date = nowStr;
+    }
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'SIGNATORY_UPDATED', 'NO_DUE_REQUEST', r.id, null, { role_key, signer_name }, getClientIp(req));
+
+  res.json({ message: 'Signatory updated successfully', signatories: r.signatories, subjects: r.subjects });
 });
 
 apiRouter.patch('/no-due-requests/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
@@ -1347,27 +1741,31 @@ apiRouter.get('/certificates/my', authMiddleware, requireRole(['STUDENT']), (req
   const dept = db.departments.find(d => d.id === student.department_id);
   const course = db.courses.find(c => c.id === student.course_id);
 
-  const result = certs.map(c => ({
-    id: c.id,
-    request_id: c.request_id,
-    student_id: c.student_id,
-    student_name: student.full_name,
-    register_number: student.register_number,
-    course_name: course ? course.name : '',
-    department_id: dept ? dept.id : undefined,
-    department_name: dept ? dept.name : '',
-    certificate_number: c.certificate_number,
-    verification_code: c.verification_code,
-    issued_at: c.issued_at,
-    is_valid: c.is_valid,
-    issued_by: c.issued_by,
-    issued_by_name: c.issued_by_name || 'Institutional Administrator',
-    revoked_by: c.revoked_by,
-    revoked_by_name: c.revoked_by_name,
-    revoked_at: c.revoked_at,
-    revocation_reason: c.revocation_reason,
-    created_at: c.created_at
-  }));
+  const result = certs.map(c => {
+    const reqObj = db.noDueRequests.find(r => r.id === c.request_id);
+    return {
+      id: c.id,
+      request_id: c.request_id,
+      student_id: c.student_id,
+      student_name: student.full_name,
+      register_number: student.register_number,
+      course_name: course ? course.name : '',
+      department_id: dept ? dept.id : undefined,
+      department_name: dept ? dept.name : '',
+      certificate_number: c.certificate_number,
+      verification_code: c.verification_code,
+      issued_at: c.issued_at,
+      is_valid: c.is_valid,
+      issued_by: c.issued_by,
+      issued_by_name: c.issued_by_name || 'Institutional Administrator',
+      revoked_by: c.revoked_by,
+      revoked_by_name: c.revoked_by_name,
+      revoked_at: c.revoked_at,
+      revocation_reason: c.revocation_reason,
+      created_at: c.created_at,
+      request: reqObj || null
+    };
+  });
 
   res.json(result);
 });
@@ -1424,6 +1822,7 @@ apiRouter.get(['/certificates', '/certificates/all'], authMiddleware, requireRol
     const st = db.students.find(s => s.id === c.student_id);
     const dept = st ? db.departments.find(d => d.id === st.department_id) : null;
     const course = st ? db.courses.find(cr => cr.id === st.course_id) : null;
+    const reqObj = db.noDueRequests.find(r => r.id === c.request_id);
     return {
       id: c.id,
       request_id: c.request_id,
@@ -1444,7 +1843,8 @@ apiRouter.get(['/certificates', '/certificates/all'], authMiddleware, requireRol
       revoked_at: c.revoked_at,
       revocation_reason: c.revocation_reason,
       created_at: c.created_at,
-      updated_at: c.updated_at
+      updated_at: c.updated_at,
+      request: reqObj || null
     };
   });
 
@@ -1518,7 +1918,7 @@ apiRouter.get('/certificates/verify/:verification_code', (req: Request, res: Res
     issued_by: cert.issued_by_name || 'Institutional Administrator',
     revoked_at: cert.revoked_at,
     revocation_reason: cert.revocation_reason,
-    college_name: 'Apex Institute of Technology & Higher Education',
+    college_name: 'Sasurie College of Engineering (Autonomous), Vijayamangalam, Tiruppur - 638056',
     status_message: cert.is_valid ? 'AUTHENTIC & VALID' : 'REVOKED / INVALID'
   });
 });
@@ -2345,7 +2745,7 @@ apiRouter.get('/admin/departments', authMiddleware, requireRole(['ADMIN']), (req
 });
 
 apiRouter.post('/admin/departments', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
-  const { name, code, description, is_active } = req.body;
+  const { name, code, description, is_active, type, category } = req.body;
   const trimmedName = (name || '').trim();
   if (!trimmedName) {
     return res.status(400).json({ detail: 'Department name is required' });
@@ -2360,11 +2760,16 @@ apiRouter.post('/admin/departments', authMiddleware, requireRole(['ADMIN']), (re
     return res.status(400).json({ detail: `Department code "${upperCode}" already exists` });
   }
 
+  const deptType = type || (category === 'institutional' ? 'INSTITUTIONAL' : 'ACADEMIC');
+  const deptCategory = category || (deptType === 'INSTITUTIONAL' ? 'institutional' : 'academic');
+
   const newDept: DepartmentRecord = {
     id: Math.max(...db.departments.map(d => d.id), 0) + 1,
     name: trimmedName,
     code: upperCode,
     description: description || '',
+    type: deptType,
+    category: deptCategory,
     is_active: is_active !== undefined ? is_active : true,
     created_at: new Date().toISOString()
   };
@@ -2378,8 +2783,10 @@ apiRouter.patch('/admin/departments/:id', authMiddleware, requireRole(['ADMIN'])
   const dept = db.departments.find(d => d.id === id);
   if (!dept) return res.status(404).json({ detail: 'Department not found' });
 
-  const { name, code, description, is_active } = req.body;
+  const { name, code, description, is_active, type, category } = req.body;
   if (name !== undefined) dept.name = name.trim();
+  if (type !== undefined) dept.type = type;
+  if (category !== undefined) dept.category = category;
   if (code !== undefined) {
     const upperCode = code.toUpperCase().trim();
     if (db.departments.some(d => d.id !== id && d.code === upperCode)) {
@@ -2620,8 +3027,86 @@ apiRouter.delete('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), (
 
 // ==========================================
 // Academic Subject Courses (Curriculum) Endpoints
-// Form fields: department, course title, course code, year, semester
+// Supports Department, Year, Semester, Course Type, Slot, Faculty In-Charge
 // ==========================================
+
+// Public curriculum lookup for authenticated Students, Staff, and Admins
+apiRouter.get('/curriculum/subjects', authMiddleware, (req: AuthRequest, res: Response) => {
+  const deptId = Number(req.query.department_id) || req.studentProfile?.department_id || 1;
+  const year = Number(req.query.year) || req.studentProfile?.year || 1;
+  const semester = Number(req.query.semester) || req.studentProfile?.semester || (year === 4 ? 7 : year * 2 - 1);
+  const courseType = req.query.course_type ? String(req.query.course_type).toLowerCase() : undefined;
+
+  let list = db.subjectCourses.filter(c => c.department_id === deptId && c.semester === semester && c.is_active !== false);
+
+  if (courseType) {
+    if (courseType === 'lab') {
+      list = list.filter(c => c.course_type === 'lab' || c.slot?.toLowerCase().includes('lab') || c.title.toLowerCase().includes('lab'));
+    } else if (courseType === 'theory') {
+      list = list.filter(c => (!c.course_type || c.course_type === 'theory') && !c.slot?.toLowerCase().includes('lab') && !c.title.toLowerCase().includes('lab'));
+    }
+  }
+
+  // If no courses found in db for this department and semester, fallback to standard catalog
+  if (list.length === 0) {
+    const dept = db.departments.find(d => d.id === deptId);
+    const catalog = DEPARTMENT_CURRICULUM_CATALOG[dept?.code?.toUpperCase() || 'CSE'] || [];
+    let semCatalog = catalog.filter(c => c.semester === semester);
+    if (courseType) {
+      semCatalog = semCatalog.filter(c => c.course_type === courseType);
+    }
+    if (semCatalog.length > 0) {
+      return res.json(semCatalog.map((c, idx) => ({
+        id: -(idx + 1),
+        title: c.title,
+        code: c.code,
+        department_id: deptId,
+        year: c.year,
+        semester: c.semester,
+        course_type: c.course_type,
+        slot: c.slot,
+        faculty_name: c.faculty_name,
+        is_elective: c.is_elective || false,
+        is_active: true
+      })));
+    }
+
+    // Generic fallback
+    const generic = generateGenericSemesterSubjects(dept?.code || 'ENGG', year, semester);
+    const filteredGeneric = courseType ? generic.filter(c => c.course_type === courseType) : generic;
+    return res.json(filteredGeneric.map((c, idx) => ({
+      id: -(idx + 100),
+      title: c.title,
+      code: c.code,
+      department_id: deptId,
+      year: c.year,
+      semester: c.semester,
+      course_type: c.course_type,
+      slot: c.slot,
+      faculty_name: c.faculty_name,
+      is_elective: c.is_elective || false,
+      is_active: true
+    })));
+  }
+
+  const dept = db.departments.find(d => d.id === deptId);
+  res.json(list.map(c => ({
+    id: c.id,
+    title: c.title,
+    code: c.code,
+    department_id: c.department_id,
+    department_name: dept?.name || 'General Engineering',
+    department_code: dept?.code || 'GEN',
+    year: c.year,
+    semester: c.semester,
+    course_type: c.course_type || (c.title.toLowerCase().includes('lab') ? 'lab' : 'theory'),
+    slot: c.slot || (c.course_type === 'lab' ? 'Lab' : 'Sub'),
+    faculty_name: c.faculty_name || 'Faculty In-Charge',
+    is_elective: c.is_elective || false,
+    is_active: c.is_active
+  })));
+});
+
 apiRouter.get(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
   let list = db.subjectCourses;
 
@@ -2634,11 +3119,21 @@ apiRouter.get(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddl
   if (req.query.semester) {
     list = list.filter(c => c.semester === Number(req.query.semester));
   }
+  if (req.query.course_type) {
+    const ct = String(req.query.course_type).toLowerCase();
+    if (ct === 'lab') {
+      list = list.filter(c => c.course_type === 'lab' || c.slot?.toLowerCase().includes('lab') || c.title.toLowerCase().includes('lab'));
+    } else if (ct === 'theory') {
+      list = list.filter(c => (!c.course_type || c.course_type === 'theory') && !c.slot?.toLowerCase().includes('lab') && !c.title.toLowerCase().includes('lab'));
+    }
+  }
   if (req.query.search) {
     const q = String(req.query.search).toLowerCase().trim();
     list = list.filter(c =>
       c.title.toLowerCase().includes(q) ||
-      c.code.toLowerCase().includes(q)
+      c.code.toLowerCase().includes(q) ||
+      (c.faculty_name && c.faculty_name.toLowerCase().includes(q)) ||
+      (c.slot && c.slot.toLowerCase().includes(q))
     );
   }
 
@@ -2653,6 +3148,10 @@ apiRouter.get(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddl
       department_code: dept ? dept.code : 'GEN',
       year: c.year,
       semester: c.semester,
+      course_type: c.course_type || (c.title.toLowerCase().includes('lab') ? 'lab' : 'theory'),
+      slot: c.slot || (c.course_type === 'lab' ? 'Lab 1' : 'Sub 1'),
+      faculty_name: c.faculty_name || 'Faculty In-Charge',
+      is_elective: Boolean(c.is_elective),
       is_active: c.is_active,
       created_at: c.created_at
     };
@@ -2662,7 +3161,7 @@ apiRouter.get(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddl
 });
 
 apiRouter.post(['/admin/subject-courses', '/admin/curriculum-courses'], authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
-  const { department, department_id, course_title, title, course_code, code, year, semester } = req.body;
+  const { department, department_id, course_title, title, course_code, code, year, semester, course_type, slot, faculty_name, is_elective } = req.body;
 
   const finalTitle = (course_title || title || '').trim();
   if (!finalTitle) {
@@ -2716,13 +3215,11 @@ apiRouter.post(['/admin/subject-courses', '/admin/curriculum-courses'], authMidd
     deptId = dept.id;
   }
 
-  const finalYear = Math.max(1, Math.min(4, Number(year) || 1));
   const finalSemester = Math.max(1, Math.min(8, Number(semester) || 1));
-
-  // Check code uniqueness within same semester/department
-  if (db.subjectCourses.some(c => c.code === finalCode && c.department_id === deptId)) {
-    finalCode = `${finalCode}_${Date.now().toString().slice(-4)}`;
-  }
+  const finalYear = Number(year) ? Math.max(1, Math.min(4, Number(year))) : Math.ceil(finalSemester / 2);
+  const finalType: 'theory' | 'lab' = course_type === 'lab' || finalTitle.toLowerCase().includes('lab') ? 'lab' : 'theory';
+  const finalSlot = (slot || (finalType === 'lab' ? 'Lab 1' : 'Sub 1')).trim();
+  const finalFaculty = (faculty_name || 'Faculty In-Charge').trim();
 
   const nextId = Math.max(0, ...db.subjectCourses.map(s => s.id)) + 1;
   const newCourse: SubjectCourseRecord = {
@@ -2732,6 +3229,10 @@ apiRouter.post(['/admin/subject-courses', '/admin/curriculum-courses'], authMidd
     department_id: deptId,
     year: finalYear,
     semester: finalSemester,
+    course_type: finalType,
+    slot: finalSlot,
+    faculty_name: finalFaculty,
+    is_elective: Boolean(is_elective),
     is_active: true,
     created_at: new Date().toISOString()
   };
@@ -2746,7 +3247,7 @@ apiRouter.post(['/admin/subject-courses', '/admin/curriculum-courses'], authMidd
     'COURSE',
     newCourse.id,
     null,
-    { title: newCourse.title, code: newCourse.code, department: dept?.name, year: finalYear, semester: finalSemester },
+    { title: newCourse.title, code: newCourse.code, department: dept?.name, year: finalYear, semester: finalSemester, slot: finalSlot },
     getClientIp(req)
   );
 
@@ -2757,12 +3258,75 @@ apiRouter.post(['/admin/subject-courses', '/admin/curriculum-courses'], authMidd
   });
 });
 
+apiRouter.post('/admin/curriculum-courses/seed-standards', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const { department_id } = req.body;
+  const deptsToSeed = department_id ? db.departments.filter(d => d.id === Number(department_id)) : db.departments.filter(d => d.type !== 'INSTITUTIONAL');
+
+  let addedCount = 0;
+  let nextId = Math.max(0, ...db.subjectCourses.map(s => s.id)) + 1;
+  const now = new Date().toISOString();
+
+  for (const dept of deptsToSeed) {
+    const catalog = DEPARTMENT_CURRICULUM_CATALOG[dept.code.toUpperCase()];
+    if (catalog) {
+      for (const item of catalog) {
+        const existing = db.subjectCourses.find(c => c.department_id === dept.id && c.code === item.code && c.semester === item.semester);
+        if (!existing) {
+          db.subjectCourses.push({
+            id: nextId++,
+            title: item.title,
+            code: item.code,
+            department_id: dept.id,
+            year: item.year,
+            semester: item.semester,
+            course_type: item.course_type,
+            slot: item.slot,
+            faculty_name: item.faculty_name,
+            is_elective: item.is_elective || false,
+            is_active: true,
+            created_at: now
+          });
+          addedCount++;
+        }
+      }
+    } else {
+      for (let sem = 1; sem <= 8; sem++) {
+        const yr = Math.ceil(sem / 2);
+        const existingCount = db.subjectCourses.filter(c => c.department_id === dept.id && c.semester === sem).length;
+        if (existingCount === 0) {
+          const generated = generateGenericSemesterSubjects(dept.code || 'ENGG', yr, sem);
+          for (const item of generated) {
+            db.subjectCourses.push({
+              id: nextId++,
+              title: item.title,
+              code: item.code,
+              department_id: dept.id,
+              year: item.year,
+              semester: item.semester,
+              course_type: item.course_type,
+              slot: item.slot,
+              faculty_name: item.faculty_name,
+              is_elective: item.is_elective || false,
+              is_active: true,
+              created_at: now
+            });
+            addedCount++;
+          }
+        }
+      }
+    }
+  }
+
+  db.saveToFile();
+  res.json({ message: `Successfully seeded ${addedCount} curriculum subjects`, added: addedCount });
+});
+
 apiRouter.patch('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
   const course = db.subjectCourses.find(c => c.id === id);
   if (!course) return res.status(404).json({ detail: 'Course not found' });
 
-  const { department, department_id, course_title, title, course_code, code, year, semester, is_active } = req.body;
+  const { department, department_id, course_title, title, course_code, code, year, semester, course_type, slot, faculty_name, is_elective, is_active } = req.body;
 
   if (course_title !== undefined || title !== undefined) {
     const t = (course_title || title || '').trim();
@@ -2771,6 +3335,18 @@ apiRouter.patch('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMI
   if (course_code !== undefined || code !== undefined) {
     const c = (course_code || code || '').toUpperCase().trim();
     if (c) course.code = c;
+  }
+  if (course_type !== undefined) {
+    course.course_type = course_type === 'lab' ? 'lab' : 'theory';
+  }
+  if (slot !== undefined) {
+    course.slot = String(slot).trim();
+  }
+  if (faculty_name !== undefined) {
+    course.faculty_name = String(faculty_name).trim();
+  }
+  if (is_elective !== undefined) {
+    course.is_elective = Boolean(is_elective);
   }
   if (department_id !== undefined || department !== undefined || req.body.department_name) {
     const rawDept = (typeof department === 'string' ? department : (req.body.department_name || '')).trim();
@@ -2815,6 +3391,9 @@ apiRouter.patch('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMI
   }
   if (semester !== undefined) {
     course.semester = Math.max(1, Math.min(8, Number(semester) || 1));
+    if (!year) {
+      course.year = Math.ceil(course.semester / 2);
+    }
   }
   if (is_active !== undefined) {
     course.is_active = Boolean(is_active);
@@ -3020,6 +3599,11 @@ apiRouter.get('/staff/dashboard', authMiddleware, requireRole(['STAFF']), (req: 
 apiRouter.get('/staff/students', authMiddleware, requireRole(['STAFF']), (req: AuthRequest, res: Response) => {
   const staff = req.staffProfile!;
   let students = db.students;
+
+  const staffDept = db.departments.find(d => d.id === staff.department_id);
+  if (staffDept && isAcademicDepartment(staffDept, db.courses)) {
+    students = students.filter(s => s.department_id === staff.department_id || db.dueRecords.some(d => d.student_id === s.id && d.department_id === staff.department_id));
+  }
 
   if (req.query.course_id) {
     students = students.filter(s => s.course_id === Number(req.query.course_id));

@@ -24,6 +24,8 @@ export const AdminStudentsPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [filterCourse, setFilterCourse] = useState('all');
+  const [filterDept, setFilterDept] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
   const [courses, setCourses] = useState<Course[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
 
@@ -282,7 +284,16 @@ export const AdminStudentsPage: React.FC = () => {
       filterCourse === 'all' ||
       !filterCourse ||
       s.course_name?.toLowerCase().includes(filterCourse.toLowerCase());
-    return matchesSearch && matchesCourse;
+    const matchesDept =
+      filterDept === 'all' ||
+      !filterDept ||
+      String(s.department_id) === filterDept ||
+      s.department_name?.toLowerCase().includes(filterDept.toLowerCase());
+    const matchesYear =
+      filterYear === 'all' ||
+      !filterYear ||
+      String(s.year) === filterYear;
+    return matchesSearch && matchesCourse && matchesDept && matchesYear;
   });
 
   return (
@@ -307,15 +318,42 @@ export const AdminStudentsPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Department Filter */}
+          <select
+            value={filterDept}
+            onChange={(e) => setFilterDept(e.target.value)}
+            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="all">All Departments</option>
+            {departments.map((d) => (
+              <option key={d.id} value={d.id}>
+                {d.name} ({d.code})
+              </option>
+            ))}
+          </select>
+
+          {/* Year Filter */}
+          <select
+            value={filterYear}
+            onChange={(e) => setFilterYear(e.target.value)}
+            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+          >
+            <option value="all">All Years</option>
+            <option value="1">1st Year</option>
+            <option value="2">2nd Year</option>
+            <option value="3">3rd Year</option>
+            <option value="4">4th Year</option>
+          </select>
+
           <div className="relative">
             <input
               type="text"
               list="students-filter-course-list"
-              placeholder="Type degree / course..."
+              placeholder="Degree / course..."
               value={filterCourse === 'all' ? '' : filterCourse}
               onChange={(e) => setFilterCourse(e.target.value || 'all')}
-              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 w-52"
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44"
             />
             <datalist id="students-filter-course-list">
               <option value="all">All Degree Programs</option>
@@ -331,7 +369,7 @@ export const AdminStudentsPage: React.FC = () => {
               placeholder="Search students, reg no..."
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-52"
+              className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-48"
             />
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
           </div>
@@ -351,6 +389,27 @@ export const AdminStudentsPage: React.FC = () => {
           >
             <PlusCircle className="w-3.5 h-3.5" /> Add Student
           </button>
+        </div>
+      </div>
+
+      {/* Quick Summary Pill Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs">
+        <div className="flex flex-wrap items-center gap-2 text-indigo-900">
+          <span className="font-bold flex items-center gap-1.5">
+            <GraduationCap className="w-4 h-4 text-indigo-600" />
+            Active Registry:
+          </span>
+          <span className="bg-white text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
+            {safeStudents.length} Students Enrolled
+          </span>
+          <span className="text-indigo-600">•</span>
+          <span className="text-slate-600">All Academic Departments & Years 1–4 Configured</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-slate-500">Universal Student Password:</span>
+          <code className="px-2 py-0.5 bg-white text-indigo-700 border border-indigo-200 font-mono font-bold rounded-md">
+            Sasurie@123
+          </code>
         </div>
       </div>
 

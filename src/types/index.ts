@@ -13,6 +13,8 @@ export interface Department {
   name: string;
   code: string;
   description?: string;
+  type?: 'ACADEMIC' | 'INSTITUTIONAL';
+  category?: 'academic' | 'institutional';
   is_active: boolean;
   created_at?: string;
 }
@@ -37,6 +39,10 @@ export interface SubjectCourse {
   department_code?: string;
   year: number;
   semester: number;
+  course_type?: 'theory' | 'lab';
+  slot?: string;
+  faculty_name?: string;
+  is_elective?: boolean;
   is_active: boolean;
   created_at?: string;
 }
@@ -120,6 +126,26 @@ export interface StudentDuesSummary {
   departments_summary: DepartmentDueSummary[];
 }
 
+export interface SasurieSubjectEntry {
+  slot: string; // 'Sub 1', 'Sub 2', ..., 'Sub 6', 'Lab 1', ..., 'Lab 4'
+  name: string;
+  dues_status: string; // 'No Dues', 'Verified', 'Pending', '-'
+  faculty_name?: string;
+  signature?: string;
+  signature_date?: string;
+}
+
+export interface SasurieSignatories {
+  chief_mentor?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+  hod?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+  coe?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+  principal?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+  library?: { signed: boolean; name?: string; date?: string; status?: string };
+  transport?: { signed: boolean; name?: string; date?: string; status?: string };
+  hostel?: { signed: boolean; name?: string; date?: string; status?: string };
+  office_accounts?: { signed: boolean; name?: string; date?: string; status?: string };
+}
+
 export interface NoDueApproval {
   id: number;
   request_id: number;
@@ -146,6 +172,20 @@ export interface NoDueRequest {
   remarks?: string;
   approvals: NoDueApproval[];
   created_at: string;
+
+  // Official Sasurie No Due Form fields
+  exam_type?: 'CIAT - I' | 'CIAT - II' | 'End Semester Examinations';
+  form_date?: string;
+  academic_year?: string;
+  year?: number;
+  semester?: number;
+  student_type?: 'day_scholar' | 'hostel';
+  attendance_percentage?: number | string;
+  attendance_month?: string;
+  undertaking_status?: 'Submitted' | 'Not Submitted' | 'Exempted';
+  subjects?: SasurieSubjectEntry[];
+  labs?: SasurieSubjectEntry[];
+  signatories?: SasurieSignatories;
 }
 
 export interface Certificate {

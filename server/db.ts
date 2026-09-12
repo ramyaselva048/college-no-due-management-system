@@ -3,10 +3,12 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import { pgPool, pgQuery, syncTableToPostgres, syncSingleRecordToPostgres, deleteRecordFromPostgres, testPgConnection } from './pg';
+import { DEPARTMENT_CURRICULUM_CATALOG, generateGenericSemesterSubjects } from './curriculum_catalog';
 
 export interface UserRecord {
   id: number;
   email: string;
+  full_name?: string;
   password_hash: string;
   role: 'STUDENT' | 'STAFF' | 'ADMIN';
   is_active: boolean;
@@ -20,6 +22,8 @@ export interface DepartmentRecord {
   name: string;
   code: string;
   description: string;
+  type?: 'ACADEMIC' | 'INSTITUTIONAL';
+  category?: 'academic' | 'institutional';
   is_active: boolean;
   created_at: string;
 }
@@ -41,6 +45,10 @@ export interface SubjectCourseRecord {
   department_id: number;
   year: number;
   semester: number;
+  course_type?: 'theory' | 'lab';
+  slot?: string;
+  faculty_name?: string;
+  is_elective?: boolean;
   is_active: boolean;
   created_at: string;
 }
@@ -64,8 +72,11 @@ export interface StudentRecord {
   department_id: number;
   course_id: number;
   year: number;
+  semester?: number;
   section: string;
   admission_year: number;
+  student_type?: 'Hosteller' | 'Dayscholar';
+  attendance_percentage?: number;
   created_at: string;
 }
 
@@ -95,6 +106,8 @@ export interface DueRecordEntity {
   created_at: string;
   updated_at?: string;
 }
+
+export type DueRecord = DueRecordEntity;
 
 export interface DuePaymentRecord {
   id: number;
@@ -126,6 +139,41 @@ export interface NoDueRequestRecord {
   reviewed_by?: number;
   remarks?: string;
   created_at: string;
+
+  // Sasurie Official Due Form Fields
+  exam_type?: 'CIAT - I' | 'CIAT - II' | 'End Semester Examinations';
+  form_date?: string;
+  academic_year?: string;
+  year?: number;
+  semester?: number;
+  student_type?: string;
+  attendance_percentage?: number | string;
+  attendance_month?: string;
+  undertaking_status?: string;
+  subjects?: Array<{
+    slot: string;
+    name: string;
+    dues_status: string;
+    faculty_name?: string;
+    signature_date?: string;
+  }>;
+  labs?: Array<{
+    slot: string;
+    name: string;
+    dues_status: string;
+    faculty_name?: string;
+    signature_date?: string;
+  }>;
+  signatories?: {
+    chief_mentor?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+    hod?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+    coe?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+    principal?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
+    library?: { signed: boolean; name?: string; date?: string; status?: string };
+    transport?: { signed: boolean; name?: string; date?: string; status?: string };
+    hostel?: { signed: boolean; name?: string; date?: string; status?: string };
+    office_accounts?: { signed: boolean; name?: string; date?: string; status?: string };
+  };
 }
 
 export interface CertificateRecord {
@@ -167,6 +215,70 @@ export interface AuditLogRecord {
   new_values?: any;
   ip_address?: string;
   created_at: string;
+}
+
+export function isAcademicDepartment(dept: DepartmentRecord, courses: CourseRecord[] = []): boolean {
+  if (dept.type === 'ACADEMIC' || dept.category === 'academic') return true;
+  if (dept.type === 'INSTITUTIONAL' || dept.category === 'institutional') return false;
+
+  // Check if any courses belong to this department
+  if (courses.some(c => c.department_id === dept.id)) return true;
+
+  const code = (dept.code || '').toUpperCase().trim();
+  const name = (dept.name || '').toLowerCase().trim();
+
+  // Known institutional clearance units
+  const institutionalCodes = ['LIB', 'ACC', 'CSL', 'HST', 'TRN', 'SPT', 'TPO', 'COE', 'NSS', 'OFFICE', 'LIBRARY', 'HOSTEL', 'TRANSPORT', 'SPORTS', 'FINANCE', 'PLA', 'PRINCI', 'CEO', 'HOS/SCL', 'TRN-453', 'ACA'];
+  if (institutionalCodes.includes(code)) return false;
+
+  if (
+    name.includes('library') ||
+    name.includes('account') ||
+    name.includes('finance') ||
+    name.includes('hostel') ||
+    name.includes('transport') ||
+    name.includes('sports') ||
+    name.includes('placement') ||
+    name.includes('principal') ||
+    name.includes('ceo') ||
+    name.includes('warden') ||
+    name.includes('office')
+  ) {
+    return false;
+  }
+
+  // Academic branches
+  return true;
+}
+
+export function getApplicableDepartmentsForStudent(
+  student: StudentRecord,
+  allDepartments: DepartmentRecord[],
+  studentDues: DueRecordEntity[] = [],
+  courses: CourseRecord[] = []
+): DepartmentRecord[] {
+  return allDepartments.filter(d => {
+    if (!d.is_active) return false;
+
+    // 1. Explicit due assigned in this department: MUST clear it
+    if (studentDues.some(due => due.department_id === d.id)) {
+      return true;
+    }
+
+    // 2. Student's own academic department: MUST clear it
+    if (d.id === student.department_id) {
+      return true;
+    }
+
+    // 3. Institutional / Common clearance units (e.g. Central Library, Accounts, Hostel, Transport): applies to all students
+    if (!isAcademicDepartment(d, courses)) {
+      return true;
+    }
+
+    // 4. Any other academic department (e.g., ECE when student is in CSE, or CSE when student is in ECE):
+    // DOES NOT apply!
+    return false;
+  });
 }
 
 // Password hashing using Node crypto
@@ -348,20 +460,42 @@ class InMemoryDatabase {
         pgQuery('SELECT * FROM subject_courses ORDER BY id ASC').catch(() => ({ rows: [] }))
       ]);
 
-      if (usersRes.rows && usersRes.rows.length > 0) {
+      if (usersRes.rows && usersRes.rows.length >= this.users.length) {
         this.users = usersRes.rows;
+      } else if (usersRes.rows && usersRes.rows.length > 0) {
+        for (const u of usersRes.rows) {
+          if (!this.users.some(x => x.id === u.id || x.email.toLowerCase() === u.email.toLowerCase())) {
+            this.users.push(u);
+          }
+        }
       }
+
       if (deptsRes.rows && deptsRes.rows.length > 0) {
         this.departments = deptsRes.rows;
       }
-      if (coursesRes.rows && coursesRes.rows.length > 0) {
+
+      if (coursesRes.rows && coursesRes.rows.length >= this.courses.length) {
         this.courses = coursesRes.rows;
+      } else if (coursesRes.rows && coursesRes.rows.length > 0) {
+        for (const c of coursesRes.rows) {
+          if (!this.courses.some(x => x.id === c.id || x.code === c.code)) {
+            this.courses.push(c);
+          }
+        }
       }
+
       if (dueCatsRes.rows && dueCatsRes.rows.length > 0) {
         this.dueCategories = dueCatsRes.rows;
       }
-      if (studentsRes.rows && studentsRes.rows.length > 0) {
+
+      if (studentsRes.rows && studentsRes.rows.length >= this.students.length) {
         this.students = studentsRes.rows;
+      } else if (studentsRes.rows && studentsRes.rows.length > 0) {
+        for (const s of studentsRes.rows) {
+          if (!this.students.some(x => x.id === s.id || x.register_number.toUpperCase() === s.register_number.toUpperCase())) {
+            this.students.push(s);
+          }
+        }
       }
       if (staffRes.rows && staffRes.rows.length > 0) {
         this.staff = staffRes.rows;
@@ -529,55 +663,85 @@ class InMemoryDatabase {
   }
 
   ensureDefaultSubjectCourses() {
-    if (this.subjectCourses.length > 0) return;
-    const cseDept = this.departments.find(d => d.code === 'CSE') || this.departments[0];
-    const itDept = this.departments.find(d => d.code === 'IT') || cseDept;
-    const mechDept = this.departments.find(d => d.code === 'MECH') || cseDept;
-    const eeeDept = this.departments.find(d => d.code === 'EEE') || cseDept;
-    const civilDept = this.departments.find(d => d.code === 'CIVIL') || cseDept;
+    let nextId = Math.max(0, ...this.subjectCourses.map(s => s.id)) + 1;
+    const now = new Date().toISOString();
 
-    const sampleSubjects = [
-      // CSE
-      { title: 'Problem Solving and Python Programming', code: 'GE3151', deptId: cseDept?.id || 1, year: 1, semester: 1 },
-      { title: 'Programming in C', code: 'CS3251', deptId: cseDept?.id || 1, year: 1, semester: 2 },
-      { title: 'Data Structures and Algorithms', code: 'CS3301', deptId: cseDept?.id || 1, year: 2, semester: 3 },
-      { title: 'Digital Principles and Computer Organization', code: 'CS3351', deptId: cseDept?.id || 1, year: 2, semester: 3 },
-      { title: 'Database Management Systems', code: 'CS3492', deptId: cseDept?.id || 1, year: 2, semester: 4 },
-      { title: 'Operating Systems', code: 'CS3452', deptId: cseDept?.id || 1, year: 2, semester: 4 },
-      { title: 'Computer Networks', code: 'CS3591', deptId: cseDept?.id || 1, year: 3, semester: 5 },
-      { title: 'Theory of Computation', code: 'CS3501', deptId: cseDept?.id || 1, year: 3, semester: 5 },
-      { title: 'Compiler Design', code: 'CS3601', deptId: cseDept?.id || 1, year: 3, semester: 6 },
-      { title: 'Artificial Intelligence and Machine Learning', code: 'CS3691', deptId: cseDept?.id || 1, year: 3, semester: 6 },
-      { title: 'Cloud Computing and Big Data Analytics', code: 'CS3701', deptId: cseDept?.id || 1, year: 4, semester: 7 },
-      { title: 'Cryptography and Cyber Security', code: 'CS3791', deptId: cseDept?.id || 1, year: 4, semester: 7 },
-      { title: 'Deep Learning & Professional Ethics', code: 'CS3801', deptId: cseDept?.id || 1, year: 4, semester: 8 },
-      // IT
-      { title: 'Object Oriented Programming using Java', code: 'IT3301', deptId: itDept?.id || 1, year: 2, semester: 3 },
-      { title: 'Web Technology and Frameworks', code: 'IT3401', deptId: itDept?.id || 1, year: 2, semester: 4 },
-      { title: 'Full Stack Web Development', code: 'IT3501', deptId: itDept?.id || 1, year: 3, semester: 5 },
-      // MECH
-      { title: 'Engineering Thermodynamics', code: 'ME3351', deptId: mechDept?.id || 1, year: 2, semester: 3 },
-      { title: 'Fluid Mechanics and Machinery', code: 'ME3491', deptId: mechDept?.id || 1, year: 2, semester: 4 },
-      // EEE
-      { title: 'Electric Circuit Analysis', code: 'EE3301', deptId: eeeDept?.id || 1, year: 2, semester: 3 },
-      { title: 'Electrical Machines - I', code: 'EE3401', deptId: eeeDept?.id || 1, year: 2, semester: 4 },
-      // CIVIL
-      { title: 'Mechanics of Solids', code: 'CE3301', deptId: civilDept?.id || 1, year: 2, semester: 3 },
-      { title: 'Surveying and Geomatics', code: 'CE3401', deptId: civilDept?.id || 1, year: 2, semester: 4 },
-    ];
+    // 1. Ensure predefined catalog subjects exist
+    for (const [deptCode, subjects] of Object.entries(DEPARTMENT_CURRICULUM_CATALOG)) {
+      const dept = this.departments.find(d => d.code.toUpperCase() === deptCode.toUpperCase());
+      if (!dept) continue;
 
-    let id = Math.max(0, ...this.subjectCourses.map(s => s.id)) + 1;
-    for (const sub of sampleSubjects) {
-      this.subjectCourses.push({
-        id: id++,
-        title: sub.title,
-        code: sub.code,
-        department_id: sub.deptId,
-        year: sub.year,
-        semester: sub.semester,
-        is_active: true,
-        created_at: new Date().toISOString()
-      });
+      for (const item of subjects) {
+        const existing = this.subjectCourses.find(c =>
+          c.department_id === dept.id &&
+          c.code.toUpperCase() === item.code.toUpperCase() &&
+          c.semester === item.semester
+        );
+
+        if (!existing) {
+          this.subjectCourses.push({
+            id: nextId++,
+            title: item.title,
+            code: item.code,
+            department_id: dept.id,
+            year: item.year,
+            semester: item.semester,
+            course_type: item.course_type,
+            slot: item.slot,
+            faculty_name: item.faculty_name,
+            is_elective: item.is_elective || false,
+            is_active: true,
+            created_at: now
+          });
+        } else {
+          // Enrich missing metadata on existing records
+          if (!existing.course_type) existing.course_type = item.course_type;
+          if (!existing.slot) existing.slot = item.slot;
+          if (!existing.faculty_name) existing.faculty_name = item.faculty_name;
+        }
+      }
+    }
+
+    // 2. Ensure each active academic department has full Sem 1 to Sem 8 subjects
+    for (const dept of this.departments) {
+      if (dept.type === 'INSTITUTIONAL') continue;
+
+      for (let sem = 1; sem <= 8; sem++) {
+        const yr = Math.ceil(sem / 2);
+        const count = this.subjectCourses.filter(c => c.department_id === dept.id && c.semester === sem).length;
+        if (count === 0) {
+          const generated = generateGenericSemesterSubjects(dept.code || 'GEN', yr, sem);
+          for (const item of generated) {
+            this.subjectCourses.push({
+              id: nextId++,
+              title: item.title,
+              code: item.code,
+              department_id: dept.id,
+              year: item.year,
+              semester: item.semester,
+              course_type: item.course_type,
+              slot: item.slot,
+              faculty_name: item.faculty_name,
+              is_elective: item.is_elective || false,
+              is_active: true,
+              created_at: now
+            });
+          }
+        }
+      }
+    }
+
+    // 3. Fallback slot assignment for any orphaned course without a slot
+    for (const c of this.subjectCourses) {
+      if (!c.course_type) {
+        c.course_type = c.title.toLowerCase().includes('lab') ? 'lab' : 'theory';
+      }
+      if (!c.slot) {
+        c.slot = c.course_type === 'lab' ? 'Lab 1' : 'Sub 1';
+      }
+      if (!c.faculty_name) {
+        c.faculty_name = 'Staff In-charge';
+      }
     }
   }
 

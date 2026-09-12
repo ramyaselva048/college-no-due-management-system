@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { Certificate, Department } from '../../types';
+import { SasurieDueFormView } from '../../components/SasurieDueFormView';
 
 interface CertificateAuditLog {
   id: number;
@@ -66,6 +67,7 @@ export const AdminCertificatesPage: React.FC = () => {
 
   // Interactive Modals State
   const [viewingCert, setViewingCert] = useState<Certificate | null>(null);
+  const [certModalFormat, setCertModalFormat] = useState<'sasurie_form' | 'certificate'>('sasurie_form');
   const [qrCert, setQrCert] = useState<Certificate | null>(null);
   const [revokingCert, setRevokingCert] = useState<Certificate | null>(null);
   const [revokeReason, setRevokeReason] = useState('Administrative review and discrepancy verification');
@@ -1125,6 +1127,32 @@ export const AdminCertificatesPage: React.FC = () => {
                     Revoked
                   </span>
                 )}
+
+                {/* View Format Switcher */}
+                <div className="p-0.5 bg-slate-200/80 rounded-lg flex items-center text-xs ml-2">
+                  <button
+                    type="button"
+                    onClick={() => setCertModalFormat('sasurie_form')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      certModalFormat === 'sasurie_form'
+                        ? 'bg-white text-indigo-900 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Sasurie Form
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCertModalFormat('certificate')}
+                    className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                      certModalFormat === 'certificate'
+                        ? 'bg-white text-indigo-900 shadow-2xs'
+                        : 'text-slate-600 hover:text-slate-900'
+                    }`}
+                  >
+                    Digital Cert
+                  </button>
+                </div>
               </div>
 
               <button
@@ -1138,22 +1166,25 @@ export const AdminCertificatesPage: React.FC = () => {
 
             {/* Scrollable Certificate Body Container */}
             <div className="p-5 sm:p-6 overflow-y-auto flex-1">
-              <div className="border-2 border-indigo-950/15 rounded-2xl p-5 sm:p-7 text-center space-y-5 relative overflow-hidden bg-slate-50/30">
-                {/* College Header */}
-                <div className="border-b-2 border-slate-900/10 pb-4">
-                  <div className="w-12 h-12 rounded-xl bg-indigo-900 text-white flex items-center justify-center mx-auto mb-2 shadow-sm">
-                    <GraduationCap className="w-7 h-7" />
+              {certModalFormat === 'sasurie_form' ? (
+                <SasurieDueFormView request={(viewingCert as any)?.request} />
+              ) : (
+                <div className="border-2 border-indigo-950/15 rounded-2xl p-5 sm:p-7 text-center space-y-5 relative overflow-hidden bg-slate-50/30">
+                  {/* College Header */}
+                  <div className="border-b-2 border-slate-900/10 pb-4">
+                    <div className="w-12 h-12 rounded-xl bg-indigo-900 text-white flex items-center justify-center mx-auto mb-2 shadow-sm">
+                      <GraduationCap className="w-7 h-7" />
+                    </div>
+                    <h3 className="font-display font-black text-xl text-indigo-950 uppercase tracking-tight">
+                      Sasurie College of Engineering
+                    </h3>
+                    <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
+                      Autonomous Institution • Vijayamangalam, Tiruppur - 638056 • NAAC 'A+'
+                    </p>
+                    <p className="text-[10px] text-slate-400">
+                      Office of Academic Clearances & Institutional Registrar
+                    </p>
                   </div>
-                  <h3 className="font-display font-black text-xl text-indigo-950 uppercase tracking-tight">
-                    Apex Institute of Technology
-                  </h3>
-                  <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                    Autonomous Academic Institution • Accredited 'A++'
-                  </p>
-                  <p className="text-[10px] text-slate-400">
-                    Office of Academic Clearances & Institutional Registrar
-                  </p>
-                </div>
 
                 {/* Certificate Title */}
                 <div>
@@ -1237,6 +1268,7 @@ export const AdminCertificatesPage: React.FC = () => {
                   </div>
                 </div>
               </div>
+            )}
             </div>
 
             {/* Modal Actions Footer (Pinned Footer) */}

@@ -9,16 +9,21 @@ import {
   ExternalLink,
   GraduationCap,
   QrCode,
-  AlertCircle
+  AlertCircle,
+  FileText
 } from 'lucide-react';
 import api from '../../services/api';
 import { Certificate } from '../../types';
+import { SasurieDueFormView } from '../../components/SasurieDueFormView';
+import { useAuth } from '../../context/AuthContext';
 
 export const StudentCertificatePage: React.FC = () => {
+  const { studentProfile } = useAuth();
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
   const [downloading, setDownloading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [viewFormat, setViewFormat] = useState<'sasurie_form' | 'digital_cert'>('sasurie_form');
 
   const fetchCerts = async () => {
     try {
@@ -47,7 +52,7 @@ export const StudentCertificatePage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `NoDue_Certificate_${certId}.pdf`;
+      a.download = `Sasurie_NoDue_Certificate_${certId}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -64,24 +69,53 @@ export const StudentCertificatePage: React.FC = () => {
   }
 
   const activeCert = certificates.find((c) => c.is_valid) || certificates[0];
+  const linkedRequest = (activeCert as any)?.request;
 
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 print:hidden">
         <div>
           <h2 className="font-display font-bold text-xl text-slate-900">
-            Official No Due Certificate
+            Official No Due Clearance & Form
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Cryptographically verifiable digital clearance certificate issued by the Registrar
+            Sasurie College of Engineering (Autonomous) — CIAT / End Sem Clearance Document
           </p>
         </div>
 
         {activeCert && (
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2.5">
+            {/* View format switcher */}
+            <div className="p-1 bg-slate-200/80 rounded-xl flex items-center text-xs font-semibold">
+              <button
+                type="button"
+                onClick={() => setViewFormat('sasurie_form')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  viewFormat === 'sasurie_form'
+                    ? 'bg-white text-indigo-900 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <FileText className="w-3.5 h-3.5 text-indigo-600" />
+                Original Sasurie Form
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewFormat('digital_cert')}
+                className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1.5 ${
+                  viewFormat === 'digital_cert'
+                    ? 'bg-white text-indigo-900 font-bold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Award className="w-3.5 h-3.5 text-indigo-600" />
+                Digital Certificate
+              </button>
+            </div>
+
             <button
               onClick={() => window.print()}
-              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs"
+              className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-xs font-bold text-slate-700 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" /> Print
             </button>
@@ -89,10 +123,10 @@ export const StudentCertificatePage: React.FC = () => {
               id="btn-download-pdf"
               onClick={() => handleDownloadPdf(activeCert.id)}
               disabled={downloading}
-              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white transition-colors inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50"
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-xs font-bold text-white transition-colors inline-flex items-center gap-1.5 shadow-xs disabled:opacity-50 cursor-pointer"
             >
               <Download className="w-3.5 h-3.5" />
-              {downloading ? 'Generating PDF...' : 'Download Official PDF'}
+              {downloading ? 'Generating PDF...' : 'Download PDF'}
             </button>
           </div>
         )}
@@ -114,7 +148,7 @@ export const StudentCertificatePage: React.FC = () => {
             No Due Certificate Not Yet Issued
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-            Your certificate will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
+            Your certificate and official Sasurie form will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
@@ -125,8 +159,11 @@ export const StudentCertificatePage: React.FC = () => {
             </Link>
           </div>
         </div>
+      ) : viewFormat === 'sasurie_form' ? (
+        /* The Authentic Sasurie Institutional Paper Replica */
+        <SasurieDueFormView request={linkedRequest} student={studentProfile} />
       ) : (
-        /* Official Certificate Card View */
+        /* Digital Verifiable Certificate View */
         <div className="bg-white rounded-3xl p-8 sm:p-12 border-2 border-indigo-900/20 shadow-xl print:shadow-none print:border-none relative overflow-hidden">
           {/* Subtle Watermark BG */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.03] select-none">
@@ -141,13 +178,13 @@ export const StudentCertificatePage: React.FC = () => {
                 <GraduationCap className="w-8 h-8" />
               </div>
               <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-indigo-950 uppercase tracking-tight">
-                Apex Institute of Technology
+                Sasurie College of Engineering
               </h1>
               <p className="text-xs font-bold text-slate-600 tracking-wider uppercase mt-1">
-                Autonomous Academic Institution • Accredited 'A++'
+                Autonomous Institution • Vijayamangalam, Tiruppur - 638056 • NAAC 'A+'
               </p>
               <p className="text-[11px] text-slate-400 font-medium">
-                Office of Academic Affairs & Institutional Clearances
+                Office of Academic Affairs & Institutional Clearances (CIAT - I / II / End Sem)
               </p>
             </div>
 
@@ -226,10 +263,10 @@ export const StudentCertificatePage: React.FC = () => {
 
                 <div>
                   <div className="h-10 flex items-end justify-center font-display italic text-indigo-900 font-semibold text-sm">
-                    Office of Registrar
+                    Dr. T. Senthilvel
                   </div>
                   <div className="w-28 border-t border-slate-400 mt-1"></div>
-                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Registrar</p>
+                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5 uppercase">PRINCIPAL</p>
                 </div>
               </div>
             </div>
@@ -239,3 +276,4 @@ export const StudentCertificatePage: React.FC = () => {
     </div>
   );
 };
+

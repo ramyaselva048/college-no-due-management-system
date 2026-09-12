@@ -19,22 +19,23 @@ import { Department, SubjectCourse } from '../../types';
 
 // Anna University / AICTE common course quick suggestion catalog
 const QUICK_COURSE_SUGGESTIONS = [
-  { title: 'Data Structures and Algorithms', code: 'CS3301', defaultDept: 'CSE', year: 2, sem: 3 },
-  { title: 'Digital Principles and Computer Organization', code: 'CS3351', defaultDept: 'CSE', year: 2, sem: 3 },
-  { title: 'Database Management Systems', code: 'CS3492', defaultDept: 'CSE', year: 2, sem: 4 },
-  { title: 'Operating Systems', code: 'CS3452', defaultDept: 'CSE', year: 2, sem: 4 },
-  { title: 'Computer Networks', code: 'CS3591', defaultDept: 'CSE', year: 3, sem: 5 },
-  { title: 'Theory of Computation', code: 'CS3501', defaultDept: 'CSE', year: 3, sem: 5 },
-  { title: 'Compiler Design', code: 'CS3601', defaultDept: 'CSE', year: 3, sem: 6 },
-  { title: 'Artificial Intelligence and Machine Learning', code: 'CS3691', defaultDept: 'CSE', year: 3, sem: 6 },
-  { title: 'Cloud Computing and Big Data Analytics', code: 'CS3701', defaultDept: 'CSE', year: 4, sem: 7 },
-  { title: 'Cryptography and Cyber Security', code: 'CS3791', defaultDept: 'CSE', year: 4, sem: 7 },
-  { title: 'Deep Learning & Ethics in AI', code: 'CS3801', defaultDept: 'CSE', year: 4, sem: 8 },
-  { title: 'Object Oriented Programming using Java', code: 'IT3301', defaultDept: 'IT', year: 2, sem: 3 },
-  { title: 'Web Technology and Frameworks', code: 'IT3401', defaultDept: 'IT', year: 2, sem: 4 },
-  { title: 'Engineering Thermodynamics', code: 'ME3351', defaultDept: 'MECH', year: 2, sem: 3 },
-  { title: 'Electric Circuit Analysis', code: 'EE3301', defaultDept: 'EEE', year: 2, sem: 3 },
-  { title: 'Mechanics of Solids', code: 'CE3301', defaultDept: 'CIVIL', year: 2, sem: 3 }
+  { title: 'Data Structures and Algorithms', code: 'CS3301', defaultDept: 'CSE', year: 2, sem: 3, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. K. Ramesh' },
+  { title: 'Digital Principles and Computer Organization', code: 'CS3351', defaultDept: 'CSE', year: 2, sem: 3, type: 'theory' as const, slot: 'Sub 2', faculty: 'Prof. M. Priya' },
+  { title: 'Data Structures Laboratory', code: 'CS3361', defaultDept: 'CSE', year: 2, sem: 3, type: 'lab' as const, slot: 'Lab 1', faculty: 'Dr. K. Ramesh' },
+  { title: 'Database Management Systems', code: 'CS3492', defaultDept: 'CSE', year: 2, sem: 4, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. R. Kavitha' },
+  { title: 'Operating Systems', code: 'CS3452', defaultDept: 'CSE', year: 2, sem: 4, type: 'theory' as const, slot: 'Sub 2', faculty: 'Prof. S. Suresh' },
+  { title: 'DBMS & OS Laboratory', code: 'CS3461', defaultDept: 'CSE', year: 2, sem: 4, type: 'lab' as const, slot: 'Lab 1', faculty: 'Dr. R. Kavitha' },
+  { title: 'Computer Networks', code: 'CS3591', defaultDept: 'CSE', year: 3, sem: 5, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. N. Sathish' },
+  { title: 'Theory of Computation', code: 'CS3501', defaultDept: 'CSE', year: 3, sem: 5, type: 'theory' as const, slot: 'Sub 2', faculty: 'Prof. V. Anitha' },
+  { title: 'Compiler Design', code: 'CS3601', defaultDept: 'CSE', year: 3, sem: 6, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. G. Balaji' },
+  { title: 'Artificial Intelligence and Machine Learning', code: 'CS3691', defaultDept: 'CSE', year: 3, sem: 6, type: 'theory' as const, slot: 'Sub 2', faculty: 'Dr. T. Mohan' },
+  { title: 'Cloud Computing and Big Data Analytics', code: 'CS3701', defaultDept: 'CSE', year: 4, sem: 7, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. S. Karthikeyan' },
+  { title: 'Cryptography and Cyber Security', code: 'CS3791', defaultDept: 'CSE', year: 4, sem: 7, type: 'theory' as const, slot: 'Sub 2', faculty: 'Prof. P. Deepa' },
+  { title: 'Deep Learning & Ethics in AI', code: 'CS3801', defaultDept: 'CSE', year: 4, sem: 8, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. S. Karthikeyan' },
+  { title: 'Object Oriented Programming using Java', code: 'IT3301', defaultDept: 'IT', year: 2, sem: 3, type: 'theory' as const, slot: 'Sub 1', faculty: 'Prof. A. Murugan' },
+  { title: 'Web Technology and Frameworks', code: 'IT3401', defaultDept: 'IT', year: 2, sem: 4, type: 'theory' as const, slot: 'Sub 2', faculty: 'Dr. E. Divya' },
+  { title: 'Engineering Thermodynamics', code: 'ME3351', defaultDept: 'MECH', year: 2, sem: 3, type: 'theory' as const, slot: 'Sub 1', faculty: 'Dr. C. Manikandan' },
+  { title: 'Electric Circuit Analysis', code: 'EE3301', defaultDept: 'EEE', year: 2, sem: 3, type: 'theory' as const, slot: 'Sub 1', faculty: 'Prof. J. Vijayan' }
 ];
 
 export const AdminCoursesPage: React.FC = () => {
@@ -45,6 +46,7 @@ export const AdminCoursesPage: React.FC = () => {
   const [selectedDeptFilter, setSelectedDeptFilter] = useState<string>('ALL');
   const [selectedYearFilter, setSelectedYearFilter] = useState<string>('ALL');
   const [selectedSemFilter, setSelectedSemFilter] = useState<string>('ALL');
+  const [selectedTypeFilter, setSelectedTypeFilter] = useState<string>('ALL');
 
   // Modal states
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -52,8 +54,9 @@ export const AdminCoursesPage: React.FC = () => {
   const [deletingCourse, setDeletingCourse] = useState<SubjectCourse | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [toastMessage, setToastMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [seeding, setSeeding] = useState(false);
 
-  // Form Fields (department, course title, course code, year, semester)
+  // Form Fields (department, course title, course code, year, semester, type, slot, faculty, elective)
   const [formDeptId, setFormDeptId] = useState<number>(0);
   const [formDeptName, setFormDeptName] = useState('');
   const [deptInputMode, setDeptInputMode] = useState<'type' | 'select'>('type');
@@ -61,6 +64,10 @@ export const AdminCoursesPage: React.FC = () => {
   const [formCourseCode, setFormCourseCode] = useState('');
   const [formYear, setFormYear] = useState<number>(1);
   const [formSemester, setFormSemester] = useState<number>(1);
+  const [formCourseType, setFormCourseType] = useState<'theory' | 'lab'>('theory');
+  const [formSlot, setFormSlot] = useState('Sub 1');
+  const [formFacultyName, setFormFacultyName] = useState('');
+  const [formIsElective, setFormIsElective] = useState(false);
   const [formError, setFormError] = useState('');
 
   const showToast = (type: 'success' | 'error', text: string) => {
@@ -99,6 +106,10 @@ export const AdminCoursesPage: React.FC = () => {
     setFormCourseCode('');
     setFormYear(1);
     setFormSemester(1);
+    setFormCourseType('theory');
+    setFormSlot('Sub 1');
+    setFormFacultyName('');
+    setFormIsElective(false);
     const defaultDept = departments[0];
     setFormDeptId(defaultDept?.id || 1);
     setFormDeptName(defaultDept ? `${defaultDept.name} (${defaultDept.code})` : '');
@@ -113,6 +124,11 @@ export const AdminCoursesPage: React.FC = () => {
     setFormCourseCode(c.code);
     setFormYear(c.year || 1);
     setFormSemester(c.semester || 1);
+    const isLab = c.course_type === 'lab' || c.slot?.toLowerCase().includes('lab') || c.title.toLowerCase().includes('lab');
+    setFormCourseType(isLab ? 'lab' : 'theory');
+    setFormSlot(c.slot || (isLab ? 'Lab 1' : 'Sub 1'));
+    setFormFacultyName(c.faculty_name || '');
+    setFormIsElective(Boolean(c.is_elective));
     const matchedDept = departments.find(d => d.id === c.department_id);
     setFormDeptId(c.department_id || departments[0]?.id || 1);
     setFormDeptName(c.department_name || (matchedDept ? `${matchedDept.name} (${matchedDept.code})` : ''));
@@ -124,7 +140,6 @@ export const AdminCoursesPage: React.FC = () => {
   // When year changes, ensure semester is within the corresponding year
   const handleYearChange = (newYear: number) => {
     setFormYear(newYear);
-    // If current semester is outside the year's default semesters, update it
     const minSem = (newYear - 1) * 2 + 1;
     const maxSem = newYear * 2;
     if (formSemester < minSem || formSemester > maxSem) {
@@ -156,12 +171,31 @@ export const AdminCoursesPage: React.FC = () => {
     setFormCourseCode(preset.code);
     setFormYear(preset.year);
     setFormSemester(preset.sem);
+    setFormCourseType(preset.type);
+    setFormSlot(preset.slot);
+    setFormFacultyName(preset.faculty);
     const matchedDept = departments.find(d => d.code.toUpperCase() === preset.defaultDept.toUpperCase());
     if (matchedDept) {
       setFormDeptId(matchedDept.id);
       setFormDeptName(`${matchedDept.name} (${matchedDept.code})`);
     } else {
       setFormDeptName(preset.defaultDept);
+    }
+  };
+
+  const handleSeedStandards = async (targetDeptId?: number) => {
+    try {
+      setSeeding(true);
+      const res = await api.post('/admin/curriculum-courses/seed-standards', {
+        department_id: targetDeptId || (selectedDeptFilter !== 'ALL' ? Number(selectedDeptFilter) : undefined)
+      });
+      showToast('success', res.data.message || 'Curriculum seeded successfully');
+      await fetchData();
+    } catch (err: any) {
+      console.error('Failed to seed curriculum:', err);
+      showToast('error', err.response?.data?.detail || 'Failed to seed curriculum');
+    } finally {
+      setSeeding(false);
     }
   };
 
@@ -196,7 +230,11 @@ export const AdminCoursesPage: React.FC = () => {
         course_title: trimmedTitle,
         course_code: trimmedCode,
         year: Number(formYear),
-        semester: Number(formSemester)
+        semester: Number(formSemester),
+        course_type: formCourseType,
+        slot: formSlot.trim() || (formCourseType === 'lab' ? 'Lab 1' : 'Sub 1'),
+        faculty_name: formFacultyName.trim() || 'Faculty In-Charge',
+        is_elective: formIsElective
       };
 
       if (editingCourse) {
@@ -242,6 +280,8 @@ export const AdminCoursesPage: React.FC = () => {
         !search.trim() ||
         c.title.toLowerCase().includes(search.toLowerCase()) ||
         c.code.toLowerCase().includes(search.toLowerCase()) ||
+        (c.faculty_name && c.faculty_name.toLowerCase().includes(search.toLowerCase())) ||
+        (c.slot && c.slot.toLowerCase().includes(search.toLowerCase())) ||
         (c.department_name && c.department_name.toLowerCase().includes(search.toLowerCase())) ||
         (c.department_code && c.department_code.toLowerCase().includes(search.toLowerCase()));
 
@@ -257,17 +297,24 @@ export const AdminCoursesPage: React.FC = () => {
       const matchesSem =
         selectedSemFilter === 'ALL' || String(c.semester) === selectedSemFilter;
 
-      return matchesSearch && matchesDept && matchesYear && matchesSem;
+      // Type filter (Theory vs Lab)
+      const isLab = c.course_type === 'lab' || c.slot?.toLowerCase().includes('lab') || c.title.toLowerCase().includes('lab');
+      const matchesType =
+        selectedTypeFilter === 'ALL' ||
+        (selectedTypeFilter === 'lab' && isLab) ||
+        (selectedTypeFilter === 'theory' && !isLab);
+
+      return matchesSearch && matchesDept && matchesYear && matchesSem && matchesType;
     });
-  }, [courses, search, selectedDeptFilter, selectedYearFilter, selectedSemFilter]);
+  }, [courses, search, selectedDeptFilter, selectedYearFilter, selectedSemFilter, selectedTypeFilter]);
 
   // Quick stats
   const stats = useMemo(() => {
     const total = courses.length;
-    const year1_2 = courses.filter(c => c.year === 1 || c.year === 2).length;
-    const year3_4 = courses.filter(c => c.year === 3 || c.year === 4).length;
+    const theoryCount = courses.filter(c => c.course_type !== 'lab' && !c.slot?.toLowerCase().includes('lab') && !c.title.toLowerCase().includes('lab')).length;
+    const labCount = courses.filter(c => c.course_type === 'lab' || c.slot?.toLowerCase().includes('lab') || c.title.toLowerCase().includes('lab')).length;
     const deptsCount = new Set(courses.map(c => c.department_id)).size;
-    return { total, year1_2, year3_4, deptsCount };
+    return { total, theoryCount, labCount, deptsCount };
   }, [courses]);
 
   const getYearBadgeColor = (year: number) => {
@@ -313,22 +360,40 @@ export const AdminCoursesPage: React.FC = () => {
               <BookOpen className="w-5 h-5" />
             </div>
             <h1 className="font-display font-bold text-2xl text-slate-900 tracking-tight">
-              Courses
+              Curriculum & Subjects
             </h1>
           </div>
           <p className="text-sm text-slate-500 mt-1">
-            Manage departmental curriculum courses, course codes, academic year, and semester subjects
+            Department-wise, semester-wise Theory & Laboratory courses with slot allocation and faculty in-charge
           </p>
         </div>
 
-        <button
-          id="add-course-btn"
-          onClick={openAddModal}
-          className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer"
-        >
-          <PlusCircle className="w-4 h-4" />
-          <span>Add Course</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            id="seed-curriculum-btn"
+            type="button"
+            disabled={seeding}
+            onClick={() => handleSeedStandards()}
+            title="Auto-generate standard Anna University / AICTE curriculum for selected or all departments"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-sm font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer disabled:opacity-50"
+          >
+            {seeding ? (
+              <div className="w-4 h-4 border-2 border-slate-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4 text-amber-500" />
+            )}
+            <span>{seeding ? 'Seeding...' : 'Auto-Seed Curriculum'}</span>
+          </button>
+
+          <button
+            id="add-course-btn"
+            onClick={openAddModal}
+            className="inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-xl shadow-xs transition-all cursor-pointer"
+          >
+            <PlusCircle className="w-4 h-4" />
+            <span>Add Course</span>
+          </button>
+        </div>
       </div>
 
       {/* Metric Stats Cards */}
@@ -344,20 +409,20 @@ export const AdminCoursesPage: React.FC = () => {
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Year 1 & 2 Subjects</span>
+            <span className="text-xs font-medium text-slate-500">Theory Subjects</span>
             <Layers className="w-4 h-4 text-indigo-600" />
           </div>
-          <p className="font-display font-bold text-2xl text-indigo-600 mt-2">{stats.year1_2}</p>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">Semesters 1 to 4</span>
+          <p className="font-display font-bold text-2xl text-indigo-600 mt-2">{stats.theoryCount}</p>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Lecture & Tutorial credits</span>
         </div>
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
           <div className="flex items-center justify-between">
-            <span className="text-xs font-medium text-slate-500">Year 3 & 4 Subjects</span>
+            <span className="text-xs font-medium text-slate-500">Practical & Labs</span>
             <Calendar className="w-4 h-4 text-purple-600" />
           </div>
-          <p className="font-display font-bold text-2xl text-purple-600 mt-2">{stats.year3_4}</p>
-          <span className="text-[11px] text-slate-400 mt-0.5 block">Semesters 5 to 8</span>
+          <p className="font-display font-bold text-2xl text-purple-600 mt-2">{stats.labCount}</p>
+          <span className="text-[11px] text-slate-400 mt-0.5 block">Laboratory practical slots</span>
         </div>
 
         <div className="p-4 bg-white rounded-xl border border-slate-200 shadow-2xs">
@@ -381,7 +446,7 @@ export const AdminCoursesPage: React.FC = () => {
               type="text"
               value={search}
               onChange={e => setSearch(e.target.value)}
-              placeholder="Search by course title, course code (e.g. CS3301), or department..."
+              placeholder="Search by title, code, slot, faculty in-charge, or department..."
               className="w-full pl-10 pr-4 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
             />
             {search && (
@@ -445,12 +510,27 @@ export const AdminCoursesPage: React.FC = () => {
             </select>
           </div>
 
-          {(selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL' || search) && (
+          {/* Type Filter */}
+          <div className="flex items-center gap-2">
+            <select
+              id="type-filter-select"
+              value={selectedTypeFilter}
+              onChange={e => setSelectedTypeFilter(e.target.value)}
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
+            >
+              <option value="ALL">All Types</option>
+              <option value="theory">Theory Subjects</option>
+              <option value="lab">Practical / Labs</option>
+            </select>
+          </div>
+
+          {(selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL' || selectedTypeFilter !== 'ALL' || search) && (
             <button
               onClick={() => {
                 setSelectedDeptFilter('ALL');
                 setSelectedYearFilter('ALL');
                 setSelectedSemFilter('ALL');
+                setSelectedTypeFilter('ALL');
                 setSearch('');
               }}
               className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 rounded-xl transition-all cursor-pointer whitespace-nowrap"
@@ -478,31 +558,42 @@ export const AdminCoursesPage: React.FC = () => {
                 No Courses Found
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
-                {search || selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL'
+                {search || selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL' || selectedTypeFilter !== 'ALL'
                   ? 'No course matches your current search or filter criteria. Try resetting filters.'
-                  : 'No curriculum courses have been added yet. Click "+ Add Course" to create the first course.'}
+                  : 'No curriculum courses have been added yet. Click "+ Add Course" or "Auto-Seed Curriculum" to create courses.'}
               </p>
             </div>
-            <button
-              onClick={openAddModal}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-all cursor-pointer"
-            >
-              <PlusCircle className="w-3.5 h-3.5" />
-              <span>Add Course</span>
-            </button>
+            <div className="flex items-center justify-center gap-2">
+              <button
+                onClick={() => handleSeedStandards()}
+                disabled={seeding}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-slate-100 border border-slate-200 text-slate-700 text-xs font-semibold rounded-xl hover:bg-slate-200 transition-all cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                <span>Auto-Seed Catalog</span>
+              </button>
+              <button
+                onClick={openAddModal}
+                className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-xl hover:bg-blue-700 transition-all cursor-pointer"
+              >
+                <PlusCircle className="w-3.5 h-3.5" />
+                <span>Add Course</span>
+              </button>
+            </div>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-sm" id="courses-table">
               <thead>
                 <tr className="border-b border-slate-200 bg-slate-50/80 text-xs font-semibold text-slate-500">
-                  <th className="py-3.5 px-4">Course Code</th>
-                  <th className="py-3.5 px-4">Course Title</th>
-                  <th className="py-3.5 px-4">Department</th>
-                  <th className="py-3.5 px-4">Year</th>
-                  <th className="py-3.5 px-4">Semester</th>
-                  <th className="py-3.5 px-4">Status</th>
-                  <th className="py-3.5 px-4 text-right">Actions</th>
+                  <th className="py-3.5 px-3 w-16 text-center">Slot</th>
+                  <th className="py-3.5 px-3">Course Code</th>
+                  <th className="py-3.5 px-4">Subject / Course Title</th>
+                  <th className="py-3.5 px-3">Type</th>
+                  <th className="py-3.5 px-4">Faculty In-Charge</th>
+                  <th className="py-3.5 px-3">Department</th>
+                  <th className="py-3.5 px-3">Year & Sem</th>
+                  <th className="py-3.5 px-3 text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -510,6 +601,7 @@ export const AdminCoursesPage: React.FC = () => {
                   const dept = departments.find(d => d.id === course.department_id);
                   const deptName = course.department_name || dept?.name || 'Department';
                   const deptCode = course.department_code || dept?.code || 'DEPT';
+                  const isLab = course.course_type === 'lab' || course.slot?.toLowerCase().includes('lab') || course.title.toLowerCase().includes('lab');
 
                   return (
                     <tr
@@ -517,70 +609,82 @@ export const AdminCoursesPage: React.FC = () => {
                       className="hover:bg-slate-50/70 transition-colors group"
                       id={`course-row-${course.id}`}
                     >
+                      {/* Slot */}
+                      <td className="py-3 px-3 text-center">
+                        <span className="font-mono text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                          {course.slot || (isLab ? 'Lab' : 'Sub')}
+                        </span>
+                      </td>
+
                       {/* Course Code */}
-                      <td className="py-3.5 px-4">
+                      <td className="py-3 px-3">
                         <span className="inline-flex items-center font-mono text-xs font-bold text-blue-700 bg-blue-50 px-2.5 py-1 rounded-lg border border-blue-200">
                           {course.code}
                         </span>
                       </td>
 
                       {/* Course Title */}
-                      <td className="py-3.5 px-4">
-                        <span className="font-semibold text-slate-900 block">
-                          {course.title}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-slate-900 block">
+                            {course.title}
+                          </span>
+                          {course.is_elective && (
+                            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 border border-amber-200">
+                              Elective
+                            </span>
+                          )}
+                        </div>
+                      </td>
+
+                      {/* Course Type */}
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold border ${
+                            isLab
+                              ? 'bg-purple-50 text-purple-700 border-purple-200'
+                              : 'bg-blue-50 text-blue-700 border-blue-200'
+                          }`}
+                        >
+                          {isLab ? 'Practical / Lab' : 'Theory'}
+                        </span>
+                      </td>
+
+                      {/* Faculty In-Charge */}
+                      <td className="py-3 px-4">
+                        <span className="text-xs text-slate-700 font-medium">
+                          {course.faculty_name || 'Faculty In-Charge'}
                         </span>
                       </td>
 
                       {/* Department */}
-                      <td className="py-3.5 px-4">
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-xs font-semibold text-slate-800">
-                            {deptName}
+                      <td className="py-3 px-3">
+                        <span className="text-xs font-semibold text-slate-800 block">
+                          {deptCode}
+                        </span>
+                        <span className="text-[10px] text-slate-400 block truncate max-w-[120px]">
+                          {deptName}
+                        </span>
+                      </td>
+
+                      {/* Year & Sem */}
+                      <td className="py-3 px-3">
+                        <div className="flex items-center gap-1">
+                          <span
+                            className={`inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-semibold border ${getYearBadgeColor(
+                              course.year
+                            )}`}
+                          >
+                            Y{course.year}
                           </span>
-                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 border border-slate-200">
-                            {deptCode}
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            S{course.semester}
                           </span>
                         </div>
                       </td>
 
-                      {/* Year */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold border ${getYearBadgeColor(
-                            course.year
-                          )}`}
-                        >
-                          Year {course.year}
-                        </span>
-                      </td>
-
-                      {/* Semester */}
-                      <td className="py-3.5 px-4">
-                        <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                          Semester {course.semester}
-                        </span>
-                      </td>
-
-                      {/* Status */}
-                      <td className="py-3.5 px-4">
-                        <span
-                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border ${
-                            course.is_active !== false
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-slate-100 text-slate-600 border-slate-200'
-                          }`}
-                        >
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              course.is_active !== false ? 'bg-emerald-500' : 'bg-slate-400'
-                            }`}
-                          />
-                          {course.is_active !== false ? 'Active' : 'Inactive'}
-                        </span>
-                      </td>
-
                       {/* Actions */}
-                      <td className="py-3.5 px-4 text-right">
+                      <td className="py-3 px-3 text-right">
                         <div className="inline-flex items-center gap-1.5 opacity-90 group-hover:opacity-100">
                           <button
                             id={`edit-course-${course.id}`}
@@ -621,12 +725,12 @@ export const AdminCoursesPage: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-display font-bold text-base text-slate-900">
-                    {editingCourse ? 'Edit Course' : 'Add New Course'}
+                    {editingCourse ? 'Edit Subject / Course' : 'Add New Subject / Course'}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
                     {editingCourse
-                      ? 'Update course details and curriculum position'
-                      : 'Fill in the course title, code, department, year, and semester'}
+                      ? 'Update course details, slot, faculty in-charge, and curriculum position'
+                      : 'Configure course code, title, slot, type, and assigned faculty'}
                   </p>
                 </div>
               </div>
@@ -655,17 +759,17 @@ export const AdminCoursesPage: React.FC = () => {
                   <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
                     <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-600">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span>Quick Suggestion Presets:</span>
+                      <span>Quick Syllabus Presets:</span>
                     </div>
                     <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
-                      {QUICK_COURSE_SUGGESTIONS.slice(0, 6).map(preset => (
+                      {QUICK_COURSE_SUGGESTIONS.slice(0, 8).map(preset => (
                         <button
                           key={preset.code}
                           type="button"
                           onClick={() => handleApplyPreset(preset)}
                           className="text-[11px] px-2 py-1 bg-white hover:bg-blue-50 border border-slate-200 hover:border-blue-300 text-slate-700 rounded-lg font-medium transition-all text-left truncate max-w-[200px] cursor-pointer"
                         >
-                          {preset.code}: {preset.title}
+                          {preset.slot}: {preset.code}
                         </button>
                       ))}
                     </div>
@@ -676,7 +780,7 @@ export const AdminCoursesPage: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="block text-xs font-semibold text-slate-700">
-                      Type Department <span className="text-rose-500">*</span>
+                      Department <span className="text-rose-500">*</span>
                     </label>
                     <div className="flex items-center gap-1.5 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
                       <button
@@ -777,10 +881,6 @@ export const AdminCoursesPage: React.FC = () => {
                       </select>
                     </div>
                   )}
-
-                  <span className="text-[11px] text-slate-400 mt-1 block">
-                    Type any department name or select directly from institutional offerings
-                  </span>
                 </div>
 
                 {/* 2. Course Title */}
@@ -813,14 +913,103 @@ export const AdminCoursesPage: React.FC = () => {
                     required
                     className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm font-mono text-slate-800 uppercase placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
                   />
+                </div>
+
+                {/* 4. Type & Slot */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Course Type <span className="text-rose-500">*</span>
+                    </label>
+                    <select
+                      id="form-course-type"
+                      value={formCourseType}
+                      onChange={e => {
+                        const newType = e.target.value as 'theory' | 'lab';
+                        setFormCourseType(newType);
+                        if (newType === 'lab' && !formSlot.startsWith('Lab')) {
+                          setFormSlot('Lab 1');
+                        } else if (newType === 'theory' && !formSlot.startsWith('Sub')) {
+                          setFormSlot('Sub 1');
+                        }
+                      }}
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none cursor-pointer"
+                    >
+                      <option value="theory">Theory Subject</option>
+                      <option value="lab">Practical / Laboratory</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                      Clearance Slot <span className="text-rose-500">*</span>
+                    </label>
+                    <input
+                      id="form-course-slot"
+                      type="text"
+                      list="slot-suggestions"
+                      value={formSlot}
+                      onChange={e => setFormSlot(e.target.value)}
+                      placeholder={formCourseType === 'lab' ? 'Lab 1' : 'Sub 1'}
+                      required
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none"
+                    />
+                    <datalist id="slot-suggestions">
+                      {formCourseType === 'lab' ? (
+                        <>
+                          <option value="Lab 1" />
+                          <option value="Lab 2" />
+                          <option value="Lab 3" />
+                          <option value="Lab 4" />
+                        </>
+                      ) : (
+                        <>
+                          <option value="Sub 1" />
+                          <option value="Sub 2" />
+                          <option value="Sub 3" />
+                          <option value="Sub 4" />
+                          <option value="Sub 5" />
+                          <option value="Sub 6" />
+                        </>
+                      )}
+                    </datalist>
+                  </div>
+                </div>
+
+                {/* 5. Faculty In-Charge */}
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 mb-1.5">
+                    Faculty In-Charge Name
+                  </label>
+                  <input
+                    id="form-course-faculty"
+                    type="text"
+                    value={formFacultyName}
+                    onChange={e => setFormFacultyName(e.target.value)}
+                    placeholder="e.g. Dr. K. Ramesh (Associate Professor)"
+                    className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
+                  />
                   <span className="text-[11px] text-slate-400 mt-1 block">
-                    Official catalog / regulation code (e.g. CS3301, EC8452, ME3351)
+                    Pre-fills the signature section on the Sasurie clearance form
                   </span>
                 </div>
 
-                {/* 4 & 5. Year and Semester (Two columns) */}
+                {/* 6. Elective Checkbox */}
+                <div className="flex items-center gap-2 pt-1">
+                  <input
+                    id="form-course-elective"
+                    type="checkbox"
+                    checked={formIsElective}
+                    onChange={e => setFormIsElective(e.target.checked)}
+                    className="w-4 h-4 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer"
+                  />
+                  <label htmlFor="form-course-elective" className="text-xs font-semibold text-slate-700 cursor-pointer">
+                    This is an Elective course (Professional / Open Elective)
+                  </label>
+                </div>
+
+                {/* 7. Year and Semester */}
                 <div className="grid grid-cols-2 gap-3 pb-2">
-                  {/* Year */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Year <span className="text-rose-500">*</span>
@@ -830,7 +1019,7 @@ export const AdminCoursesPage: React.FC = () => {
                       value={formYear}
                       onChange={e => handleYearChange(Number(e.target.value))}
                       required
-                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none cursor-pointer"
                     >
                       <option value={1}>1st Year (Year 1)</option>
                       <option value={2}>2nd Year (Year 2)</option>
@@ -839,7 +1028,6 @@ export const AdminCoursesPage: React.FC = () => {
                     </select>
                   </div>
 
-                  {/* Semester */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Semester <span className="text-rose-500">*</span>
@@ -849,7 +1037,7 @@ export const AdminCoursesPage: React.FC = () => {
                       value={formSemester}
                       onChange={e => setFormSemester(Number(e.target.value))}
                       required
-                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none cursor-pointer"
                     >
                       {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => {
                         const isExpectedForYear = Math.ceil(sem / 2) === formYear;

@@ -26,14 +26,14 @@ export function generateCertificatePdf(
 
   const lines = [
     'BT',
-    '/F1 18 Tf',
+    '/F1 17 Tf',
     '1 0 0 1 50 780 Tm',
-    `(${escapePdf('APEX INSTITUTE OF TECHNOLOGY & HIGHER EDUCATION')}) Tj`,
+    `(${escapePdf('SASURIE COLLEGE OF ENGINEERING (AUTONOMOUS)')}) Tj`,
     '/F2 9 Tf',
     '1 0 0 1 50 762 Tm',
-    `(${escapePdf('Approved by AICTE & Affiliated to State University | Accredited Grade A+')}) Tj`,
+    `(${escapePdf('Vijayamangalam, Tiruppur - 638056 | Approved by AICTE, Affiliated to Anna University | NAAC A+')}) Tj`,
     '1 0 0 1 50 750 Tm',
-    `(${escapePdf('Office of Academic Affairs & Student Clearance Administration')}) Tj`,
+    `(${escapePdf('Student No Due Form & Clearance Administration - CIAT / End Semester')}) Tj`,
     'ET',
 
     // Decorative blue dividing bar
