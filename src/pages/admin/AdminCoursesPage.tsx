@@ -990,7 +990,7 @@ export const AdminCoursesPage: React.FC = () => {
                     className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none"
                   />
                   <span className="text-[11px] text-slate-400 mt-1 block">
-                    Pre-fills the signature section on the Sasurie clearance form
+                    Pre-fills the signature section on the official clearance form
                   </span>
                 </div>
 

@@ -126,7 +126,7 @@ export const LandingPage: React.FC = () => {
             <p className="text-xs text-slate-500 mt-1">Select your institutional role to continue</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {/* Student Card */}
             <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between">
               <div>
@@ -158,6 +158,44 @@ export const LandingPage: React.FC = () => {
                   className="w-full text-center px-4 py-2.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors shadow-xs"
                 >
                   Student Login
+                </Link>
+              </div>
+            </div>
+
+            {/* HOD Portal Card */}
+            <div className="bg-white rounded-2xl p-6 border border-amber-200 shadow-sm hover:shadow-md transition-shadow flex flex-col justify-between ring-1 ring-amber-100">
+              <div>
+                <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center mb-4">
+                  <Building2 className="w-6 h-6" />
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <h4 className="font-display font-bold text-base text-slate-900">HOD Portal</h4>
+                  <span className="text-[9px] font-bold px-1.5 py-0.2 rounded bg-amber-100 text-amber-800">Key Role</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                  Head of Department controls. Allocate semester-wise clearance nodes and assign faculty in-charge for student dues clearance.
+                </p>
+                <ul className="mt-4 space-y-2 text-xs text-slate-600">
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    Allocate Year/Sem nodes
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    Assign subject faculty
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                    HOD endorsement sign-off
+                  </li>
+                </ul>
+              </div>
+              <div className="mt-6 pt-4 border-t border-slate-100 flex flex-col gap-2">
+                <Link
+                  to="/login?role=hod"
+                  className="w-full text-center px-4 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-xs"
+                >
+                  HOD Login
                 </Link>
               </div>
             </div>

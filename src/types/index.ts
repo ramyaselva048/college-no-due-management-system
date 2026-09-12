@@ -1,10 +1,20 @@
-export type UserRole = 'STUDENT' | 'STAFF' | 'ADMIN';
+export type UserRole = 'STUDENT' | 'STAFF' | 'HOD' | 'ADMIN';
 
 export interface User {
   id: number;
   email: string;
   role: UserRole;
   full_name?: string;
+  is_active?: boolean;
+}
+
+export interface DepartmentHODInfo {
+  id: number;
+  user_id?: number;
+  full_name: string;
+  employee_id: string;
+  email: string;
+  phone?: string;
   is_active?: boolean;
 }
 
@@ -17,6 +27,7 @@ export interface Department {
   category?: 'academic' | 'institutional';
   is_active: boolean;
   created_at?: string;
+  hod_info?: DepartmentHODInfo | null;
 }
 
 export interface Course {
@@ -42,6 +53,8 @@ export interface SubjectCourse {
   course_type?: 'theory' | 'lab';
   slot?: string;
   faculty_name?: string;
+  faculty_id?: number;
+  faculty_email?: string;
   is_elective?: boolean;
   is_active: boolean;
   created_at?: string;
@@ -85,6 +98,15 @@ export interface StaffProfile {
   designation?: string;
   is_active?: boolean;
   created_at?: string;
+  assigned_nodes?: Array<{
+    id: number;
+    slot?: string;
+    code: string;
+    title: string;
+    course_type?: string;
+    year?: number;
+    semester?: number;
+  }>;
 }
 
 export interface DueRecord {

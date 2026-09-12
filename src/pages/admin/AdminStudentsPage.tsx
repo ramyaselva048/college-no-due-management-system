@@ -406,9 +406,9 @@ export const AdminStudentsPage: React.FC = () => {
           <span className="text-slate-600">All Academic Departments & Years 1–4 Configured</span>
         </div>
         <div className="flex items-center gap-2">
-          <span className="text-slate-500">Universal Student Password:</span>
+          <span className="text-slate-500">Default Student Password:</span>
           <code className="px-2 py-0.5 bg-white text-indigo-700 border border-indigo-200 font-mono font-bold rounded-md">
-            Sasurie@123
+            College@123
           </code>
         </div>
       </div>

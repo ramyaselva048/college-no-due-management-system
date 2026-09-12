@@ -100,6 +100,34 @@ async function executeWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promis
   throw lastErr;
 }
 
+const tableColumnCache = new Map<string, Set<string>>();
+
+export async function getTableColumns(tableName: string): Promise<Set<string> | null> {
+  if (tableColumnCache.has(tableName)) {
+    return tableColumnCache.get(tableName)!;
+  }
+  const pool = getPool();
+  if (!pool) return null;
+  try {
+    const res = await pool.query<{ column_name: string }>(
+      'SELECT column_name FROM information_schema.columns WHERE table_name = $1',
+      [tableName]
+    );
+    if (res.rows && res.rows.length > 0) {
+      const colSet = new Set(res.rows.map((r) => r.column_name));
+      tableColumnCache.set(tableName, colSet);
+      return colSet;
+    }
+  } catch (err) {
+    console.warn(`[PostgreSQL] Error fetching columns for ${tableName}:`, err);
+  }
+  return null;
+}
+
+export function clearTableColumnCache() {
+  tableColumnCache.clear();
+}
+
 // Utility to safely insert or update PostgreSQL records
 export async function syncTableToPostgres(tableName: string, records: any[]): Promise<void> {
   const pool = getPool();
@@ -114,6 +142,8 @@ export async function syncTableToPostgres(tableName: string, records: any[]): Pr
   const isAppendOnly = tableName === 'audit_logs';
 
   try {
+    const validColumns = await getTableColumns(tableName);
+
     await executeWithRetry(async () => {
       let client;
       try {
@@ -122,7 +152,7 @@ export async function syncTableToPostgres(tableName: string, records: any[]): Pr
         await client.query("SET LOCAL lock_timeout = '4s'");
 
         for (const record of sortedRecords) {
-          const keys = Object.keys(record);
+          const keys = Object.keys(record).filter((k) => !validColumns || validColumns.has(k));
           if (keys.length === 0) continue;
 
           const values = keys.map((k) => {
@@ -181,10 +211,11 @@ export async function syncSingleRecordToPostgres(tableName: string, record: any)
   const pool = getPool();
   if (!pool || !record || typeof record !== 'object') return;
   try {
-    await executeWithRetry(async () => {
-      const keys = Object.keys(record);
-      if (keys.length === 0) return;
+    const validColumns = await getTableColumns(tableName);
+    const keys = Object.keys(record).filter((k) => !validColumns || validColumns.has(k));
+    if (keys.length === 0) return;
 
+    await executeWithRetry(async () => {
       const values = keys.map((k) => {
         const v = record[k];
         if (v !== null && typeof v === 'object' && !(v instanceof Date)) {

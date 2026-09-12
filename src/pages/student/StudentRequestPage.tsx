@@ -104,10 +104,10 @@ export const StudentRequestPage: React.FC = () => {
     <div className="space-y-6 max-w-4xl mx-auto">
       <div>
         <h2 className="font-display font-bold text-xl text-slate-900">
-          Sasurie Institutional Clearance & No Due Form
+          Institutional Clearance & No Due Form
         </h2>
         <p className="text-xs text-slate-500 mt-0.5">
-          Sasurie College of Engineering (Autonomous) — CIAT / End Semester Clearance System
+          College of Engineering (Autonomous) — CIAT / End Semester Clearance System
         </p>
       </div>
 
@@ -118,7 +118,7 @@ export const StudentRequestPage: React.FC = () => {
         </div>
       )}
 
-      {/* If Active Request Exists -> Display Live Progress Tracker & Sasurie Form */}
+      {/* If Active Request Exists -> Display Live Progress Tracker & Official Form */}
       {activeRequest ? (
         <div className="space-y-6">
           <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
@@ -172,7 +172,7 @@ export const StudentRequestPage: React.FC = () => {
                 }`}
               >
                 <FileText className="w-3.5 h-3.5" />
-                Original Sasurie No Due Form
+                Official No Due Form
               </button>
               <button
                 type="button"
@@ -283,7 +283,7 @@ export const StudentRequestPage: React.FC = () => {
               Clearance Pre-requisites Verification
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed mb-4">
-              Sasurie College institutional policy requires zero outstanding dues across all academic departments, laboratories, library, and accounts before submitting a No Due Form.
+              College institutional policy requires zero outstanding dues across all academic departments, laboratories, library, and accounts before submitting a No Due Form.
             </p>
 
             {hasPendingDues ? (
@@ -292,7 +292,7 @@ export const StudentRequestPage: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-rose-800">Clearance Application Blocked</h4>
                   <p className="text-xs text-rose-700 mt-1">
-                    You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues. You must settle all dues before your Sasurie No Due Form can be dispatched to faculty and department heads.
+                    You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues. You must settle all dues before your official No Due Form can be dispatched to faculty and department heads.
                   </p>
                   <div className="mt-3">
                     <Link
@@ -310,7 +310,7 @@ export const StudentRequestPage: React.FC = () => {
                 <div>
                   <h4 className="text-xs font-bold text-emerald-800">Pre-requisites Satisfied</h4>
                   <p className="text-xs text-emerald-700 mt-0.5">
-                    Zero outstanding dues recorded! You are fully eligible to apply for your official Sasurie No Due Form.
+                    Zero outstanding dues recorded! You are fully eligible to apply for your official No Due Form.
                   </p>
                 </div>
               </div>
@@ -393,7 +393,7 @@ export const StudentRequestPage: React.FC = () => {
                   </span>
                 </div>
                 <p className="text-[10px] text-slate-400 mt-1">
-                  Students with attendance ≥ 80% are exempted from Undertaking Form (Clause 4 of Sasurie form).
+                  Students with attendance ≥ 80% are exempted from Undertaking Form (Clause 4 of Clearance Regulation).
                 </p>
               </div>
 
@@ -458,7 +458,7 @@ export const StudentRequestPage: React.FC = () => {
                   'Dispatching Application...'
                 ) : (
                   <>
-                    <Send className="w-4 h-4" /> Submit Official Sasurie No Due Form
+                    <Send className="w-4 h-4" /> Submit Official No Due Form
                   </>
                 )}
               </button>

@@ -26,7 +26,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, re
 
   if (!user) {
     const rolesList = (allowedRoles || requiredRoles || []).map((r) => String(r).toUpperCase());
-    const targetRole = rolesList.includes('ADMIN') ? 'admin' : rolesList.includes('STAFF') ? 'staff' : 'student';
+    const targetRole = rolesList.includes('ADMIN') ? 'admin' : rolesList.includes('HOD') ? 'hod' : rolesList.includes('STAFF') ? 'staff' : 'student';
     return <Navigate to={`/login?role=${targetRole}`} state={{ from: location }} replace />;
   }
 
@@ -36,6 +36,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles, re
   if (checkRoles.length > 0 && !checkRoles.includes(currentRole)) {
     // Redirect to their default dashboard
     if (currentRole === 'STUDENT') return <Navigate to="/student/dashboard" replace />;
+    if (currentRole === 'HOD') return <Navigate to="/hod/dashboard" replace />;
     if (currentRole === 'STAFF') return <Navigate to="/staff/dashboard" replace />;
     if (currentRole === 'ADMIN') return <Navigate to="/admin/dashboard" replace />;
     return <Navigate to="/login" replace />;

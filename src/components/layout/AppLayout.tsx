@@ -27,7 +27,7 @@ interface AppLayoutProps {
 }
 
 export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
-  const { user, studentProfile, staffProfile, logout, isStudent, isStaff, isAdmin } = useAuth();
+  const { user, studentProfile, staffProfile, logout, isStudent, isStaff, isHOD, isAdmin } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -46,6 +46,14 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       { label: 'Dues & Fees', href: '/student/dues', icon: Receipt },
       { label: 'Clearance Request', href: '/student/request', icon: FileCheck2 },
       { label: 'My Certificate', href: '/student/certificate', icon: Award },
+    ];
+  } else if (isHOD) {
+    navItems = [
+      { label: 'HOD Overview', href: '/hod/dashboard', icon: LayoutDashboard },
+      { label: 'Allocate Clearance Nodes', href: '/hod/curriculum', icon: BookOpen },
+      { label: 'Student Clearances', href: '/hod/requests', icon: FileCheck2 },
+      { label: 'Staff Allocations', href: '/hod/staff-dues', icon: UserCheck },
+      { label: 'Department Students', href: '/hod/students', icon: Users },
     ];
   } else if (isStaff) {
     navItems = [
@@ -70,9 +78,11 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     ];
   }
 
-  const roleLabel = isStudent ? 'Student' : isStaff ? 'Department Staff' : 'Administrator';
+  const roleLabel = isStudent ? 'Student' : isHOD ? 'Head of Department' : isStaff ? 'Department Staff' : 'Administrator';
   const roleBadgeColor = isStudent
     ? 'bg-blue-50 text-blue-700 border-blue-200'
+    : isHOD
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
     : isStaff
     ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
     : 'bg-purple-50 text-purple-700 border-purple-200';

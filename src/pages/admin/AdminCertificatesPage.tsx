@@ -1139,7 +1139,7 @@ export const AdminCertificatesPage: React.FC = () => {
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    Sasurie Form
+                    Clearance Form
                   </button>
                   <button
                     type="button"
@@ -1176,10 +1176,10 @@ export const AdminCertificatesPage: React.FC = () => {
                       <GraduationCap className="w-7 h-7" />
                     </div>
                     <h3 className="font-display font-black text-xl text-indigo-950 uppercase tracking-tight">
-                      Sasurie College of Engineering
+                      College of Engineering
                     </h3>
                     <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest mt-0.5">
-                      Autonomous Institution • Vijayamangalam, Tiruppur - 638056 • NAAC 'A+'
+                      Autonomous Institution • Approved by AICTE & Affiliated to Anna University • NAAC 'A+'
                     </p>
                     <p className="text-[10px] text-slate-400">
                       Office of Academic Clearances & Institutional Registrar

@@ -52,7 +52,7 @@ export const StudentCertificatePage: React.FC = () => {
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `Sasurie_NoDue_Certificate_${certId}.pdf`;
+      a.download = `College_NoDue_Certificate_${certId}.pdf`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
@@ -79,7 +79,7 @@ export const StudentCertificatePage: React.FC = () => {
             Official No Due Clearance & Form
           </h2>
           <p className="text-xs text-slate-500 mt-0.5">
-            Sasurie College of Engineering (Autonomous) — CIAT / End Sem Clearance Document
+            College of Engineering (Autonomous) — CIAT / End Sem Clearance Document
           </p>
         </div>
 
@@ -97,7 +97,7 @@ export const StudentCertificatePage: React.FC = () => {
                 }`}
               >
                 <FileText className="w-3.5 h-3.5 text-indigo-600" />
-                Original Sasurie Form
+                Official Form
               </button>
               <button
                 type="button"
@@ -148,7 +148,7 @@ export const StudentCertificatePage: React.FC = () => {
             No Due Certificate Not Yet Issued
           </h3>
           <p className="text-xs text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-            Your certificate and official Sasurie form will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
+            Your certificate and official clearance form will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
           </p>
           <div className="mt-6 flex justify-center gap-3">
             <Link
@@ -160,7 +160,7 @@ export const StudentCertificatePage: React.FC = () => {
           </div>
         </div>
       ) : viewFormat === 'sasurie_form' ? (
-        /* The Authentic Sasurie Institutional Paper Replica */
+        /* The Authentic Institutional Paper Replica */
         <SasurieDueFormView request={linkedRequest} student={studentProfile} />
       ) : (
         /* Digital Verifiable Certificate View */
@@ -178,10 +178,10 @@ export const StudentCertificatePage: React.FC = () => {
                 <GraduationCap className="w-8 h-8" />
               </div>
               <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-indigo-950 uppercase tracking-tight">
-                Sasurie College of Engineering
+                College of Engineering
               </h1>
               <p className="text-xs font-bold text-slate-600 tracking-wider uppercase mt-1">
-                Autonomous Institution • Vijayamangalam, Tiruppur - 638056 • NAAC 'A+'
+                Autonomous Institution • Approved by AICTE & Affiliated to Anna University • NAAC 'A+'
               </p>
               <p className="text-[11px] text-slate-400 font-medium">
                 Office of Academic Affairs & Institutional Clearances (CIAT - I / II / End Sem)

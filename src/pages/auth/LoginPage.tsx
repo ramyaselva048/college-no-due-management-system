@@ -12,7 +12,7 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const roleParam = searchParams.get('role')?.toUpperCase() as UserRole;
-    if (roleParam && ['STUDENT', 'STAFF', 'ADMIN'].includes(roleParam)) {
+    if (roleParam && ['STUDENT', 'STAFF', 'HOD', 'ADMIN'].includes(roleParam)) {
       setActiveRole(roleParam);
     }
   }, [searchParams]);
@@ -29,6 +29,7 @@ export const LoginPage: React.FC = () => {
   useEffect(() => {
     if (user) {
       if (user.role === 'STUDENT') navigate('/student/dashboard');
+      else if (user.role === 'HOD') navigate('/hod/dashboard');
       else if (user.role === 'STAFF') navigate('/staff/dashboard');
       else if (user.role === 'ADMIN') navigate('/admin/dashboard');
     }
@@ -44,6 +45,7 @@ export const LoginPage: React.FC = () => {
     try {
       const loggedIn = await login(email.trim(), password, activeRole);
       if (loggedIn.role === 'STUDENT') navigate('/student/dashboard');
+      else if (loggedIn.role === 'HOD') navigate('/hod/dashboard');
       else if (loggedIn.role === 'STAFF') navigate('/staff/dashboard');
       else if (loggedIn.role === 'ADMIN') navigate('/admin/dashboard');
     } catch (err: any) {
@@ -74,7 +76,7 @@ export const LoginPage: React.FC = () => {
       <div className="mt-6 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-white py-8 px-6 sm:px-10 rounded-2xl shadow-xl border border-slate-200">
           {/* Role Tabs */}
-          <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-xl mb-6">
+          <div className="grid grid-cols-4 gap-1 bg-slate-100 p-1 rounded-xl mb-6">
             <button
               type="button"
               id="tab-role-student"
@@ -84,7 +86,7 @@ export const LoginPage: React.FC = () => {
                 setPassword('');
                 setError(null);
               }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                 activeRole === 'STUDENT'
                   ? 'bg-white text-indigo-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -95,6 +97,24 @@ export const LoginPage: React.FC = () => {
             </button>
             <button
               type="button"
+              id="tab-role-hod"
+              onClick={() => {
+                setActiveRole('HOD');
+                setEmail('hod.cse@college.edu');
+                setPassword('College@123');
+                setError(null);
+              }}
+              className={`py-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
+                activeRole === 'HOD'
+                  ? 'bg-white text-amber-600 shadow-xs ring-1 ring-amber-200'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              <Building2 className="w-3.5 h-3.5" />
+              HOD
+            </button>
+            <button
+              type="button"
               id="tab-role-staff"
               onClick={() => {
                 setActiveRole('STAFF');
@@ -102,14 +122,14 @@ export const LoginPage: React.FC = () => {
                 setPassword('');
                 setError(null);
               }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                 activeRole === 'STAFF'
                   ? 'bg-white text-emerald-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <Building2 className="w-3.5 h-3.5" />
-              Staff & Officer
+              Staff
             </button>
             <button
               type="button"
@@ -120,7 +140,7 @@ export const LoginPage: React.FC = () => {
                 setPassword('');
                 setError(null);
               }}
-              className={`py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`py-2 text-[11px] font-bold rounded-lg transition-all flex items-center justify-center gap-1 ${
                 activeRole === 'ADMIN'
                   ? 'bg-white text-purple-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
@@ -130,6 +150,43 @@ export const LoginPage: React.FC = () => {
               Admin
             </button>
           </div>
+
+          {activeRole === 'HOD' && (
+            <div className="mb-4 p-2.5 bg-amber-50/80 border border-amber-200 rounded-xl text-amber-900 text-[11px] flex flex-col gap-1.5">
+              <div className="flex items-center justify-between font-semibold">
+                <span className="flex items-center gap-1.5">
+                  <Building2 className="w-3.5 h-3.5 text-amber-600" />
+                  Head of Department (HOD) Portal
+                </span>
+                <span className="text-[10px] bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded font-mono">CSE / ECE / MECH / CIVIL</span>
+              </div>
+              <p className="text-amber-800/80 text-[10px] leading-tight">
+                Log in to configure year-wise & semester-wise subject clearance nodes and assign staff for due clearance.
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('hod.cse@college.edu');
+                    setPassword('College@123');
+                  }}
+                  className="px-2 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-semibold text-amber-800 hover:bg-amber-100 transition-colors shadow-2xs"
+                >
+                  CSE HOD Demo
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEmail('hod.ece@college.edu');
+                    setPassword('College@123');
+                  }}
+                  className="px-2 py-0.5 bg-white border border-amber-300 rounded text-[10px] font-semibold text-amber-800 hover:bg-amber-100 transition-colors shadow-2xs"
+                >
+                  ECE HOD Demo
+                </button>
+              </div>
+            </div>
+          )}
 
           {error && (
             <div className="mb-4 p-3 bg-rose-50 border border-rose-200 rounded-xl text-rose-700 text-xs flex items-center gap-2">
@@ -143,6 +200,8 @@ export const LoginPage: React.FC = () => {
               <label className="block text-xs font-semibold text-slate-700 mb-1">
                 {activeRole === 'STUDENT'
                   ? 'Register Number or College Email'
+                  : activeRole === 'HOD'
+                  ? 'HOD Institutional Email or Employee ID'
                   : activeRole === 'STAFF'
                   ? 'Employee ID or College Email'
                   : 'Institutional Admin Email'}
@@ -157,10 +216,12 @@ export const LoginPage: React.FC = () => {
                   required
                   placeholder={
                     activeRole === 'STUDENT'
-                      ? 'e.g. 732423104036 or student@sasurie.edu'
+                      ? 'e.g. 732423104036 or student@college.edu'
+                      : activeRole === 'HOD'
+                      ? 'e.g. hod.cse@college.edu or HOD-CSE-001'
                       : activeRole === 'STAFF'
                       ? 'e.g. EMP-LIB-101 or staff.library@college.edu'
-                      : 'e.g. admin@sasurie.edu'
+                      : 'e.g. admin@college.edu'
                   }
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}

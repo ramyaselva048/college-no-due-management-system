@@ -283,7 +283,7 @@ export const AdminRequestsPage: React.FC = () => {
                     <button
                       onClick={() => setPreviewFormReq(req)}
                       className="px-3 py-1.5 text-xs font-bold rounded-lg border border-indigo-200 bg-indigo-50/80 hover:bg-indigo-100 text-indigo-900 inline-flex items-center gap-1.5 transition-colors cursor-pointer"
-                      title="Inspect Sasurie No Due Form"
+                      title="Inspect Official No Due Form"
                     >
                       <FileText className="w-3.5 h-3.5 text-indigo-700" />
                       Official Form
@@ -600,7 +600,7 @@ export const AdminRequestsPage: React.FC = () => {
                 </div>
                 <div>
                   <h4 className="font-bold text-slate-900 text-sm">
-                    Sasurie College of Engineering - Official No Due Form
+                    College of Engineering - Official No Due Form
                   </h4>
                   <p className="text-[11px] text-slate-500">
                     Application #{previewFormReq.id} • {previewFormReq.student_name} ({previewFormReq.student_reg_no})

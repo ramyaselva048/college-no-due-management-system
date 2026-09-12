@@ -22,6 +22,13 @@ import { StaffApprovalsPage } from './pages/staff/StaffApprovalsPage';
 import { StaffStudentsPage } from './pages/staff/StaffStudentsPage';
 import { StaffDuesPage } from './pages/staff/StaffDuesPage';
 
+// HOD Pages
+import { HODDashboard } from './pages/hod/HODDashboard';
+import { HODCurriculumPage } from './pages/hod/HODCurriculumPage';
+import { HODRequestsPage } from './pages/hod/HODRequestsPage';
+import { HODStaffDuesPage } from './pages/hod/HODStaffDuesPage';
+import { HODStudentsPage } from './pages/hod/HODStudentsPage';
+
 // Admin Pages
 import { AdminDashboard } from './pages/admin/AdminDashboard';
 import { AdminRequestsPage } from './pages/admin/AdminRequestsPage';
@@ -79,6 +86,23 @@ export default function App() {
               <Route path="approvals" element={<StaffApprovalsPage />} />
               <Route path="students" element={<StaffStudentsPage />} />
               <Route path="dues" element={<StaffDuesPage />} />
+            </Route>
+
+            {/* HOD Protected Routes */}
+            <Route
+              path="/hod"
+              element={
+                <ProtectedRoute requiredRoles={['hod', 'admin']}>
+                  <AppLayout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/hod/dashboard" replace />} />
+              <Route path="dashboard" element={<HODDashboard />} />
+              <Route path="curriculum" element={<HODCurriculumPage />} />
+              <Route path="requests" element={<HODRequestsPage />} />
+              <Route path="staff-dues" element={<HODStaffDuesPage />} />
+              <Route path="students" element={<HODStudentsPage />} />
             </Route>
 
             {/* Admin Protected Routes */}

@@ -42,15 +42,15 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   req.user = user;
   if (user.role === 'STUDENT') {
     req.studentProfile = db.students.find(s => s.user_id === user.id);
-  } else if (user.role === 'STAFF') {
-    req.staffProfile = db.staff.find(s => s.user_id === user.id);
+  } else if (user.role === 'STAFF' || user.role === 'HOD') {
+    req.staffProfile = db.staff.find(s => s.user_id === user.id || s.email.toLowerCase() === user.email.toLowerCase());
   }
 
   next();
 }
 
 // Optional auth helper
-function requireRole(roles: Array<'STUDENT' | 'STAFF' | 'ADMIN'>) {
+function requireRole(roles: Array<'STUDENT' | 'STAFF' | 'HOD' | 'ADMIN'>) {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
     if (!req.user || !roles.includes(req.user.role)) {
       return res.status(403).json({ detail: 'Permission denied for this action' });
@@ -98,6 +98,9 @@ apiRouter.get('/health', async (req, res) => {
 // Authentication Routes (/api/auth)
 // ----------------------------------------------------
 const COLLEGE_ADMIN_EMAILS = [
+  'admin@college.edu',
+  'admin@college.ac.in',
+  'admin@institution.edu',
   'ramya@sasurie.edu',
   'ramyacse23@sasurie.com',
   'admin@sasurie.edu'
@@ -153,11 +156,20 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     if (!user) {
       user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
     }
+  } else if (requestedRole === 'HOD') {
+    if (staff) {
+      user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
+    } else {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && (u.role === 'HOD' || u.role === 'STAFF'));
+    }
+    if (!user) {
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
+    }
   } else if (requestedRole === 'STAFF') {
     if (staff) {
       user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
     } else {
-      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && u.role === 'STAFF');
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && (u.role === 'STAFF' || u.role === 'HOD'));
     }
   } else if (requestedRole === 'STUDENT') {
     if (student) {
@@ -189,12 +201,44 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
         detail: 'Access denied: Only students are authorized to log in through the Student Portal.'
       });
     }
+  } else if (requestedRole === 'HOD') {
+    const isHod = user.role === 'HOD' || (staff && (staff.designation?.toLowerCase().includes('hod') || staff.designation?.toLowerCase().includes('head of department')));
+    if (!isHod && user.role !== 'ADMIN') {
+      return res.status(403).json({
+        detail: 'Access denied: Only authorized Heads of Department (HOD) allocated by the Administrator can log in through the HOD Portal.'
+      });
+    }
+    const hodStaffRecord = staff || db.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === user!.email.toLowerCase());
+    if (!hodStaffRecord || !hodStaffRecord.department_id) {
+      return res.status(403).json({
+        detail: 'Access denied: No department has been allocated to this HOD account. Please contact the Administrator.'
+      });
+    }
+    if (user.is_active === false || hodStaffRecord.is_active === false) {
+      return res.status(403).json({
+        detail: 'Access denied: This HOD account has been deactivated by the Administrator. Please contact college administration.'
+      });
+    }
+    user.role = 'HOD';
+    staff = hodStaffRecord;
   } else if (requestedRole === 'STAFF') {
-    if (user.role !== 'STAFF') {
+    if (user.role !== 'STAFF' && user.role !== 'HOD') {
       return res.status(403).json({
         detail: 'Access denied: Only department staff are authorized to log in through the Staff Portal.'
       });
     }
+    const enrolledStaff = staff || db.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === user!.email.toLowerCase());
+    if (!enrolledStaff) {
+      return res.status(403).json({
+        detail: 'Access Denied: This staff account is not enrolled by the Head of Department or Administrator.'
+      });
+    }
+    if (user.is_active === false || enrolledStaff.is_active === false) {
+      return res.status(403).json({
+        detail: 'Access Denied: This staff account has been deactivated by the Head of Department (HOD). Please contact your HOD.'
+      });
+    }
+    staff = enrolledStaff;
   } else if (requestedRole === 'ADMIN') {
     if (user.role !== 'ADMIN' || !COLLEGE_ADMIN_EMAILS.some(e => e.toLowerCase() === user!.email.toLowerCase())) {
       return res.status(403).json({
@@ -276,6 +320,15 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
       userInfo.year = st.year;
       userInfo.section = st.section;
     }
+  } else if (user.role === 'HOD') {
+    const st = staff || db.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === user!.email.toLowerCase());
+    const dept = st ? db.departments.find(d => d.id === st.department_id) : db.departments.find(d => d.code === 'CSE');
+    userInfo.full_name = st?.full_name || 'Head of Department';
+    userInfo.employee_id = st?.employee_id || 'HOD-CSE-001';
+    userInfo.department_id = dept ? dept.id : 1;
+    userInfo.department_name = dept ? dept.name : 'Computer Science and Engineering';
+    userInfo.department_code = dept ? dept.code : 'CSE';
+    userInfo.designation = st?.designation || 'Professor & Head of Department';
   } else if (user.role === 'STAFF') {
     const staff = db.staff.find(s => s.user_id === user.id);
     if (staff) {
@@ -333,6 +386,17 @@ apiRouter.post('/auth/refresh', (req: Request, res: Response) => {
       userInfo.register_number = student.register_number;
       userInfo.department_id = student.department_id;
     }
+  } else if (user.role === 'HOD') {
+    const staff = db.staff.find(s => s.user_id === user.id || s.email.toLowerCase() === user.email.toLowerCase());
+    if (staff) {
+      const dept = db.departments.find(d => d.id === staff.department_id);
+      userInfo.full_name = staff.full_name;
+      userInfo.employee_id = staff.employee_id;
+      userInfo.department_id = staff.department_id;
+      userInfo.department_name = dept ? dept.name : '';
+      userInfo.department_code = dept ? dept.code : '';
+      userInfo.designation = staff.designation;
+    }
   } else if (user.role === 'STAFF') {
     const staff = db.staff.find(s => s.user_id === user.id);
     if (staff) {
@@ -385,7 +449,7 @@ apiRouter.get('/auth/me', authMiddleware, (req: AuthRequest, res: Response) => {
     userInfo.section = sp.section;
     userInfo.admission_year = sp.admission_year;
     userInfo.student_profile = { ...sp, department_name: userInfo.department_name, course_name: userInfo.course_name };
-  } else if (user.role === 'STAFF' && req.staffProfile) {
+  } else if ((user.role === 'STAFF' || user.role === 'HOD') && req.staffProfile) {
     const st = req.staffProfile;
     const dept = db.departments.find(d => d.id === st.department_id);
     userInfo.staff_id = st.id;
@@ -394,8 +458,9 @@ apiRouter.get('/auth/me', authMiddleware, (req: AuthRequest, res: Response) => {
     userInfo.phone = st.phone;
     userInfo.department_id = st.department_id;
     userInfo.department_name = dept ? dept.name : '';
+    userInfo.department_code = dept ? dept.code : '';
     userInfo.designation = st.designation;
-    userInfo.staff_profile = { ...st, department_name: userInfo.department_name };
+    userInfo.staff_profile = { ...st, department_name: userInfo.department_name, department_code: userInfo.department_code };
   } else if (user.role === 'ADMIN') {
     userInfo.full_name = 'College Administrator';
     userInfo.department_name = 'Office of the Principal / Administration';
@@ -1274,7 +1339,7 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
   db.logAudit(req.user!.id, req.user!.email, 'NO_DUE_REQUEST_CREATED', 'NO_DUE_REQUEST', newReq.id, null, { departments_count: activeDepts.length, exam_type: newReq.exam_type }, getClientIp(req));
   db.createNotification(
     student.user_id,
-    'Sasurie No Due Request Submitted',
+    'Official No Due Request Submitted',
     `Your ${newReq.exam_type} No Due Form has been initiated with 14 clearance sections and routed for verification.`,
     'info'
   );
@@ -1918,7 +1983,7 @@ apiRouter.get('/certificates/verify/:verification_code', (req: Request, res: Res
     issued_by: cert.issued_by_name || 'Institutional Administrator',
     revoked_at: cert.revoked_at,
     revocation_reason: cert.revocation_reason,
-    college_name: 'Sasurie College of Engineering (Autonomous), Vijayamangalam, Tiruppur - 638056',
+    college_name: 'College of Engineering (Autonomous), Approved by AICTE & Anna University',
     status_message: cert.is_valid ? 'AUTHENTIC & VALID' : 'REVOKED / INVALID'
   });
 });
@@ -2741,7 +2806,173 @@ apiRouter.delete('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (re
 });
 
 apiRouter.get('/admin/departments', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
-  res.json(db.departments);
+  const deptsWithHod = db.departments.map(dept => {
+    const hodStaff = db.staff.find(s => s.department_id === dept.id && (
+      s.designation?.toLowerCase().includes('hod') || 
+      s.designation?.toLowerCase().includes('head of department')
+    ));
+    let hodInfo = null;
+    if (hodStaff) {
+      const hodUser = db.users.find(u => u.id === hodStaff.user_id || u.email.toLowerCase() === hodStaff.email.toLowerCase());
+      hodInfo = {
+        id: hodStaff.id,
+        user_id: hodUser?.id || hodStaff.user_id,
+        full_name: hodStaff.full_name,
+        employee_id: hodStaff.employee_id,
+        email: hodStaff.email,
+        phone: hodStaff.phone,
+        is_active: hodUser ? hodUser.is_active : (hodStaff.is_active !== false)
+      };
+    }
+    return {
+      ...dept,
+      hod_info: hodInfo
+    };
+  });
+  res.json(deptsWithHod);
+});
+
+apiRouter.post('/admin/departments/:id/allocate-hod', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const deptId = Number(req.params.id);
+  const dept = db.departments.find(d => d.id === deptId);
+  if (!dept) return res.status(404).json({ detail: 'Department not found' });
+
+  const { full_name, employee_id, email, password, phone, is_active } = req.body;
+  if (!full_name || !employee_id || !email) {
+    return res.status(400).json({ detail: 'HOD Full Name, Employee ID, and Login Email are required.' });
+  }
+
+  const cleanEmail = email.trim().toLowerCase();
+  const cleanEmpId = employee_id.trim().toUpperCase();
+  const cleanName = full_name.trim();
+
+  let user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    if (!password || !password.trim()) {
+      return res.status(400).json({ detail: 'Password is required to allocate new HOD login credentials.' });
+    }
+    const nextUserId = Math.max(0, ...db.users.map(u => u.id)) + 1;
+    user = {
+      id: nextUserId,
+      email: cleanEmail,
+      password_hash: hashPassword(password.trim()),
+      role: 'HOD',
+      is_active: is_active !== undefined ? Boolean(is_active) : true,
+      is_registered: true,
+      created_at: new Date().toISOString()
+    };
+    db.users.push(user);
+  } else {
+    user.role = 'HOD';
+    if (is_active !== undefined) {
+      user.is_active = Boolean(is_active);
+    }
+    if (password && password.trim()) {
+      user.password_hash = hashPassword(password.trim());
+    }
+  }
+
+  let hodStaff = db.staff.find(s => s.department_id === deptId && (
+    s.designation?.toLowerCase().includes('hod') || 
+    s.designation?.toLowerCase().includes('head of department')
+  ));
+
+  if (!hodStaff) {
+    hodStaff = db.staff.find(s => s.email.toLowerCase() === cleanEmail || s.employee_id.toUpperCase() === cleanEmpId);
+  }
+
+  if (!hodStaff) {
+    const nextStaffId = Math.max(0, ...db.staff.map(s => s.id)) + 1;
+    hodStaff = {
+      id: nextStaffId,
+      user_id: user.id,
+      employee_id: cleanEmpId,
+      full_name: cleanName,
+      email: cleanEmail,
+      phone: phone || '9842100000',
+      department_id: deptId,
+      designation: `Head of Department (${dept.code})`,
+      is_active: user.is_active,
+      created_at: new Date().toISOString()
+    };
+    db.staff.push(hodStaff);
+  } else {
+    hodStaff.user_id = user.id;
+    hodStaff.employee_id = cleanEmpId;
+    hodStaff.full_name = cleanName;
+    hodStaff.email = cleanEmail;
+    if (phone) hodStaff.phone = phone;
+    hodStaff.department_id = deptId;
+    hodStaff.designation = `Head of Department (${dept.code})`;
+    hodStaff.is_active = user.is_active;
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_ALLOCATED', 'DEPARTMENT', deptId, null, {
+    department: dept.name,
+    hod_name: cleanName,
+    hod_email: cleanEmail,
+    employee_id: cleanEmpId,
+    is_active: user.is_active
+  }, getClientIp(req));
+
+  res.json({
+    message: `Head of Department successfully allocated for ${dept.name}!`,
+    hod_info: {
+      id: hodStaff.id,
+      user_id: user.id,
+      full_name: hodStaff.full_name,
+      employee_id: hodStaff.employee_id,
+      email: hodStaff.email,
+      phone: hodStaff.phone,
+      is_active: user.is_active
+    }
+  });
+});
+
+apiRouter.patch('/admin/departments/:id/hod-status', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const deptId = Number(req.params.id);
+  const dept = db.departments.find(d => d.id === deptId);
+  if (!dept) return res.status(404).json({ detail: 'Department not found' });
+
+  const hodStaff = db.staff.find(s => s.department_id === deptId && (
+    s.designation?.toLowerCase().includes('hod') || 
+    s.designation?.toLowerCase().includes('head of department')
+  ));
+  if (!hodStaff) return res.status(404).json({ detail: 'No HOD currently allocated to this department' });
+
+  const user = db.users.find(u => u.id === hodStaff.user_id || u.email.toLowerCase() === hodStaff.email.toLowerCase());
+  const newStatus = req.body.is_active !== undefined ? Boolean(req.body.is_active) : (user ? !user.is_active : false);
+  if (user) user.is_active = newStatus;
+  hodStaff.is_active = newStatus;
+
+  db.saveToFile();
+  res.json({
+    message: `HOD account ${newStatus ? 'activated' : 'deactivated'} successfully`,
+    is_active: newStatus
+  });
+});
+
+apiRouter.delete('/admin/departments/:id/hod', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+  const deptId = Number(req.params.id);
+  const dept = db.departments.find(d => d.id === deptId);
+  if (!dept) return res.status(404).json({ detail: 'Department not found' });
+
+  const hodStaffIdx = db.staff.findIndex(s => s.department_id === deptId && (
+    s.designation?.toLowerCase().includes('hod') || 
+    s.designation?.toLowerCase().includes('head of department')
+  ));
+  if (hodStaffIdx === -1) return res.status(404).json({ detail: 'No HOD allocated to this department' });
+
+  const hodStaff = db.staff[hodStaffIdx];
+  const user = db.users.find(u => u.id === hodStaff.user_id || u.email.toLowerCase() === hodStaff.email.toLowerCase());
+  if (user && user.role === 'HOD') {
+    user.is_active = false;
+  }
+  db.staff.splice(hodStaffIdx, 1);
+  db.saveToFile();
+
+  res.json({ message: `HOD unallocated from ${dept.name}` });
 });
 
 apiRouter.post('/admin/departments', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
@@ -3668,4 +3899,638 @@ apiRouter.get('/staff/students', authMiddleware, requireRole(['STAFF']), (req: A
   const paginated = enriched.slice(skip, skip + limit);
 
   res.json(paginated);
+});
+
+// ====================================================
+// HOD Clearance Management & Staff Allocation APIs
+// ====================================================
+
+apiRouter.get('/hod/profile', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const deptId = staff?.department_id || 1;
+  const dept = db.departments.find(d => d.id === deptId) || db.departments[0];
+  const deptStudents = db.students.filter(s => s.department_id === deptId);
+  const deptStaff = db.staff.filter(s => s.department_id === deptId);
+  const deptNodes = db.subjectCourses.filter(c => c.department_id === deptId && c.is_active !== false);
+  const deptReqs = db.noDueRequests.filter(r => {
+    const student = db.students.find(s => s.id === r.student_id);
+    return student && student.department_id === deptId;
+  });
+
+  res.json({
+    hod: {
+      id: req.user!.id,
+      email: req.user!.email,
+      full_name: staff?.full_name || 'Dr. K. Senthil Kumar, M.E., Ph.D.',
+      employee_id: staff?.employee_id || 'HOD-CSE-001',
+      designation: staff?.designation || `Head of Department (${dept?.code || 'CSE'})`,
+      phone: staff?.phone || '9842100000'
+    },
+    department: {
+      id: dept?.id || 1,
+      name: dept?.name || 'Department of Computer Science and Engineering',
+      code: dept?.code || 'CSE',
+      description: dept?.description || 'Academic Department'
+    },
+    metrics: {
+      total_students: deptStudents.length,
+      total_faculty: deptStaff.length,
+      total_clearance_nodes: deptNodes.length,
+      active_requests: deptReqs.length,
+      pending_hod_endorsements: deptReqs.filter(r => !r.signatories?.hod?.signed).length
+    }
+  });
+});
+
+apiRouter.get('/hod/clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const deptId = staff?.department_id || 1;
+  
+  let nodes = db.subjectCourses.filter(c => c.department_id === deptId);
+  
+  if (req.query.year) {
+    nodes = nodes.filter(c => c.year === Number(req.query.year));
+  }
+  if (req.query.semester) {
+    nodes = nodes.filter(c => c.semester === Number(req.query.semester));
+  }
+  if (req.query.course_type) {
+    nodes = nodes.filter(c => c.course_type === req.query.course_type);
+  }
+
+  const sorted = nodes.slice().sort((a, b) => {
+    if (a.semester !== b.semester) return a.semester - b.semester;
+    const aType = a.course_type || 'theory';
+    const bType = b.course_type || 'theory';
+    if (aType !== bType) return aType === 'theory' ? -1 : 1;
+    return (a.slot || '').localeCompare(b.slot || '');
+  });
+
+  res.json(sorted);
+});
+
+apiRouter.post('/hod/clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const deptId = staff?.department_id || 1;
+
+  const { title, code, year, semester, course_type, slot, faculty_name, faculty_id, faculty_email, is_elective } = req.body;
+
+  if (!title || !code || !year || !semester) {
+    return res.status(400).json({ detail: 'Title, Code, Year, and Semester are required to allocate a clearance node.' });
+  }
+
+  const nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
+  const newNode: SubjectCourseRecord = {
+    id: nextId,
+    title: title.trim(),
+    code: code.trim().toUpperCase(),
+    department_id: deptId,
+    year: Number(year),
+    semester: Number(semester),
+    course_type: course_type || 'theory',
+    slot: slot || (course_type === 'lab' ? `Lab ${nextId % 4 + 1}` : `Sub ${nextId % 6 + 1}`),
+    faculty_name: faculty_name || 'Department Faculty',
+    faculty_id: faculty_id ? Number(faculty_id) : undefined,
+    faculty_email: faculty_email || undefined,
+    is_elective: Boolean(is_elective),
+    is_active: true,
+    created_at: new Date().toISOString()
+  };
+
+  db.subjectCourses.push(newNode);
+  db.saveToFile();
+
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_CLEARANCE_NODE_CREATED', 'SUBJECT_COURSE', newNode.id, null, newNode, getClientIp(req));
+
+  res.status(201).json(newNode);
+});
+
+apiRouter.put('/hod/clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const node = db.subjectCourses.find(c => c.id === id);
+  if (!node) {
+    return res.status(404).json({ detail: 'Clearance node not found' });
+  }
+
+  const { title, code, year, semester, course_type, slot, faculty_name, faculty_id, faculty_email, is_elective, is_active } = req.body;
+
+  if (title !== undefined) node.title = title.trim();
+  if (code !== undefined) node.code = code.trim().toUpperCase();
+  if (year !== undefined) node.year = Number(year);
+  if (semester !== undefined) node.semester = Number(semester);
+  if (course_type !== undefined) node.course_type = course_type;
+  if (slot !== undefined) node.slot = slot;
+  if (faculty_name !== undefined) node.faculty_name = faculty_name;
+  if (faculty_id !== undefined) node.faculty_id = Number(faculty_id);
+  if (faculty_email !== undefined) node.faculty_email = faculty_email;
+  if (is_elective !== undefined) node.is_elective = Boolean(is_elective);
+  if (is_active !== undefined) node.is_active = Boolean(is_active);
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_CLEARANCE_NODE_UPDATED', 'SUBJECT_COURSE', node.id, null, node, getClientIp(req));
+
+  res.json(node);
+});
+
+apiRouter.delete('/hod/clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const index = db.subjectCourses.findIndex(c => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ detail: 'Clearance node not found' });
+  }
+
+  const deleted = db.subjectCourses.splice(index, 1)[0];
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_CLEARANCE_NODE_DELETED', 'SUBJECT_COURSE', id, deleted, null, getClientIp(req));
+
+  res.json({ message: 'Clearance node removed successfully' });
+});
+
+apiRouter.post('/hod/clearance-nodes/populate-semester', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const deptId = staff?.department_id || 1;
+  const dept = db.departments.find(d => d.id === deptId) || db.departments[0];
+  const deptCode = dept?.code?.toUpperCase() || 'CSE';
+
+  const semester = Number(req.body.semester);
+  const year = Number(req.body.year) || Math.ceil(semester / 2);
+
+  if (!semester || semester < 1 || semester > 8) {
+    return res.status(400).json({ detail: 'Valid semester between 1 and 8 is required.' });
+  }
+
+  // Remove any existing nodes for this department and semester
+  db.subjectCourses = db.subjectCourses.filter(c => !(c.department_id === deptId && c.semester === semester));
+
+  // Get department faculty to allocate
+  const deptStaff = db.staff.filter(s => s.department_id === deptId);
+
+  // Look up catalog or generate default
+  let catalog = DEPARTMENT_CURRICULUM_CATALOG[deptCode] || [];
+  let semItems = catalog.filter(c => c.semester === semester);
+  if (semItems.length === 0) {
+    semItems = generateGenericSemesterSubjects(deptCode, year, semester);
+  }
+
+  let nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
+  const createdNodes: SubjectCourseRecord[] = [];
+
+  semItems.forEach((item, idx) => {
+    const assignedStaff = deptStaff.length > 0 ? deptStaff[idx % deptStaff.length] : null;
+    const node: SubjectCourseRecord = {
+      id: nextId++,
+      title: item.title,
+      code: item.code,
+      department_id: deptId,
+      year: item.year || year,
+      semester: semester,
+      course_type: item.course_type,
+      slot: item.slot,
+      faculty_name: item.faculty_name || assignedStaff?.full_name || 'Staff In-Charge',
+      faculty_id: assignedStaff?.id,
+      faculty_email: assignedStaff?.email,
+      is_elective: item.is_elective || false,
+      is_active: true,
+      created_at: new Date().toISOString()
+    };
+    db.subjectCourses.push(node);
+    createdNodes.push(node);
+  });
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_POPULATE_SEMESTER_NODES', 'SUBJECT_COURSE', semester, null, { count: createdNodes.length, deptCode, semester }, getClientIp(req));
+
+  res.json({
+    message: `Successfully allocated ${createdNodes.length} clearance nodes for Year ${year}, Semester ${semester}.`,
+    nodes: createdNodes
+  });
+});
+
+apiRouter.get('/hod/faculty', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id || s.email.toLowerCase() === req.user!.email.toLowerCase());
+  const deptId = hodStaff?.department_id || 1;
+
+  const facultyList = db.staff.filter(s => s.department_id === deptId).map(s => {
+    const assignedNodes = db.subjectCourses.filter(c => c.department_id === deptId && (c.faculty_id === s.id || c.faculty_email?.toLowerCase() === s.email.toLowerCase() || c.faculty_name === s.full_name));
+    const userRec = db.users.find(u => u.id === s.user_id || u.email.toLowerCase() === s.email.toLowerCase());
+    const isActive = (s.is_active !== false) && (userRec ? userRec.is_active !== false : true);
+    return {
+      ...s,
+      is_active: isActive,
+      assigned_nodes: assignedNodes.map(n => ({
+        id: n.id,
+        slot: n.slot,
+        code: n.code,
+        title: n.title,
+        course_type: n.course_type,
+        year: n.year,
+        semester: n.semester
+      }))
+    };
+  });
+
+  res.json(facultyList);
+});
+
+apiRouter.post('/hod/faculty', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id || s.email.toLowerCase() === req.user!.email.toLowerCase());
+  const deptId = hodStaff?.department_id || 1;
+  const { full_name, employee_id, email, password, phone, designation, is_active } = req.body;
+
+  if (!full_name || !employee_id || !email) {
+    return res.status(400).json({ detail: 'Full Name, Employee ID, and Email are required.' });
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const cleanEmpId = employee_id.trim().toUpperCase();
+  const cleanName = full_name.trim();
+  const cleanPassword = (password && password.trim()) || 'Staff@123';
+  const activeFlag = is_active !== undefined ? Boolean(is_active) : true;
+
+  let user = db.users.find(u => u.email.toLowerCase() === cleanEmail);
+  if (!user) {
+    const nextUserId = Math.max(0, ...db.users.map(u => u.id)) + 1;
+    user = {
+      id: nextUserId,
+      email: cleanEmail,
+      password_hash: hashPassword(cleanPassword),
+      role: 'STAFF',
+      is_active: activeFlag,
+      is_registered: true,
+      created_at: new Date().toISOString()
+    };
+    db.users.push(user);
+  } else {
+    user.role = 'STAFF';
+    user.is_active = activeFlag;
+    if (password && password.trim()) {
+      user.password_hash = hashPassword(password.trim());
+    }
+  }
+
+  const nextStaffId = Math.max(0, ...db.staff.map(s => s.id)) + 1;
+  const newStaff: StaffRecord = {
+    id: nextStaffId,
+    user_id: user.id,
+    employee_id: cleanEmpId,
+    full_name: cleanName,
+    email: cleanEmail,
+    phone: phone || '9876543210',
+    department_id: deptId,
+    designation: designation || 'Assistant Professor',
+    is_active: activeFlag,
+    created_at: new Date().toISOString()
+  };
+
+  db.staff.push(newStaff);
+  db.saveToFile();
+
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_CREATED', 'STAFF', newStaff.id, null, {
+    staff_name: cleanName,
+    emp_id: cleanEmpId,
+    dept_id: deptId,
+    is_active: activeFlag
+  }, getClientIp(req));
+
+  res.status(201).json({ ...newStaff, is_active: activeFlag, assigned_nodes: [] });
+});
+
+apiRouter.patch('/hod/faculty/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id || s.email.toLowerCase() === req.user!.email.toLowerCase());
+  const deptId = hodStaff?.department_id || 1;
+  const staffId = Number(req.params.id);
+
+  const staff = db.staff.find(s => s.id === staffId && s.department_id === deptId);
+  if (!staff) {
+    return res.status(404).json({ detail: 'Faculty member not found in your department.' });
+  }
+
+  const { full_name, employee_id, email, password, phone, designation, is_active } = req.body;
+  const oldEmail = staff.email;
+  const oldName = staff.full_name;
+
+  if (full_name !== undefined) staff.full_name = full_name.trim();
+  if (employee_id !== undefined) staff.employee_id = employee_id.trim().toUpperCase();
+  if (email !== undefined) staff.email = email.trim().toLowerCase();
+  if (phone !== undefined) staff.phone = phone.trim();
+  if (designation !== undefined) staff.designation = designation.trim();
+  if (is_active !== undefined) staff.is_active = Boolean(is_active);
+
+  const user = db.users.find(u => u.id === staff.user_id || u.email.toLowerCase() === oldEmail.toLowerCase());
+  if (user) {
+    if (email !== undefined) user.email = staff.email;
+    if (is_active !== undefined) user.is_active = staff.is_active;
+    if (password && password.trim()) {
+      user.password_hash = hashPassword(password.trim());
+    }
+  }
+
+  if (staff.full_name !== oldName || staff.email !== oldEmail) {
+    db.subjectCourses.forEach(c => {
+      if (c.department_id === deptId && (c.faculty_id === staff.id || c.faculty_email?.toLowerCase() === oldEmail.toLowerCase())) {
+        c.faculty_name = staff.full_name;
+        c.faculty_email = staff.email;
+      }
+    });
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_UPDATED', 'STAFF', staff.id, null, req.body, getClientIp(req));
+
+  const assignedNodes = db.subjectCourses.filter(c => c.department_id === deptId && (c.faculty_id === staff.id || c.faculty_email?.toLowerCase() === staff.email.toLowerCase()));
+
+  res.json({
+    ...staff,
+    is_active: staff.is_active !== false,
+    assigned_nodes: assignedNodes.map(n => ({
+      id: n.id,
+      slot: n.slot,
+      code: n.code,
+      title: n.title,
+      course_type: n.course_type,
+      year: n.year,
+      semester: n.semester
+    }))
+  });
+});
+
+apiRouter.patch('/hod/faculty/:id/status', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id || s.email.toLowerCase() === req.user!.email.toLowerCase());
+  const deptId = hodStaff?.department_id || 1;
+  const staffId = Number(req.params.id);
+
+  const staff = db.staff.find(s => s.id === staffId && s.department_id === deptId);
+  if (!staff) {
+    return res.status(404).json({ detail: 'Faculty member not found in your department.' });
+  }
+
+  const user = db.users.find(u => u.id === staff.user_id || u.email.toLowerCase() === staff.email.toLowerCase());
+  const newStatus = req.body.is_active !== undefined ? Boolean(req.body.is_active) : (staff.is_active !== false ? false : true);
+
+  staff.is_active = newStatus;
+  if (user) {
+    user.is_active = newStatus;
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_STATUS_TOGGLED', 'STAFF', staff.id, null, { is_active: newStatus }, getClientIp(req));
+
+  res.json({
+    message: `Faculty ${staff.full_name} is now ${newStatus ? 'active' : 'deactivated'}.`,
+    is_active: newStatus
+  });
+});
+
+apiRouter.delete('/hod/faculty/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id || s.email.toLowerCase() === req.user!.email.toLowerCase());
+  const deptId = hodStaff?.department_id || 1;
+  const staffId = Number(req.params.id);
+
+  const staffIdx = db.staff.findIndex(s => s.id === staffId && s.department_id === deptId);
+  if (staffIdx === -1) {
+    return res.status(404).json({ detail: 'Faculty member not found in your department.' });
+  }
+
+  const staff = db.staff[staffIdx];
+
+  db.subjectCourses.forEach(c => {
+    if (c.department_id === deptId && (c.faculty_id === staff.id || c.faculty_email?.toLowerCase() === staff.email.toLowerCase())) {
+      c.faculty_id = undefined;
+      c.faculty_name = undefined;
+      c.faculty_email = undefined;
+    }
+  });
+
+  const user = db.users.find(u => u.id === staff.user_id || u.email.toLowerCase() === staff.email.toLowerCase());
+  if (user) {
+    user.is_active = false;
+  }
+
+  db.staff.splice(staffIdx, 1);
+  db.saveToFile();
+
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_DELETED', 'STAFF', staffId, null, { staff_name: staff.full_name, emp_id: staff.employee_id }, getClientIp(req));
+
+  res.json({ message: `Faculty ${staff.full_name} has been removed successfully.` });
+});
+
+apiRouter.get('/hod/requests', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const deptId = hodStaff?.department_id || 1;
+  const dept = db.departments.find(d => d.id === deptId);
+
+  const deptStudents = db.students.filter(s => s.department_id === deptId);
+  const studentMap = new Map<number, StudentRecord>(deptStudents.map(s => [s.id, s]));
+
+  let requests = db.noDueRequests.filter(r => studentMap.has(r.student_id));
+
+  if (req.query.status) {
+    requests = requests.filter(r => r.status === req.query.status);
+  }
+  if (req.query.year) {
+    requests = requests.filter(r => {
+      const st = studentMap.get(r.student_id);
+      return (r.year || st?.year) === Number(req.query.year);
+    });
+  }
+  if (req.query.exam_type) {
+    requests = requests.filter(r => r.exam_type === req.query.exam_type);
+  }
+
+  const enriched = requests.map(r => {
+    const student = studentMap.get(r.student_id);
+    const course = student ? db.courses.find(c => c.id === student.course_id) : null;
+    const subjects = r.subjects || defaultSubjectsForStudent(student, r.semester);
+    const labs = r.labs || defaultLabsForStudent(student, r.semester);
+    const signatories = r.signatories || defaultSignatoriesForStudent(r);
+
+    const pendingSubjects = subjects.filter((s: any) => s.dues_status && s.dues_status !== 'No Dues' && s.dues_status !== '-');
+    const pendingLabs = labs.filter((l: any) => l.dues_status && l.dues_status !== 'No Dues' && l.dues_status !== '-');
+
+    return {
+      ...r,
+      student_name: student?.full_name || 'Student',
+      student_reg_no: student?.register_number || '-',
+      department_name: dept?.name || '',
+      department_code: dept?.code || '',
+      course_name: course?.name || 'B.E. Computer Science and Engineering',
+      year: r.year || student?.year || 4,
+      semester: r.semester || student?.semester || 7,
+      section: student?.section || 'A',
+      student_type: r.student_type || student?.student_type || 'day_scholar',
+      attendance_percentage: r.attendance_percentage ?? student?.attendance_percentage ?? 95,
+      subjects,
+      labs,
+      signatories,
+      all_subjects_cleared: pendingSubjects.length === 0,
+      all_labs_cleared: pendingLabs.length === 0,
+      hod_endorsed: Boolean(signatories?.hod?.signed),
+      created_at: r.created_at || r.submitted_at
+    };
+  });
+
+  res.json(enriched.reverse());
+});
+
+apiRouter.post('/hod/requests/:id/sign-off', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const reqId = Number(req.params.id);
+  const noDueReq = db.noDueRequests.find(r => r.id === reqId);
+  if (!noDueReq) {
+    return res.status(404).json({ detail: 'No Due request not found' });
+  }
+
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const hodName = hodStaff?.full_name || 'Dr. K. Senthil Kumar, M.E., Ph.D.';
+  const todayStr = new Date().toLocaleDateString('en-GB');
+
+  noDueReq.signatories = noDueReq.signatories || defaultSignatoriesForStudent(noDueReq);
+  noDueReq.signatories.hod = {
+    signed: true,
+    name: hodName,
+    date: todayStr,
+    status: 'approved',
+    remarks: req.body.remarks || 'All department subject clearances and lab dues verified and approved.'
+  };
+
+  const student = db.students.find(s => s.id === noDueReq.student_id);
+  if (student) {
+    db.createNotification(
+      student.user_id,
+      'HOD Endorsement Approved',
+      `Head of Department (${hodName}) has officially reviewed and signed off your ${noDueReq.exam_type} Clearance Form.`,
+      'success'
+    );
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_REQUEST_SIGNED', 'NO_DUE_REQUEST', reqId, null, { hod: hodName, remarks: req.body.remarks }, getClientIp(req));
+
+  res.json({
+    message: 'Official HOD Endorsement signed successfully.',
+    request: noDueReq
+  });
+});
+
+apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-subject'], authMiddleware, requireRole(['HOD', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const reqId = Number(req.params.id);
+  const noDueReq = db.noDueRequests.find(r => r.id === reqId);
+  if (!noDueReq) {
+    return res.status(404).json({ detail: 'No Due request not found' });
+  }
+
+  const { slot, faculty_name } = req.body;
+  if (!slot) {
+    return res.status(400).json({ detail: 'Slot name is required (e.g., Sub 1, Lab 2).' });
+  }
+
+  const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const staffName = faculty_name || staff?.full_name || 'Faculty In-Charge';
+  const todayStr = new Date().toLocaleDateString('en-GB');
+
+  let updated = false;
+  if (noDueReq.subjects && Array.isArray(noDueReq.subjects)) {
+    for (const sub of noDueReq.subjects) {
+      const subCode = (sub as any).code || '';
+      if (sub.slot?.toLowerCase() === slot.toLowerCase() || subCode.toLowerCase() === slot.toLowerCase()) {
+        sub.dues_status = 'No Dues';
+        sub.faculty_name = staffName;
+        sub.signature_date = todayStr;
+        updated = true;
+      }
+    }
+  }
+
+  if (noDueReq.labs && Array.isArray(noDueReq.labs)) {
+    for (const lab of noDueReq.labs) {
+      const labCode = (lab as any).code || '';
+      if (lab.slot?.toLowerCase() === slot.toLowerCase() || labCode.toLowerCase() === slot.toLowerCase()) {
+        lab.dues_status = 'No Dues';
+        lab.faculty_name = staffName;
+        lab.signature_date = todayStr;
+        updated = true;
+      }
+    }
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'SUBJECT_DUE_CLEARED', 'NO_DUE_REQUEST', reqId, null, { slot, staff: staffName }, getClientIp(req));
+
+  res.json({
+    message: `Dues cleared for ${slot} by ${staffName}.`,
+    request: noDueReq
+  });
+});
+
+apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-subject-due'], authMiddleware, requireRole(['HOD', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const reqId = Number(req.params.id);
+  const noDueReq = db.noDueRequests.find(r => r.id === reqId);
+  if (!noDueReq) {
+    return res.status(404).json({ detail: 'No Due request not found' });
+  }
+
+  const { slot, amount, description } = req.body;
+  if (!slot) {
+    return res.status(400).json({ detail: 'Slot name is required.' });
+  }
+
+  const dueText = amount && Number(amount) > 0 ? `Due: ₹${amount}` : (description || 'Pending Lab/Subject Due');
+
+  if (noDueReq.subjects && Array.isArray(noDueReq.subjects)) {
+    for (const sub of noDueReq.subjects) {
+      const subCode = (sub as any).code || '';
+      if (sub.slot?.toLowerCase() === slot.toLowerCase() || subCode.toLowerCase() === slot.toLowerCase()) {
+        sub.dues_status = dueText;
+      }
+    }
+  }
+
+  if (noDueReq.labs && Array.isArray(noDueReq.labs)) {
+    for (const lab of noDueReq.labs) {
+      const labCode = (lab as any).code || '';
+      if (lab.slot?.toLowerCase() === slot.toLowerCase() || labCode.toLowerCase() === slot.toLowerCase()) {
+        lab.dues_status = dueText;
+      }
+    }
+  }
+
+  db.saveToFile();
+  res.json({
+    message: `Due marked for ${slot}.`,
+    request: noDueReq
+  });
+});
+
+apiRouter.get('/hod/students', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
+  const deptId = hodStaff?.department_id || 1;
+  const dept = db.departments.find(d => d.id === deptId);
+
+  let students = db.students.filter(s => s.department_id === deptId);
+
+  if (req.query.year) {
+    students = students.filter(s => s.year === Number(req.query.year));
+  }
+  if (req.query.section) {
+    students = students.filter(s => s.section === req.query.section);
+  }
+
+  const enriched = students.map(s => {
+    const dues = db.dueRecords.filter(d => d.student_id === s.id);
+    const pendingDues = dues.filter(d => d.status === 'pending');
+    const totalPending = pendingDues.reduce((sum, d) => sum + d.amount, 0);
+    const req = db.noDueRequests.slice().reverse().find(r => r.student_id === s.id);
+
+    return {
+      ...s,
+      department_name: dept?.name || '',
+      department_code: dept?.code || '',
+      pending_due_amount: totalPending,
+      has_pending_dues: pendingDues.length > 0,
+      active_request_id: req?.id,
+      active_request_status: req?.status,
+      active_request_exam: req?.exam_type
+    };
+  });
+
+  res.json(enriched);
 });

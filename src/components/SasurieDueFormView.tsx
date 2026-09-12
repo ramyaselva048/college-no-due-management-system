@@ -67,7 +67,7 @@ export const SasurieDueFormView: React.FC<SasurieDueFormViewProps> = ({
   const signatories = request?.signatories || {
     chief_mentor: { signed: true, name: 'S. Rajesh', date: '10/8/26', status: 'approved' },
     hod: { signed: true, name: 'Dr. S. R. Murugan', date: '10/8/26', status: 'approved' },
-    coe: { signed: true, name: 'Dr. H. Sasipal CoE', date: '10/8/26', status: 'approved' },
+    coe: { signed: true, name: 'Dr. H. Soundararajan CoE', date: '10/8/26', status: 'approved' },
     principal: { signed: true, name: 'Dr. T. Senthilvel', date: '10/8/26', status: 'approved' },
     library: { signed: true, name: 'D. Vinoth', date: '10/8/26', status: 'No Due' },
     transport: { signed: false, name: '-', date: '-', status: '-' },
@@ -86,7 +86,7 @@ export const SasurieDueFormView: React.FC<SasurieDueFormViewProps> = ({
           <div className="flex items-center gap-2">
             <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
             <span className="text-xs font-bold text-slate-800">
-              Sasurie College Official No Due Form Replica (Original Institutional Template)
+              Official Institutional No Due Form (Original Paper Template)
             </span>
             <span className="text-[10px] bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded-full">
               Autonomous
@@ -106,31 +106,28 @@ export const SasurieDueFormView: React.FC<SasurieDueFormViewProps> = ({
 
       {/* The Exact Physical Paper Form Container */}
       <div
-        id="sasurie-official-paper-form"
+        id="official-paper-form"
         className="bg-white text-black p-6 sm:p-10 border border-slate-400 shadow-md max-w-3xl mx-auto rounded-none font-serif relative print:shadow-none print:border-none print:p-0 print:m-0"
         style={{ minHeight: '1000px', backgroundColor: '#ffffff' }}
       >
         {/* Top Header: Logo + College Name + Badges */}
         <div className="flex items-center justify-between border-b-2 border-black pb-3">
-          {/* Left: Sasurie Logo */}
+          {/* Left: Institutional Logo & Header */}
           <div className="flex items-center gap-2.5">
             <div className="w-16 h-16 flex items-center justify-center font-bold text-black border-2 border-black text-center p-1 leading-tight">
               <span className="text-[10px] font-sans font-black tracking-tighter">
-                SASURIE
+                COLLEGE
               </span>
             </div>
             <div>
               <h1 className="font-extrabold text-lg sm:text-xl text-black tracking-tight uppercase font-sans">
-                SASURIE
+                COLLEGE OF ENGINEERING
               </h1>
               <p className="text-[11px] font-bold text-black uppercase font-sans -mt-1">
-                College of Engineering
+                Approved by AICTE & Affiliated to Anna University
               </p>
               <p className="text-[9px] text-black italic font-sans">
-                (Autonomous)
-              </p>
-              <p className="text-[8px] text-black font-sans">
-                Vijayamangalam, Tiruppur - 638056
+                (Autonomous Institution)
               </p>
             </div>
           </div>
@@ -425,7 +422,7 @@ export const SasurieDueFormView: React.FC<SasurieDueFormViewProps> = ({
           {/* CoE */}
           <div className="flex flex-col items-center justify-end h-16">
             <div className="font-serif italic font-bold text-blue-900 text-xs">
-              {signatories.coe?.signed ? signatories.coe?.name || 'Dr. H. Sasipal' : ''}
+              {signatories.coe?.signed ? signatories.coe?.name || 'Dr. H. Soundararajan' : ''}
             </div>
             <div className="text-[10px] font-mono text-blue-950">
               {signatories.coe?.signed ? signatories.coe?.date || '10/8/26' : ''}

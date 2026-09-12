@@ -13,6 +13,7 @@ interface AuthContextType {
   refreshMe: () => Promise<void>;
   isStudent: boolean;
   isStaff: boolean;
+  isHOD: boolean;
   isAdmin: boolean;
 }
 
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       setUser(userObj);
       setStudentProfile(data.student_profile || (userObj.role === 'STUDENT' ? (data as any) : null));
-      setStaffProfile(data.staff_profile || (userObj.role === 'STAFF' ? (data as any) : null));
+      setStaffProfile(data.staff_profile || ((userObj.role === 'STAFF' || userObj.role === 'HOD') ? (data as any) : null));
 
       sessionStorage.setItem('user', JSON.stringify(userObj));
     } catch (err: any) {
@@ -139,6 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const isStudent = user?.role === 'STUDENT';
   const isStaff = user?.role === 'STAFF';
+  const isHOD = user?.role === 'HOD';
   const isAdmin = user?.role === 'ADMIN';
 
   return (
@@ -154,6 +156,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         refreshMe,
         isStudent,
         isStaff,
+        isHOD,
         isAdmin,
       }}
     >

@@ -2,7 +2,7 @@ import 'dotenv/config';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { pgPool, pgQuery, syncTableToPostgres, syncSingleRecordToPostgres, deleteRecordFromPostgres, testPgConnection } from './pg';
+import { pgPool, pgQuery, syncTableToPostgres, syncSingleRecordToPostgres, deleteRecordFromPostgres, testPgConnection, clearTableColumnCache } from './pg';
 import { DEPARTMENT_CURRICULUM_CATALOG, generateGenericSemesterSubjects } from './curriculum_catalog';
 
 export interface UserRecord {
@@ -10,7 +10,7 @@ export interface UserRecord {
   email: string;
   full_name?: string;
   password_hash: string;
-  role: 'STUDENT' | 'STAFF' | 'ADMIN';
+  role: 'STUDENT' | 'STAFF' | 'HOD' | 'ADMIN';
   is_active: boolean;
   is_registered?: boolean;
   created_at: string;
@@ -48,6 +48,8 @@ export interface SubjectCourseRecord {
   course_type?: 'theory' | 'lab';
   slot?: string;
   faculty_name?: string;
+  faculty_id?: number;
+  faculty_email?: string;
   is_elective?: boolean;
   is_active: boolean;
   created_at: string;
@@ -89,6 +91,7 @@ export interface StaffRecord {
   phone: string;
   department_id: number;
   designation: string;
+  is_active?: boolean;
   created_at: string;
 }
 
@@ -292,6 +295,9 @@ export function verifyPassword(password: string, hash: string): boolean {
   const standardPasses = [
     'RamyaSasurie@123',
     'Sasurie@123',
+    'College@123',
+    'Student@123',
+    'Admin@123',
     'StudentPassword@123',
     'StaffPassword@123',
     'Password123!',
@@ -376,6 +382,7 @@ class InMemoryDatabase {
     const loaded = this.loadFromFile();
     if (loaded) {
       this.ensureAdminsExist();
+      this.ensureHODsExist();
       this.deduplicateAll();
       this.saveToFile();
     } else {
@@ -398,7 +405,7 @@ class InMemoryDatabase {
       const ok = await testPgConnection();
       if (ok) {
         this.isPgConnected = true;
-        // Ensure subject_courses table exists
+        // Ensure subject_courses and no_due_requests tables and columns exist
         await pgQuery(`
           CREATE TABLE IF NOT EXISTS subject_courses (
             id SERIAL PRIMARY KEY,
@@ -407,14 +414,33 @@ class InMemoryDatabase {
             department_id INTEGER,
             year INTEGER NOT NULL,
             semester INTEGER NOT NULL,
+            course_type VARCHAR(50),
+            slot VARCHAR(50),
+            faculty_name VARCHAR(255),
+            is_elective BOOLEAN DEFAULT FALSE,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMPTZ DEFAULT NOW()
-          )
-        `).catch(e => console.warn('[PostgreSQL] subject_courses table check:', e?.message));
+          );
+
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS course_type VARCHAR(50);
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS slot VARCHAR(50);
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS faculty_name VARCHAR(255);
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS is_elective BOOLEAN DEFAULT FALSE;
+
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS exam_type VARCHAR(100);
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS form_date VARCHAR(50);
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS attendance_month VARCHAR(50);
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS subjects JSONB;
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS labs JSONB;
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS signatories JSONB;
+        `).catch(e => console.warn('[PostgreSQL] schema migration check:', e?.message));
+
+        clearTableColumnCache();
 
         await this.loadFromPostgres();
         // Keep institutional admin guaranteed
         this.ensureAdminsExist();
+        this.ensureHODsExist();
         this.ensureDefaultSubjectCourses();
         this.deduplicateAll();
         // Sync current state to PostgreSQL to ensure complete parity
@@ -755,7 +781,7 @@ class InMemoryDatabase {
   }
 
   ensureAdminsExist() {
-    const adminEmails = ['ramya@sasurie.edu', 'ramyacse23@sasurie.com', 'admin@sasurie.edu'];
+    const adminEmails = ['admin@college.edu', 'admin@institution.edu', 'ramya@sasurie.edu', 'ramyacse23@sasurie.com', 'admin@sasurie.edu'];
     const soleAdminPass = 'RamyaSasurie@123';
 
     for (const em of adminEmails) {
@@ -776,6 +802,101 @@ class InMemoryDatabase {
           is_registered: true,
           created_at: new Date().toISOString()
         });
+      }
+    }
+  }
+
+  ensureHODsExist() {
+    const hodConfigs = [
+      {
+        deptCode: 'CSE',
+        deptName: 'Computer Science and Engineering',
+        name: 'Dr. K. Senthil Kumar, M.E., Ph.D.',
+        empId: 'HOD-CSE-001',
+        emails: ['hod.cse@college.edu', 'hod.cse@college.ac.in', 'hod.cse@sasurie.com', 'hod.cse@sasurie.edu'],
+        passwords: ['College@123', 'StaffPassword@123', 'Password123!']
+      },
+      {
+        deptCode: 'ECE',
+        deptName: 'Electronics and Communication Engineering',
+        name: 'Dr. M. Lakshmi, M.E., Ph.D.',
+        empId: 'HOD-ECE-001',
+        emails: ['hod.ece@college.edu', 'hod.ece@sasurie.edu'],
+        passwords: ['College@123', 'StaffPassword@123', 'Password123!']
+      },
+      {
+        deptCode: 'MECH',
+        deptName: 'Mechanical Engineering',
+        name: 'Dr. R. Vijayakumar, M.E., Ph.D.',
+        empId: 'HOD-MECH-001',
+        emails: ['hod.mech@college.edu', 'hod.mech@sasurie.edu'],
+        passwords: ['College@123', 'StaffPassword@123', 'Password123!']
+      },
+      {
+        deptCode: 'EEE',
+        deptName: 'Electrical and Electronics Engineering',
+        name: 'Dr. S. R. Murugan, M.E., Ph.D.',
+        empId: 'HOD-EEE-001',
+        emails: ['hod.eee@college.edu', 'hod.eee@sasurie.edu'],
+        passwords: ['College@123', 'StaffPassword@123', 'Password123!']
+      }
+    ];
+
+    for (const conf of hodConfigs) {
+      const dept = this.departments.find(d => d.code?.toUpperCase() === conf.deptCode || d.name.toLowerCase().includes(conf.deptName.toLowerCase()));
+      const deptId = dept ? dept.id : (conf.deptCode === 'CSE' ? 1 : conf.deptCode === 'ECE' ? 2 : conf.deptCode === 'MECH' ? 3 : 4);
+
+      for (const em of conf.emails) {
+        let user = this.users.find(u => u.email.toLowerCase() === em.toLowerCase());
+        if (!user) {
+          const nextId = Math.max(0, ...this.users.map(u => u.id)) + 1;
+          user = {
+            id: nextId,
+            email: em,
+            password_hash: hashPassword(conf.passwords[0]),
+            role: 'HOD',
+            is_active: true,
+            is_registered: true,
+            created_at: new Date().toISOString()
+          };
+          this.users.push(user);
+        } else {
+          user.role = 'HOD';
+          user.is_registered = true;
+          if (user.is_active === undefined) {
+            user.is_active = true;
+          }
+          if (!user.password_hash) {
+            user.password_hash = hashPassword(conf.passwords[0]);
+          }
+        }
+
+        // Ensure linked staff profile exists
+        let staffMember = this.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === em.toLowerCase());
+        if (!staffMember) {
+          const nextStaffId = Math.max(0, ...this.staff.map(s => s.id)) + 1;
+          staffMember = {
+            id: nextStaffId,
+            user_id: user.id,
+            employee_id: conf.empId,
+            full_name: conf.name,
+            email: em,
+            phone: '9842100000',
+            department_id: deptId,
+            designation: `Professor & Head of Department (${conf.deptCode})`,
+            is_active: user.is_active,
+            created_at: new Date().toISOString()
+          };
+          this.staff.push(staffMember);
+        } else {
+          staffMember.user_id = user.id;
+          staffMember.department_id = deptId;
+          staffMember.designation = `Professor & Head of Department (${conf.deptCode})`;
+          staffMember.full_name = conf.name;
+          if (staffMember.is_active === undefined) {
+            staffMember.is_active = user.is_active;
+          }
+        }
       }
     }
   }
