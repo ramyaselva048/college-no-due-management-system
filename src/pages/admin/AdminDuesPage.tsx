@@ -297,13 +297,19 @@ export const AdminDuesPage: React.FC = () => {
 
   const filteredDues = safeDues.filter((d) => {
     const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
-    const matchesDept = deptFilter === 'all' || d.department_id === deptFilter;
+    const matchesDept =
+      deptFilter === 'all' ||
+      Number(d.department_id) === Number(deptFilter) ||
+      String(d.department_id) === String(deptFilter);
+    const searchLower = String(search || '').toLowerCase().trim();
     const matchesSearch =
-      search === '' ||
-      d.student_name?.toLowerCase().includes(search.toLowerCase()) ||
-      d.student_reg_no?.toLowerCase().includes(search.toLowerCase()) ||
-      d.department_name?.toLowerCase().includes(search.toLowerCase()) ||
-      d.description?.toLowerCase().includes(search.toLowerCase());
+      searchLower === '' ||
+      Boolean(d.student_name?.toLowerCase().includes(searchLower)) ||
+      Boolean(d.student_reg_no?.toLowerCase().includes(searchLower)) ||
+      Boolean(d.department_name?.toLowerCase().includes(searchLower)) ||
+      Boolean(d.department_code?.toLowerCase().includes(searchLower)) ||
+      Boolean(d.category_name?.toLowerCase().includes(searchLower)) ||
+      Boolean(d.description?.toLowerCase().includes(searchLower));
     return matchesStatus && matchesDept && matchesSearch;
   });
 

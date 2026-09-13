@@ -3,7 +3,7 @@
     {
       "id": 1,
       "email": "ramya@sasurie.edu",
-      "password_hash": "2d9cbfc0527fb7c0cbe2d2dd094c84d58835d72f2557c3c312d32cad810d7681",
+      "password_hash": "cf379b4b9ce24f3a75d3e6e55cef4a6639c51591c096e64d41f01984a9a2c775",
       "role": "ADMIN",
       "is_active": true,
       "is_registered": true,
@@ -1358,6 +1358,17 @@
       "is_active": true,
       "is_registered": true,
       "created_at": "2026-09-13T10:42:32.972Z",
+      "updated_at": null,
+      "department_id": null
+    },
+    {
+      "id": 128,
+      "email": "maran25@sasurie.com",
+      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "role": "STUDENT",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-13T13:07:32.275Z",
       "updated_at": null,
       "department_id": null
     }
@@ -2788,7 +2799,7 @@
       "section": "A",
       "admission_year": 2024,
       "created_at": "2026-09-12T11:47:06.320Z",
-      "semester": null,
+      "semester": 5,
       "academic_year": null,
       "student_type": null,
       "attendance_percentage": null,
@@ -2827,6 +2838,25 @@
       "admission_year": 2026,
       "created_at": "2026-09-13T09:11:20.038Z",
       "semester": 1,
+      "academic_year": null,
+      "student_type": null,
+      "attendance_percentage": null,
+      "undertaking_status": null
+    },
+    {
+      "id": 64,
+      "user_id": 128,
+      "register_number": "732425104007",
+      "full_name": "Maran S",
+      "email": "maran25@sasurie.com",
+      "phone": "",
+      "department_id": 1,
+      "course_id": 1,
+      "year": 2,
+      "section": "A",
+      "admission_year": 2026,
+      "created_at": "2026-09-13T13:07:32.275Z",
+      "semester": 3,
       "academic_year": null,
       "student_type": null,
       "attendance_percentage": null,
@@ -2879,8 +2909,7 @@
       "phone": "9842100104",
       "department_id": 1,
       "designation": "Assistant Professor & Mentor",
-      "created_at": "2026-09-10T08:39:05.166Z",
-      "is_active": true
+      "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
       "id": 5,
@@ -2913,8 +2942,7 @@
       "phone": "9842100107",
       "department_id": 8,
       "designation": "Librarian",
-      "created_at": "2026-09-10T08:39:05.166Z",
-      "is_active": true
+      "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
       "id": 8,
@@ -2925,8 +2953,7 @@
       "phone": "9842100108",
       "department_id": 10,
       "designation": "Accounts Officer",
-      "created_at": "2026-09-10T08:39:05.166Z",
-      "is_active": true
+      "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
       "id": 9,
@@ -2937,8 +2964,7 @@
       "phone": "9842100109",
       "department_id": 1,
       "designation": "Campus Hostel Warden",
-      "created_at": "2026-09-10T08:39:05.166Z",
-      "is_active": true
+      "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
       "id": 10,
@@ -2949,8 +2975,7 @@
       "phone": "9842100110",
       "department_id": 1,
       "designation": "Transport In-Charge",
-      "created_at": "2026-09-10T08:39:05.166Z",
-      "is_active": true
+      "created_at": "2026-09-10T08:39:05.166Z"
     },
     {
       "id": 11,
@@ -2961,8 +2986,7 @@
       "phone": "",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-10T12:59:01.279Z",
-      "is_active": true
+      "created_at": "2026-09-10T12:59:01.279Z"
     },
     {
       "id": 12,
@@ -2973,8 +2997,7 @@
       "phone": "+91 8825641424",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-10T15:07:56.020Z",
-      "is_active": true
+      "created_at": "2026-09-10T15:07:56.020Z"
     },
     {
       "id": 13,
@@ -3143,8 +3166,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Associate Professor & Academic In-Charge",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 33,
@@ -3155,8 +3177,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 34,
@@ -3167,8 +3188,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 35,
@@ -3179,8 +3199,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 36,
@@ -3191,8 +3210,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 37,
@@ -3203,8 +3221,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 38,
@@ -3215,8 +3232,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Laboratory Instructor & Equipment Custodian",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 39,
@@ -3227,8 +3243,7 @@
       "phone": "9842100000",
       "department_id": 8,
       "designation": "Chief Librarian & Book Bank Officer",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 40,
@@ -3239,8 +3254,7 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Chief Mentor & Student Advisor",
-      "created_at": "2026-09-13T10:42:33.008Z",
-      "is_active": true
+      "created_at": "2026-09-13T10:42:33.008Z"
     },
     {
       "id": 41,
@@ -3610,69 +3624,7 @@
           "signed": true,
           "status": "No Dues"
         }
-      },
-      "common_nodes": [
-        {
-          "slot": "COM-LIB",
-          "name": "Central Library & Book Bank",
-          "code": "LIB-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Mr. D. Vinoth",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "lib-101"
-        },
-        {
-          "slot": "COM-ACC",
-          "name": "Accounts & College Finance Office",
-          "code": "ACC-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "S. Accounts (Finance Officer)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "acc-101"
-        },
-        {
-          "slot": "COM-TRN",
-          "name": "College Bus & Transport Section",
-          "code": "TRN-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "K. Murugesan (Transport In-Charge)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "trn-101"
-        },
-        {
-          "slot": "COM-HST",
-          "name": "Campus Hostel & Mess Section",
-          "code": "HST-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Dr. R. Warden (Chief Warden)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "hst-101"
-        },
-        {
-          "slot": "COM-PED",
-          "name": "Physical Education & Sports Department",
-          "code": "PED-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "P. Ravichandran (Physical Director)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "ped-101"
-        },
-        {
-          "slot": "COM-COE",
-          "name": "Office of Controller of Examinations (CoE)",
-          "code": "COE-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Dr. H. Sasipal CoE",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "coe-101"
-        }
-      ]
+      }
     },
     {
       "id": 2,
@@ -3715,8 +3667,88 @@
       "exam_type": null,
       "form_date": null,
       "attendance_month": null,
-      "subjects": null,
-      "labs": null,
+      "subjects": [
+        {
+          "code": "CS3601",
+          "name": "Compiler Design",
+          "slot": "Sub 1",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Staff In-charge",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3691",
+          "name": "Artificial Intelligence and Machine Learning",
+          "slot": "Sub 2",
+          "faculty_id": 41,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. P. Vijay",
+          "faculty_email": "vijay.faculty@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "CCS341",
+          "name": "Mobile Application Development",
+          "slot": "Sub 1",
+          "faculty_id": 23,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Dr. K. Ramesh",
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "OE3601",
+          "name": "Open Elective - I (Sensors & Actuators)",
+          "slot": "Sub 3",
+          "faculty_id": 44,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. M. Selvam",
+          "faculty_email": "selvam.faculty@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "PE3601",
+          "name": "Professional Elective - II (Big Data)",
+          "slot": "Sub 4",
+          "faculty_id": 40,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Rajesh",
+          "faculty_email": "chiefmentor@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "PE3602",
+          "name": "Professional Elective - III (Blockchain)",
+          "slot": "Sub 5",
+          "faculty_id": 45,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Vignesh",
+          "faculty_email": "vignesh.faculty@sasurie.edu",
+          "signature_date": "-"
+        }
+      ],
+      "labs": [
+        {
+          "code": "CS3661",
+          "name": "Mobile Application Development Lab",
+          "slot": "Lab 1",
+          "faculty_id": 23,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Dr. K. Ramesh",
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3681",
+          "name": "Internet of Things Laboratory",
+          "slot": "Lab 2",
+          "faculty_id": 41,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. P. Vijay",
+          "faculty_email": "vijay.faculty@sasurie.edu",
+          "signature_date": "-"
+        }
+      ],
       "signatories": null
     },
     {
@@ -3807,69 +3839,7 @@
       "attendance_month": null,
       "subjects": null,
       "labs": null,
-      "signatories": null,
-      "common_nodes": [
-        {
-          "slot": "COM-LIB",
-          "name": "Central Library & Book Bank",
-          "code": "LIB-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Mr. D. Vinoth",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "lib-101"
-        },
-        {
-          "slot": "COM-ACC",
-          "name": "Accounts & College Finance Office",
-          "code": "ACC-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "S. Accounts (Finance Officer)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "acc-101"
-        },
-        {
-          "slot": "COM-TRN",
-          "name": "College Bus & Transport Section",
-          "code": "TRN-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "K. Murugesan (Transport In-Charge)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "trn-101"
-        },
-        {
-          "slot": "COM-HST",
-          "name": "Campus Hostel & Mess Section",
-          "code": "HST-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Dr. R. Warden (Chief Warden)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "hst-101"
-        },
-        {
-          "slot": "COM-PED",
-          "name": "Physical Education & Sports Department",
-          "code": "PED-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "P. Ravichandran (Physical Director)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "ped-101"
-        },
-        {
-          "slot": "COM-COE",
-          "name": "Office of Controller of Examinations (CoE)",
-          "code": "COE-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Dr. H. Sasipal CoE",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "coe-101"
-        }
-      ]
+      "signatories": null
     },
     {
       "id": 5,
@@ -4043,77 +4013,15 @@
           "signed": true,
           "status": "No Dues"
         }
-      },
-      "common_nodes": [
-        {
-          "slot": "COM-LIB",
-          "name": "Central Library & Book Bank",
-          "code": "LIB-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Mr. D. Vinoth",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "lib-101"
-        },
-        {
-          "slot": "COM-ACC",
-          "name": "Accounts & College Finance Office",
-          "code": "ACC-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "S. Accounts (Finance Officer)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "acc-101"
-        },
-        {
-          "slot": "COM-TRN",
-          "name": "College Bus & Transport Section",
-          "code": "TRN-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "K. Murugesan (Transport In-Charge)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "trn-101"
-        },
-        {
-          "slot": "COM-HST",
-          "name": "Campus Hostel & Mess Section",
-          "code": "HST-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Dr. R. Warden (Chief Warden)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "hst-101"
-        },
-        {
-          "slot": "COM-PED",
-          "name": "Physical Education & Sports Department",
-          "code": "PED-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "P. Ravichandran (Physical Director)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "ped-101"
-        },
-        {
-          "slot": "COM-COE",
-          "name": "Office of Controller of Examinations (CoE)",
-          "code": "COE-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "Dr. H. Sasipal CoE",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "coe-101"
-        }
-      ]
+      }
     },
     {
       "id": 6,
       "student_id": 62,
-      "status": "approved",
+      "status": "completed",
       "submitted_at": "2026-09-13T08:53:25.835Z",
-      "reviewed_at": "2026-09-13T12:08:58.702Z",
-      "reviewed_by": 3,
+      "reviewed_at": "2026-09-13T12:11:15.995Z",
+      "reviewed_by": 1,
       "remarks": "CIAT - I Examination No Due Clearance -",
       "created_at": "2026-09-13T08:53:25.835Z",
       "department_id": null,
@@ -4240,35 +4148,35 @@
           "status": "pending"
         },
         "hod": {
-          "signed": true,
-          "name": "Dr. K. Senthil Kumar, M.E., Ph.D.",
           "date": "13/09/2026",
+          "name": "Dr. K. Senthil Kumar, M.E., Ph.D.",
+          "signed": true,
           "status": "approved",
           "remarks": "HOD reviewed and verified departmental subjects."
         },
         "hostel": {
-          "signed": true,
-          "name": "Faculty In-Charge",
           "date": "13/09/2026",
+          "name": "Faculty In-Charge",
+          "signed": true,
           "status": "No Dues"
         },
         "library": {
-          "signed": true,
-          "name": "Faculty In-Charge",
           "date": "13/09/2026",
+          "name": "Faculty In-Charge",
+          "signed": true,
           "status": "No Due"
         },
         "principal": {
-          "signed": true,
-          "name": "Dr. T. Senthilvel (Principal / Admin)",
           "date": "13/09/2026",
+          "name": "Dr. T. Senthilvel (Principal / Admin)",
+          "signed": true,
           "status": "approved",
           "remarks": "All departmental clearances and HOD endorsement verified. Approved by Principal."
         },
         "transport": {
-          "signed": true,
-          "name": "Faculty In-Charge",
           "date": "13/09/2026",
+          "name": "Faculty In-Charge",
+          "signed": true,
           "status": "No Dues"
         },
         "chief_mentor": {
@@ -4278,74 +4186,12 @@
           "status": "pending"
         },
         "office_accounts": {
-          "signed": true,
-          "name": "Faculty In-Charge",
           "date": "13/09/2026",
+          "name": "Faculty In-Charge",
+          "signed": true,
           "status": "No Dues"
         }
-      },
-      "common_nodes": [
-        {
-          "slot": "COM-LIB",
-          "name": "Central Library & Book Bank",
-          "code": "LIB-101",
-          "dues_status": "No Dues",
-          "faculty_name": "Faculty In-Charge",
-          "signature_date": "13/09/2026",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "lib-101"
-        },
-        {
-          "slot": "COM-ACC",
-          "name": "Accounts & College Finance Office",
-          "code": "ACC-101",
-          "dues_status": "No Dues",
-          "faculty_name": "Faculty In-Charge",
-          "signature_date": "13/09/2026",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "acc-101"
-        },
-        {
-          "slot": "COM-TRN",
-          "name": "College Bus & Transport Section",
-          "code": "TRN-101",
-          "dues_status": "No Dues",
-          "faculty_name": "Faculty In-Charge",
-          "signature_date": "13/09/2026",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "trn-101"
-        },
-        {
-          "slot": "COM-HST",
-          "name": "Campus Hostel & Mess Section",
-          "code": "HST-101",
-          "dues_status": "No Dues",
-          "faculty_name": "Faculty In-Charge",
-          "signature_date": "13/09/2026",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "hst-101"
-        },
-        {
-          "slot": "COM-PED",
-          "name": "Physical Education & Sports Department",
-          "code": "PED-101",
-          "dues_status": "No Dues",
-          "faculty_name": "Faculty In-Charge",
-          "signature_date": "13/09/2026",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "ped-101"
-        },
-        {
-          "slot": "COM-COE",
-          "name": "Office of Controller of Examinations (CoE)",
-          "code": "COE-101",
-          "dues_status": "No Dues",
-          "faculty_name": "Faculty In-Charge",
-          "signature_date": "13/09/2026",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "coe-101"
-        }
-      ]
+      }
     },
     {
       "id": 7,
@@ -4504,6 +4350,178 @@
           "signed": true,
           "status": "approved",
           "remarks": "Approved by Principal / Institutional Administration"
+        },
+        "transport": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "-"
+        },
+        "chief_mentor": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "pending"
+        },
+        "office_accounts": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "pending"
+        }
+      }
+    },
+    {
+      "id": 8,
+      "student_id": 64,
+      "status": "under_review",
+      "submitted_at": "2026-09-13T13:09:22.931Z",
+      "reviewed_at": null,
+      "reviewed_by": null,
+      "remarks": "End semester examination clearance  -",
+      "created_at": "2026-09-13T13:09:22.931Z",
+      "department_id": null,
+      "course_name": null,
+      "academic_year": "2025-26",
+      "year": 2,
+      "semester": 3,
+      "student_type": "hosteller",
+      "attendance_percentage": "91",
+      "undertaking_status": "Exempted",
+      "current_stage": null,
+      "chief_mentor_verified_by": null,
+      "chief_mentor_name": null,
+      "chief_mentor_verified_at": null,
+      "chief_mentor_remarks": null,
+      "chief_mentor_status": null,
+      "hod_approved_by": null,
+      "hod_name": null,
+      "hod_approved_at": null,
+      "hod_remarks": null,
+      "hod_status": null,
+      "coe_verified_by": null,
+      "coe_name": null,
+      "coe_verified_at": null,
+      "coe_remarks": null,
+      "coe_status": null,
+      "principal_approved_by": null,
+      "principal_name": null,
+      "principal_approved_at": null,
+      "principal_remarks": null,
+      "principal_status": null,
+      "exam_type": "End Semester Examinations",
+      "form_date": "13/09/2026",
+      "attendance_month": "August",
+      "subjects": [
+        {
+          "code": "CS3301",
+          "name": "Data Structures and Algorithms",
+          "slot": "Sub 1",
+          "faculty_id": 40,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Rajesh",
+          "faculty_email": "chiefmentor@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3351",
+          "name": "Digital Principles and Computer Organization",
+          "slot": "Sub 2",
+          "faculty_id": 41,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. P. Vijay",
+          "faculty_email": "vijay.faculty@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3301_3254",
+          "name": "Data Structures and Algorithms",
+          "slot": "Sub 1",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Staff In-charge",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3501_2624",
+          "name": "Theory of Computation",
+          "slot": "Sub 1",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Staff In-charge",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3352",
+          "name": "Foundations of Data Science",
+          "slot": "Sub 3",
+          "faculty_id": 23,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Dr. K. Ramesh",
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3391",
+          "name": "Object Oriented Programming",
+          "slot": "Sub 4",
+          "faculty_id": 45,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Vignesh",
+          "faculty_email": "vignesh.faculty@sasurie.edu",
+          "signature_date": "-"
+        }
+      ],
+      "labs": [
+        {
+          "code": "CS3361",
+          "name": "Data Structures Laboratory",
+          "slot": "Lab 1",
+          "faculty_id": 40,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Rajesh",
+          "faculty_email": "chiefmentor@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "code": "CS3381",
+          "name": "Object Oriented Programming Laboratory",
+          "slot": "Lab 2",
+          "faculty_id": 45,
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Vignesh",
+          "faculty_email": "vignesh.faculty@sasurie.edu",
+          "signature_date": "-"
+        }
+      ],
+      "signatories": {
+        "coe": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "pending"
+        },
+        "hod": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "pending"
+        },
+        "hostel": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "-"
+        },
+        "library": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "pending"
+        },
+        "principal": {
+          "date": "-",
+          "name": "-",
+          "signed": false,
+          "status": "pending"
         },
         "transport": {
           "date": "-",
@@ -5287,15 +5305,15 @@
       "certificate_number": "CERT-2026-00008",
       "verification_code": "VFY-54A4268F5AC2",
       "issued_at": "2026-09-12T15:23:56.308Z",
-      "is_valid": true,
+      "is_valid": false,
       "created_at": "2026-09-12T15:23:56.308Z",
-      "updated_at": null,
+      "updated_at": "2026-09-13T13:19:41.785Z",
       "issued_by": 1,
       "issued_by_name": "Controller of Clearances & Dean (Academics)",
-      "revoked_by": null,
-      "revoked_by_name": null,
-      "revoked_at": null,
-      "revocation_reason": null
+      "revoked_by": 1,
+      "revoked_by_name": "College Administrator",
+      "revoked_at": "2026-09-13T13:19:41.785Z",
+      "revocation_reason": "Administrative review and discrepancy verification"
     },
     {
       "id": 9,
@@ -5330,252 +5348,26 @@
       "revoked_by_name": null,
       "revoked_at": null,
       "revocation_reason": null
+    },
+    {
+      "id": 11,
+      "request_id": 6,
+      "student_id": 62,
+      "certificate_number": "CERT-2026-00011",
+      "verification_code": "VFY-BCE62D3F51AD",
+      "issued_at": "2026-09-13T12:11:15.995Z",
+      "is_valid": true,
+      "created_at": "2026-09-13T12:11:15.995Z",
+      "updated_at": null,
+      "issued_by": 1,
+      "issued_by_name": "College Administrator",
+      "revoked_by": null,
+      "revoked_by_name": null,
+      "revoked_at": null,
+      "revocation_reason": null
     }
   ],
   "notifications": [
-    {
-      "id": 104,
-      "user_id": 103,
-      "title": "No Due Request Update",
-      "message": "Your No Due Request #6 status is now: APPROVED.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:58.702Z"
-    },
-    {
-      "id": 103,
-      "user_id": 102,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.323Z"
-    },
-    {
-      "id": 102,
-      "user_id": 101,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.317Z"
-    },
-    {
-      "id": 101,
-      "user_id": 100,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.312Z"
-    },
-    {
-      "id": 100,
-      "user_id": 99,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.306Z"
-    },
-    {
-      "id": 99,
-      "user_id": 97,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.300Z"
-    },
-    {
-      "id": 98,
-      "user_id": 96,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.295Z"
-    },
-    {
-      "id": 97,
-      "user_id": 95,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.289Z"
-    },
-    {
-      "id": 96,
-      "user_id": 94,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.284Z"
-    },
-    {
-      "id": 95,
-      "user_id": 93,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.278Z"
-    },
-    {
-      "id": 94,
-      "user_id": 92,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.273Z"
-    },
-    {
-      "id": 93,
-      "user_id": 91,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.267Z"
-    },
-    {
-      "id": 92,
-      "user_id": 24,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.261Z"
-    },
-    {
-      "id": 91,
-      "user_id": 5,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.256Z"
-    },
-    {
-      "id": 90,
-      "user_id": 4,
-      "title": "Clearance Ready for HOD Endorsement",
-      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.249Z"
-    },
-    {
-      "id": 89,
-      "user_id": 103,
-      "title": "Subject Clearance Approved",
-      "message": "Your clearance for COM-COE has been accepted with 'No Dues' by Faculty In-Charge.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.242Z"
-    },
-    {
-      "id": 88,
-      "user_id": 103,
-      "title": "Subject Clearance Approved",
-      "message": "Your clearance for COM-PED has been accepted with 'No Dues' by Faculty In-Charge.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.206Z"
-    },
-    {
-      "id": 87,
-      "user_id": 103,
-      "title": "Subject Clearance Approved",
-      "message": "Your clearance for COM-HST has been accepted with 'No Dues' by Faculty In-Charge.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.169Z"
-    },
-    {
-      "id": 86,
-      "user_id": 103,
-      "title": "Subject Clearance Approved",
-      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by Faculty In-Charge.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.133Z"
-    },
-    {
-      "id": 85,
-      "user_id": 103,
-      "title": "Subject Clearance Approved",
-      "message": "Your clearance for COM-ACC has been accepted with 'No Dues' by Faculty In-Charge.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:50.095Z"
-    },
-    {
-      "id": 84,
-      "user_id": 90,
-      "title": "Clearance Application Ready for Principal Approval",
-      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:37.170Z"
-    },
-    {
-      "id": 83,
-      "user_id": 89,
-      "title": "Clearance Application Ready for Principal Approval",
-      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:37.164Z"
-    },
-    {
-      "id": 82,
-      "user_id": 3,
-      "title": "Clearance Application Ready for Principal Approval",
-      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:37.159Z"
-    },
-    {
-      "id": 81,
-      "user_id": 2,
-      "title": "Clearance Application Ready for Principal Approval",
-      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:37.152Z"
-    },
-    {
-      "id": 80,
-      "user_id": 1,
-      "title": "Clearance Application Ready for Principal Approval",
-      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
-      "notification_type": "info",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:37.146Z"
-    },
-    {
-      "id": 79,
-      "user_id": 103,
-      "title": "HOD Endorsement Approved",
-      "message": "Head of Department (Dr. K. Senthil Kumar, M.E., Ph.D.) has approved and endorsed your clearance form. Forwarded to Principal for final approval.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:37.138Z"
-    },
-    {
-      "id": 78,
-      "user_id": 103,
-      "title": "Subject Clearance Approved",
-      "message": "Your clearance for COM-LIB has been accepted with 'No Dues' by Faculty In-Charge.",
-      "notification_type": "success",
-      "is_read": false,
-      "created_at": "2026-09-13T12:08:32.151Z"
-    },
     {
       "id": 1,
       "user_id": 28,
@@ -6268,195 +6060,509 @@
       "notification_type": "success",
       "is_read": false,
       "created_at": "2026-09-13T11:49:22.034Z"
+    },
+    {
+      "id": 78,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-LIB has been accepted with 'No Dues' by Faculty In-Charge.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:32.151Z"
+    },
+    {
+      "id": 79,
+      "user_id": 103,
+      "title": "HOD Endorsement Approved",
+      "message": "Head of Department (Dr. K. Senthil Kumar, M.E., Ph.D.) has approved and endorsed your clearance form. Forwarded to Principal for final approval.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:37.138Z"
+    },
+    {
+      "id": 80,
+      "user_id": 1,
+      "title": "Clearance Application Ready for Principal Approval",
+      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:37.146Z"
+    },
+    {
+      "id": 81,
+      "user_id": 2,
+      "title": "Clearance Application Ready for Principal Approval",
+      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:37.152Z"
+    },
+    {
+      "id": 82,
+      "user_id": 3,
+      "title": "Clearance Application Ready for Principal Approval",
+      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:37.159Z"
+    },
+    {
+      "id": 83,
+      "user_id": 89,
+      "title": "Clearance Application Ready for Principal Approval",
+      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:37.164Z"
+    },
+    {
+      "id": 84,
+      "user_id": 90,
+      "title": "Clearance Application Ready for Principal Approval",
+      "message": "Student Abinaya M (732524145001) clearance has been fully verified by allocated staff and endorsed by HOD (Dr. K. Senthil Kumar, M.E., Ph.D.). Ready for Principal review.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:37.170Z"
+    },
+    {
+      "id": 85,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-ACC has been accepted with 'No Dues' by Faculty In-Charge.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.095Z"
+    },
+    {
+      "id": 86,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by Faculty In-Charge.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.133Z"
+    },
+    {
+      "id": 87,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-HST has been accepted with 'No Dues' by Faculty In-Charge.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.169Z"
+    },
+    {
+      "id": 88,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-PED has been accepted with 'No Dues' by Faculty In-Charge.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.206Z"
+    },
+    {
+      "id": 89,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-COE has been accepted with 'No Dues' by Faculty In-Charge.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.242Z"
+    },
+    {
+      "id": 90,
+      "user_id": 4,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.249Z"
+    },
+    {
+      "id": 91,
+      "user_id": 5,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.256Z"
+    },
+    {
+      "id": 92,
+      "user_id": 24,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.261Z"
+    },
+    {
+      "id": 93,
+      "user_id": 91,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.267Z"
+    },
+    {
+      "id": 94,
+      "user_id": 92,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.273Z"
+    },
+    {
+      "id": 95,
+      "user_id": 93,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.278Z"
+    },
+    {
+      "id": 96,
+      "user_id": 94,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.284Z"
+    },
+    {
+      "id": 97,
+      "user_id": 95,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.289Z"
+    },
+    {
+      "id": 98,
+      "user_id": 96,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.295Z"
+    },
+    {
+      "id": 99,
+      "user_id": 97,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.300Z"
+    },
+    {
+      "id": 100,
+      "user_id": 99,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.306Z"
+    },
+    {
+      "id": 101,
+      "user_id": 100,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.312Z"
+    },
+    {
+      "id": 102,
+      "user_id": 101,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.317Z"
+    },
+    {
+      "id": 103,
+      "user_id": 102,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Abinaya M (732524145001) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:50.323Z"
+    },
+    {
+      "id": 104,
+      "user_id": 103,
+      "title": "No Due Request Update",
+      "message": "Your No Due Request #6 status is now: APPROVED.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T12:08:58.702Z"
+    },
+    {
+      "id": 105,
+      "user_id": 103,
+      "title": "No Due Certificate Issued!",
+      "message": "Congratulations! Your official No Due Certificate #CERT-2026-00011 has been issued and is available for download.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T12:11:16.003Z"
+    },
+    {
+      "id": 106,
+      "user_id": 29,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-LIB has been accepted with 'No Dues' by Kavipriya D.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.824Z"
+    },
+    {
+      "id": 107,
+      "user_id": 4,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.831Z"
+    },
+    {
+      "id": 108,
+      "user_id": 5,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.838Z"
+    },
+    {
+      "id": 109,
+      "user_id": 24,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.844Z"
+    },
+    {
+      "id": 110,
+      "user_id": 91,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.850Z"
+    },
+    {
+      "id": 111,
+      "user_id": 92,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.857Z"
+    },
+    {
+      "id": 112,
+      "user_id": 93,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.863Z"
+    },
+    {
+      "id": 113,
+      "user_id": 94,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.870Z"
+    },
+    {
+      "id": 114,
+      "user_id": 95,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.876Z"
+    },
+    {
+      "id": 115,
+      "user_id": 96,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.883Z"
+    },
+    {
+      "id": 116,
+      "user_id": 97,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.889Z"
+    },
+    {
+      "id": 117,
+      "user_id": 99,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.895Z"
+    },
+    {
+      "id": 118,
+      "user_id": 100,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.901Z"
+    },
+    {
+      "id": 119,
+      "user_id": 101,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.907Z"
+    },
+    {
+      "id": 120,
+      "user_id": 102,
+      "title": "Clearance Ready for HOD Endorsement",
+      "message": "All allocated subjects, labs, and nodes for student Mugesh R (732423104009) have been verified and cleared by staff. Ready for HOD endorsement.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:00:33.913Z"
+    },
+    {
+      "id": 121,
+      "user_id": 29,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-LIB has been accepted with 'No Dues' by Mr. D. Vinoth.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-13T13:02:01.110Z"
+    },
+    {
+      "id": 122,
+      "user_id": 23,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Maran S (732425104007) applied for clearance in Data Structures and Algorithms (Sub 1). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.932Z"
+    },
+    {
+      "id": 123,
+      "user_id": 111,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Maran S (732425104007) applied for clearance in Digital Principles and Computer Organization (Sub 2). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.939Z"
+    },
+    {
+      "id": 124,
+      "user_id": 105,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Maran S (732425104007) applied for clearance in Foundations of Data Science (Sub 3). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.946Z"
+    },
+    {
+      "id": 125,
+      "user_id": 115,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Maran S (732425104007) applied for clearance in Object Oriented Programming (Sub 4). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.953Z"
+    },
+    {
+      "id": 126,
+      "user_id": 23,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Maran S (732425104007) applied for clearance in Data Structures Laboratory (Lab 1). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.960Z"
+    },
+    {
+      "id": 127,
+      "user_id": 115,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Maran S (732425104007) applied for clearance in Object Oriented Programming Laboratory (Lab 2). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.967Z"
+    },
+    {
+      "id": 128,
+      "user_id": 128,
+      "title": "Official No Due Request Submitted",
+      "message": "Your End Semester Examinations No Due Form has been initiated with 14 clearance sections and routed for verification.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-13T13:09:22.987Z"
+    },
+    {
+      "id": 129,
+      "user_id": 37,
+      "title": "Certificate Revoked",
+      "message": "Your certificate #CERT-2026-00008 has been revoked by administration. Reason: Administrative review and discrepancy verification.",
+      "notification_type": "danger",
+      "is_read": false,
+      "created_at": "2026-09-13T13:19:41.793Z"
     }
   ],
   "auditLogs": [
     {
-      "id": 434,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
+      "id": 460,
+      "user_id": 128,
+      "user_email": "maran25@sasurie.com",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 128,
+      "new_values": "{\"email\":\"maran25@sasurie.com\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:32:53.055Z"
+    },
+    {
+      "id": 459,
+      "user_id": 128,
+      "user_email": "maran25@sasurie.com",
       "action": "USER_LOGIN",
       "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:09:26.542Z"
+      "entity_id": 128,
+      "new_values": "{\"identifier\":\"732425104007\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:32:17.562Z"
     },
     {
-      "id": 433,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
+      "id": 458,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
       "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:09:17.321Z"
-    },
-    {
-      "id": 432,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "REQUEST_STATUS_UPDATED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"status\":\"approved\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:58.718Z"
-    },
-    {
-      "id": 431,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:58.673Z"
-    },
-    {
-      "id": 430,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "SUBJECT_DUE_CLEARED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"slot\":\"COM-COE\",\"staff\":\"Faculty In-Charge\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:50.334Z"
-    },
-    {
-      "id": 429,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "SUBJECT_DUE_CLEARED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"slot\":\"COM-PED\",\"staff\":\"Faculty In-Charge\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:50.220Z"
-    },
-    {
-      "id": 428,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "SUBJECT_DUE_CLEARED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"slot\":\"COM-HST\",\"staff\":\"Faculty In-Charge\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:50.184Z"
-    },
-    {
-      "id": 427,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "SUBJECT_DUE_CLEARED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"Faculty In-Charge\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:50.147Z"
-    },
-    {
-      "id": 426,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "SUBJECT_DUE_CLEARED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"slot\":\"COM-ACC\",\"staff\":\"Faculty In-Charge\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:50.111Z"
-    },
-    {
-      "id": 425,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:50.067Z"
-    },
-    {
-      "id": 424,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:42.228Z"
-    },
-    {
-      "id": 423,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "HOD_REQUEST_SIGNED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"hod\":\"Dr. K. Senthil Kumar, M.E., Ph.D.\",\"remarks\":\"HOD reviewed and verified departmental subjects.\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:37.181Z"
-    },
-    {
-      "id": 422,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:37.108Z"
-    },
-    {
-      "id": 421,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "SUBJECT_DUE_CLEARED",
-      "entity_type": "NO_DUE_REQUEST",
-      "entity_id": 6,
-      "new_values": "{\"slot\":\"COM-LIB\",\"staff\":\"Faculty In-Charge\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:32.165Z"
-    },
-    {
-      "id": 420,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:32.098Z"
-    },
-    {
-      "id": 419,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:26.962Z"
-    },
-    {
-      "id": 418,
-      "user_id": 3,
-      "user_email": "admin@sasurie.edu",
-      "action": "USER_LOGIN",
-      "entity_type": "USER",
-      "entity_id": 3,
-      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
-      "ip_address": "127.0.0.1",
-      "created_at": "2026-09-13T12:08:19.522Z"
+      "entity_id": 1,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:32:04.538Z"
     },
     {
       "id": 1,
@@ -11461,6 +11567,486 @@
       "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
       "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
       "created_at": "2026-09-13T12:04:48.334Z"
+    },
+    {
+      "id": 418,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:19.522Z"
+    },
+    {
+      "id": 419,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:26.962Z"
+    },
+    {
+      "id": 420,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:32.098Z"
+    },
+    {
+      "id": 421,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-LIB\",\"staff\":\"Faculty In-Charge\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:32.165Z"
+    },
+    {
+      "id": 422,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:37.108Z"
+    },
+    {
+      "id": 423,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "HOD_REQUEST_SIGNED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"hod\":\"Dr. K. Senthil Kumar, M.E., Ph.D.\",\"remarks\":\"HOD reviewed and verified departmental subjects.\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:37.181Z"
+    },
+    {
+      "id": 424,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:42.228Z"
+    },
+    {
+      "id": 425,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:50.067Z"
+    },
+    {
+      "id": 426,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-ACC\",\"staff\":\"Faculty In-Charge\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:50.111Z"
+    },
+    {
+      "id": 427,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"Faculty In-Charge\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:50.147Z"
+    },
+    {
+      "id": 428,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-HST\",\"staff\":\"Faculty In-Charge\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:50.184Z"
+    },
+    {
+      "id": 429,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-PED\",\"staff\":\"Faculty In-Charge\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:50.220Z"
+    },
+    {
+      "id": 430,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-COE\",\"staff\":\"Faculty In-Charge\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:50.334Z"
+    },
+    {
+      "id": 431,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:58.673Z"
+    },
+    {
+      "id": 432,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "REQUEST_STATUS_UPDATED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "old_values": null,
+      "new_values": "{\"status\":\"approved\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:08:58.718Z"
+    },
+    {
+      "id": 433,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:09:17.321Z"
+    },
+    {
+      "id": 434,
+      "user_id": 3,
+      "user_email": "admin@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 3,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:09:26.542Z"
+    },
+    {
+      "id": 435,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "CERTIFICATE_ISSUED",
+      "entity_type": "CERTIFICATE",
+      "entity_id": 11,
+      "old_values": null,
+      "new_values": "{\"cert_number\":\"CERT-2026-00011\",\"student_id\":62,\"student_name\":\"Abinaya M\",\"register_number\":\"732524145001\",\"issued_by\":\"College Administrator\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T12:11:16.010Z"
+    },
+    {
+      "id": 436,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T12:53:55.968Z"
+    },
+    {
+      "id": 437,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"hod.cse@college.edu\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T12:54:02.739Z"
+    },
+    {
+      "id": 438,
+      "user_id": 89,
+      "user_email": "admin@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 89,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@college.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:59:52.851Z"
+    },
+    {
+      "id": 439,
+      "user_id": 89,
+      "user_email": "admin@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 89,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@college.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T12:59:58.935Z"
+    },
+    {
+      "id": 440,
+      "user_id": 89,
+      "user_email": "admin@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 89,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@college.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:00:03.958Z"
+    },
+    {
+      "id": 441,
+      "user_id": 89,
+      "user_email": "admin@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 89,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@college.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:00:09.730Z"
+    },
+    {
+      "id": 442,
+      "user_id": 93,
+      "user_email": "hod.cse@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 93,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"hod.cse@sasurie.com\",\"role\":\"HOD\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:00:27.639Z"
+    },
+    {
+      "id": 443,
+      "user_id": 31,
+      "user_email": "kavipriya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 31,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"kavipriya@sasurie.edu\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:00:33.783Z"
+    },
+    {
+      "id": 444,
+      "user_id": 31,
+      "user_email": "kavipriya@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 2,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-LIB\",\"staff\":\"Kavipriya D\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:00:33.928Z"
+    },
+    {
+      "id": 445,
+      "user_id": 31,
+      "user_email": "kavipriya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 31,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"kavipriya@sasurie.edu\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:01:55.632Z"
+    },
+    {
+      "id": 446,
+      "user_id": 22,
+      "user_email": "vinoth.library@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 22,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"vinoth.library@sasurie.edu\",\"role\":\"STAFF\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:02:01.088Z"
+    },
+    {
+      "id": 447,
+      "user_id": 22,
+      "user_email": "vinoth.library@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 2,
+      "old_values": null,
+      "new_values": "{\"slot\":\"COM-LIB\",\"staff\":\"Mr. D. Vinoth\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:02:01.122Z"
+    },
+    {
+      "id": 448,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:05:19.619Z"
+    },
+    {
+      "id": 449,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 64,
+      "old_values": null,
+      "new_values": "{\"full_name\":\"Maran S\",\"register_number\":\"732425104007\",\"email\":\"maran25@sasurie.com\",\"password\":\"Sasurie@123\",\"phone\":\"\",\"department_id\":1,\"course_id\":1,\"year\":2,\"semester\":3,\"section\":\"A\",\"admission_year\":2026}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:07:32.339Z"
+    },
+    {
+      "id": 450,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:07:39.030Z"
+    },
+    {
+      "id": 451,
+      "user_id": 128,
+      "user_email": "maran25@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 128,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"732425104007\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:07:48.521Z"
+    },
+    {
+      "id": 452,
+      "user_id": 128,
+      "user_email": "maran25@sasurie.com",
+      "action": "NO_DUE_REQUEST_CREATED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 8,
+      "old_values": null,
+      "new_values": "{\"exam_type\":\"End Semester Examinations\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:09:22.980Z"
+    },
+    {
+      "id": 453,
+      "user_id": 128,
+      "user_email": "maran25@sasurie.com",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 128,
+      "old_values": null,
+      "new_values": "{\"email\":\"maran25@sasurie.com\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:09:48.515Z"
+    },
+    {
+      "id": 454,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:09:55.325Z"
+    },
+    {
+      "id": 455,
+      "user_id": 89,
+      "user_email": "admin@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 89,
+      "old_values": null,
+      "new_values": "{\"identifier\":\"admin@college.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "127.0.0.1",
+      "created_at": "2026-09-13T13:12:43.993Z"
+    },
+    {
+      "id": 456,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "CERTIFICATE_REVOKED",
+      "entity_type": "CERTIFICATE",
+      "entity_id": 8,
+      "old_values": "{\"is_valid\":true}",
+      "new_values": "{\"is_valid\":false,\"reason\":\"Administrative review and discrepancy verification\",\"revoked_by\":\"College Administrator\",\"certificate_number\":\"CERT-2026-00008\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:19:41.801Z"
+    },
+    {
+      "id": 457,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "CERTIFICATE_DELETED",
+      "entity_type": "CERTIFICATE",
+      "entity_id": 8,
+      "old_values": null,
+      "new_values": "{\"cert_number\":\"CERT-2026-00008\"}",
+      "ip_address": "2409:40f4:2149:59ab:14c4:7c77:88a2:be83",
+      "created_at": "2026-09-13T13:20:59.900Z"
     }
   ],
   "subjectCourses": [
@@ -25928,19 +26514,19 @@
     }
   ],
   "nextId": {
-    "users": 128,
+    "users": 129,
     "departments": 18,
     "courses": 12,
     "dueCategories": 6,
-    "students": 64,
+    "students": 65,
     "staff": 58,
     "dueRecords": 1,
     "duePayments": 1,
-    "noDueRequests": 8,
+    "noDueRequests": 9,
     "noDueApprovals": 58,
-    "certificates": 11,
-    "notifications": 105,
-    "auditLogs": 435,
+    "certificates": 12,
+    "notifications": 130,
+    "auditLogs": 461,
     "subjectCourses": 1034
   }
 }

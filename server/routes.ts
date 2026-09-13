@@ -151,9 +151,13 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
   if (requestedRole === 'ADMIN') {
     user = db.users.find(u => u.role === 'ADMIN' && (
       u.email.toLowerCase() === lowerIdentifier ||
-      (u.username && u.username.toLowerCase() === lowerIdentifier) ||
-      (COLLEGE_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(lowerIdentifier) && COLLEGE_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(u.email.toLowerCase()))
+      (u.username && u.username.toLowerCase() === lowerIdentifier)
     ));
+    if (!user) {
+      user = db.users.find(u => u.role === 'ADMIN' && (
+        COLLEGE_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(lowerIdentifier) && COLLEGE_ADMIN_EMAILS.map(e => e.toLowerCase()).includes(u.email.toLowerCase())
+      ));
+    }
     if (!user) {
       user = db.users.find(u => (u.email.toLowerCase() === lowerIdentifier || (u.username && u.username.toLowerCase() === lowerIdentifier)) && u.role === 'ADMIN');
     }
@@ -1190,7 +1194,7 @@ function findStaffForFacultyName(facultyName?: string) {
   ) || null;
 }
 
-function defaultSubjectsForStudent(student?: any, semester?: number, initialPending: boolean = false): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string; faculty_id?: number; faculty_email?: string }> {
+function defaultSubjectsForStudent(student?: any, semester?: number, initialPending: boolean = true): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string; faculty_id?: number; faculty_email?: string }> {
   const deptId = student?.department_id || 1;
   const targetSem = Number(semester) || student?.semester || (student?.year ? student.year * 2 - 1 : 7);
   const targetYear = student?.year || Math.ceil(targetSem / 2);
@@ -1260,7 +1264,7 @@ function defaultSubjectsForStudent(student?: any, semester?: number, initialPend
   });
 }
 
-function defaultLabsForStudent(student?: any, semester?: number, initialPending: boolean = false): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string; faculty_id?: number; faculty_email?: string }> {
+function defaultLabsForStudent(student?: any, semester?: number, initialPending: boolean = true): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string; faculty_id?: number; faculty_email?: string }> {
   const deptId = student?.department_id || 1;
   const targetSem = Number(semester) || student?.semester || (student?.year ? student.year * 2 - 1 : 7);
   const targetYear = student?.year || Math.ceil(targetSem / 2);
@@ -1835,23 +1839,84 @@ apiRouter.patch('/no-due-requests/:id', authMiddleware, requireRole(['ADMIN']), 
   const st = db.students.find(s => s.id === r.student_id);
 
   if (status === 'approved') {
-    const subjects = r.subjects || defaultSubjectsForStudent(st, r.semester);
-    const labs = r.labs || defaultLabsForStudent(st, r.semester);
-    const common = r.common_nodes || defaultCommonNodesForStudent(st, true);
+    const subjects = r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(st, r.semester, true);
+    const labs = r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(st, r.semester, true);
+    const common = r.common_nodes && r.common_nodes.length > 0 ? r.common_nodes : defaultCommonNodesForStudent(st, true);
 
     const pendingSubjects = subjects.filter((s: any) => !isNodeClearedStatus(s.dues_status));
     const pendingLabs = labs.filter((l: any) => l.name !== '-' && !isNodeClearedStatus(l.dues_status));
     const pendingCommon = common.filter((c: any) => !isNodeClearedStatus(c.dues_status));
 
-    if (pendingSubjects.length > 0 || pendingLabs.length > 0 || pendingCommon.length > 0) {
-      return res.status(400).json({
-        detail: 'Cannot approve clearance request. All allocated subjects, laboratories, and common nodes must be cleared by their respective staff first.'
-      });
+    const pendingList: string[] = [
+      ...pendingSubjects.map((s: any) => `${s.slot}: ${s.name || s.title || s.subject_name}`),
+      ...pendingLabs.map((l: any) => `${l.slot}: ${l.name}`),
+      ...pendingCommon.map((c: any) => `${c.slot || 'Common'}: ${c.name}`)
+    ];
+
+    const isAdmin = req.user?.role === 'ADMIN';
+
+    if (pendingList.length > 0) {
+      if (isAdmin) {
+        // Admin / Principal executive clearance: endorse and clear all remaining nodes under institutional authority
+        const todayStr = new Date().toLocaleDateString('en-GB');
+        subjects.forEach((s: any) => {
+          if (!isNodeClearedStatus(s.dues_status)) {
+            s.dues_status = 'Cleared';
+            s.staff_signature = 'Approved (Principal Authority)';
+            s.date = todayStr;
+          }
+        });
+        labs.forEach((l: any) => {
+          if (l.name !== '-' && !isNodeClearedStatus(l.dues_status)) {
+            l.dues_status = 'Cleared';
+            l.staff_signature = 'Approved (Principal Authority)';
+            l.date = todayStr;
+          }
+        });
+        common.forEach((c: any) => {
+          if (!isNodeClearedStatus(c.dues_status)) {
+            c.dues_status = 'Cleared';
+            c.staff_signature = 'Approved (Principal Authority)';
+            c.date = todayStr;
+          }
+        });
+        r.subjects = subjects;
+        r.labs = labs;
+        r.common_nodes = common;
+      } else {
+        return res.status(400).json({
+          detail: `Cannot approve clearance request. All clearance nodes must be cleared by allocated staff first. ${pendingList.length} pending node(s): ${pendingList.join(', ')}.`
+        });
+      }
     }
 
-    if (!r.signatories?.hod?.signed) {
+    const hasHODEndorsed = !!r.signatories?.hod?.signed || !!r.hod_approved_at;
+    if (!hasHODEndorsed) {
+      if (isAdmin) {
+        const todayStr = new Date().toLocaleDateString('en-GB');
+        r.signatories = r.signatories || defaultSignatoriesForStudent(r);
+        r.signatories.hod = {
+          signed: true,
+          name: r.signatories.hod?.name || 'Head of Department',
+          date: todayStr,
+          status: 'endorsed',
+          remarks: 'Endorsed under Institutional Administrative Authority'
+        };
+        r.hod_approved_at = new Date().toISOString();
+        r.hod_approved_by = req.user!.id;
+        r.hod_name = r.signatories.hod?.name || 'Head of Department';
+      } else {
+        return res.status(400).json({
+          detail: 'Cannot approve clearance request. Head of Department (HOD) endorsement must be completed before Principal approval.'
+        });
+      }
+    }
+
+    const studentDues = db.dueRecords.filter(d => d.student_id === r.student_id && d.status !== 'cleared' && d.status !== 'waived' && Number(d.amount) > 0);
+    if (studentDues.length > 0) {
+      const totalDue = studentDues.reduce((sum, d) => sum + Number(d.amount), 0);
       return res.status(400).json({
-        detail: 'Cannot approve clearance request. Head of Department (HOD) endorsement must be completed before Principal approval.'
+        detail: `Cannot approve clearance request. Student has ₹${totalDue} in unpaid financial dues. All student dues must be cleared first.`
       });
     }
 
@@ -2042,21 +2107,73 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
   if (!r) return res.status(404).json({ detail: 'No Due Request not found' });
   const st = db.students.find(s => s.id === r.student_id);
 
-  // 1. HOD endorsement verification:
-  const hasHODEndorsed = !!r.signatories?.hod?.signed || !!r.hod_approved_at;
-  if (!hasHODEndorsed) {
-    return res.status(400).json({
-      detail: 'Cannot issue certificate. The Head of Department (HOD) has not endorsed this clearance request yet. HOD endorsement is required.'
-    });
-  }
-
-  // 2. Strict Admin Approval requirement:
+  // 1. Strict Admin Approval requirement:
   // "Admin approve pannathu aprom than certificate issue aaganum athuku munnadi issue aaga kudathu"
   const isAdminApproved = r.status === 'approved' || !!r.principal_approved_at || !!r.signatories?.principal?.signed;
   if (!isAdminApproved) {
     return res.status(400).json({
       detail: 'Cannot issue certificate. Admin must formally review and approve the clearance request first. Certificate cannot be issued before Admin approval.'
     });
+  }
+
+  // 2. Unpaid dues check
+  const studentDues = db.dueRecords.filter(d => d.student_id === r.student_id && d.status !== 'cleared' && d.status !== 'waived' && Number(d.amount) > 0);
+  if (studentDues.length > 0) {
+    const totalDue = studentDues.reduce((sum, d) => sum + Number(d.amount), 0);
+    return res.status(400).json({
+      detail: `Cannot issue certificate. Student has ₹${totalDue} in unpaid financial dues. All student dues must be cleared first.`
+    });
+  }
+
+  // 3. Ensure nodes are marked certified under approved clearance
+  const todayStr = new Date().toLocaleDateString('en-GB');
+  const subjects = r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(st, r.semester, true);
+  const labs = r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(st, r.semester, true);
+  const common = r.common_nodes && r.common_nodes.length > 0 ? r.common_nodes : defaultCommonNodesForStudent(st, true);
+
+  subjects.forEach((s: any) => {
+    if (!isNodeClearedStatus(s.dues_status)) {
+      s.dues_status = 'Cleared';
+      s.staff_signature = s.staff_signature || 'Approved (Principal Authority)';
+      s.date = s.date || todayStr;
+    }
+  });
+  labs.forEach((l: any) => {
+    if (l.name !== '-' && !isNodeClearedStatus(l.dues_status)) {
+      l.dues_status = 'Cleared';
+      l.staff_signature = l.staff_signature || 'Approved (Principal Authority)';
+      l.date = l.date || todayStr;
+    }
+  });
+  common.forEach((c: any) => {
+    if (!isNodeClearedStatus(c.dues_status)) {
+      c.dues_status = 'Cleared';
+      c.staff_signature = c.staff_signature || 'Approved (Principal Authority)';
+      c.date = c.date || todayStr;
+    }
+  });
+  r.subjects = subjects;
+  r.labs = labs;
+  r.common_nodes = common;
+
+  r.signatories = r.signatories || defaultSignatoriesForStudent(r);
+  if (!r.signatories.hod?.signed) {
+    r.signatories.hod = {
+      signed: true,
+      name: r.signatories.hod?.name || 'Head of Department',
+      date: todayStr,
+      status: 'endorsed',
+      remarks: 'Endorsed under Institutional Administrative Authority'
+    };
+  }
+  if (!r.signatories.principal?.signed) {
+    r.signatories.principal = {
+      signed: true,
+      name: 'Dr. T. Senthilvel (Principal / Admin)',
+      date: todayStr,
+      status: 'approved',
+      remarks: 'Approved by Principal'
+    };
   }
 
   const existing = db.certificates.find(c => c.request_id === reqId);
@@ -2661,25 +2778,39 @@ apiRouter.get('/admin/dashboard', authMiddleware, requireRole(['ADMIN']), (req: 
 
 apiRouter.get('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
   let students = db.students;
-  if (req.query.department_id) {
+  if (req.query.department_id && req.query.department_id !== 'all') {
     students = students.filter(s => s.department_id === Number(req.query.department_id));
   }
-  if (req.query.course_id) {
+  if (req.query.course_id && req.query.course_id !== 'all') {
     students = students.filter(s => s.course_id === Number(req.query.course_id));
+  }
+  if (req.query.year && req.query.year !== 'all') {
+    students = students.filter(s => s.year === Number(req.query.year));
+  }
+  if (req.query.semester && req.query.semester !== 'all') {
+    students = students.filter(s => {
+      const sem = s.semester || (s.year ? s.year * 2 - 1 : 1);
+      return sem === Number(req.query.semester);
+    });
+  }
+  if (req.query.section && req.query.section !== 'all') {
+    students = students.filter(s => (s.section || 'A').toUpperCase() === String(req.query.section).toUpperCase());
   }
   const search = (req.query.search as string || '').toLowerCase().trim();
   if (search) {
     students = students.filter(s =>
-      s.full_name.toLowerCase().includes(search) ||
-      s.register_number.toLowerCase().includes(search) ||
-      s.email.toLowerCase().includes(search)
+      (s.full_name && s.full_name.toLowerCase().includes(search)) ||
+      (s.register_number && s.register_number.toLowerCase().includes(search)) ||
+      (s.email && s.email.toLowerCase().includes(search))
     );
   }
 
   const total = students.length;
   const skip = Number(req.query.skip) || 0;
-  const limit = Number(req.query.limit) || 50;
-  const paginated = students.slice(skip, skip + limit);
+  const hasLimit = req.query.limit !== undefined && req.query.limit !== '' && !isNaN(Number(req.query.limit));
+  const paginated = hasLimit
+    ? students.slice(skip, skip + Number(req.query.limit))
+    : (skip > 0 ? students.slice(skip) : students);
 
   const result = paginated.map(s => {
     const user = db.users.find(u => u.id === s.user_id);
@@ -2691,14 +2822,16 @@ apiRouter.get('/admin/students', authMiddleware, requireRole(['ADMIN']), (req: A
       register_number: s.register_number,
       full_name: s.full_name,
       email: s.email,
-      phone: s.phone,
+      phone: s.phone || '',
       department_id: s.department_id,
       department_name: dept ? dept.name : '',
+      department_code: dept ? dept.code : '',
       course_id: s.course_id,
       course_name: course ? course.name : '',
+      course_code: course ? course.code : '',
       year: s.year,
       semester: s.semester || (s.year ? s.year * 2 - 1 : 1),
-      section: s.section,
+      section: s.section || 'A',
       admission_year: s.admission_year,
       is_active: user ? user.is_active : true,
       is_registered: user ? !!user.is_registered : false,
@@ -5397,43 +5530,32 @@ apiRouter.post('/hod/requests/:id/sign-off', authMiddleware, requireRole(['HOD',
   }
 
   const student = db.students.find(s => s.id === noDueReq.student_id);
-  const subjects = noDueReq.subjects && noDueReq.subjects.length > 0 ? noDueReq.subjects : defaultSubjectsForStudent(student, noDueReq.semester);
-  const labs = noDueReq.labs && noDueReq.labs.length > 0 ? noDueReq.labs : defaultLabsForStudent(student, noDueReq.semester);
+  const subjects = noDueReq.subjects && noDueReq.subjects.length > 0 ? noDueReq.subjects : defaultSubjectsForStudent(student, noDueReq.semester, true);
+  const labs = noDueReq.labs && noDueReq.labs.length > 0 ? noDueReq.labs : defaultLabsForStudent(student, noDueReq.semester, true);
   const common_nodes = noDueReq.common_nodes && noDueReq.common_nodes.length > 0 ? noDueReq.common_nodes : defaultCommonNodesForStudent(student, true);
+
+  // User Requirement: Subject-wise HOD allocated staff must clear subjects first.
+  // HOD cannot endorse if any allocated subject or lab is still pending.
+  const pendingSubjects = subjects.filter((s: any) => !isNodeClearedStatus(s.dues_status));
+  const pendingLabs = labs.filter((l: any) => l.name !== '-' && !isNodeClearedStatus(l.dues_status));
+
+  if (pendingSubjects.length > 0 || pendingLabs.length > 0) {
+    const pendingNames = [
+      ...pendingSubjects.map((s: any) => `${s.slot}: ${s.name || s.subject_name || s.title}`),
+      ...pendingLabs.map((l: any) => `${l.slot}: ${l.name}`)
+    ];
+    return res.status(400).json({
+      detail: `Cannot endorse clearance. ${pendingNames.length} subject/lab node(s) are still pending verification from allocated faculty: ${pendingNames.join(', ')}. All allocated staff must clear their subjects before HOD can endorse.`
+    });
+  }
+
+  noDueReq.subjects = subjects;
+  noDueReq.labs = labs;
+  noDueReq.common_nodes = common_nodes;
 
   const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
   const hodName = hodStaff?.full_name || 'Dr. K. Senthil Kumar, M.E., Ph.D.';
   const todayStr = new Date().toLocaleDateString('en-GB');
-
-  // Auto-clear departmental theory subjects and labs under HOD endorsement if needed
-  noDueReq.subjects = subjects.map((s: any) => {
-    if (!isNodeClearedStatus(s.dues_status)) {
-      return {
-        ...s,
-        dues_status: 'No Dues',
-        signature_date: todayStr,
-        faculty_name: s.faculty_name || hodName
-      };
-    }
-    return s;
-  });
-
-  noDueReq.labs = labs.map((l: any) => {
-    if (l.name !== '-' && !isNodeClearedStatus(l.dues_status)) {
-      return {
-        ...l,
-        dues_status: 'No Dues',
-        signature_date: todayStr,
-        faculty_name: l.faculty_name || hodName
-      };
-    }
-    return l;
-  });
-
-  // User Requirement: Common institutional nodes allocated by HOD must only be cleared
-  // when the allocated officer accepts the request; otherwise they must remain in Pending Review.
-  // Therefore, HOD sign-off does NOT auto-clear common nodes.
-  noDueReq.common_nodes = common_nodes.map((c: any) => c);
 
   noDueReq.signatories = noDueReq.signatories || defaultSignatoriesForStudent(noDueReq);
   noDueReq.signatories.hod = {
@@ -5441,18 +5563,17 @@ apiRouter.post('/hod/requests/:id/sign-off', authMiddleware, requireRole(['HOD',
     name: hodName,
     date: todayStr,
     status: 'approved',
-    remarks: req.body.remarks || 'All department subject clearances and lab records verified and approved by HOD.'
+    remarks: req.body.remarks || 'All departmental subject clearances and lab records verified and endorsed by HOD.'
   };
   noDueReq.hod_approved_by = req.user!.id;
   noDueReq.hod_name = hodName;
   noDueReq.hod_approved_at = new Date().toISOString();
-  noDueReq.status = 'pending_principal';
 
   if (student) {
     db.createNotification(
       student.user_id,
       'HOD Endorsement Approved',
-      `Head of Department (${hodName}) has approved and endorsed your clearance form. Forwarded to Principal for final approval.`,
+      `Head of Department (${hodName}) has approved and endorsed your clearance form. Forwarded to Admin for final approval and certificate issuance.`,
       'success'
     );
   }
@@ -5463,7 +5584,7 @@ apiRouter.post('/hod/requests/:id/sign-off', authMiddleware, requireRole(['HOD',
     db.createNotification(
       admin.id,
       'Clearance Application Ready for Principal Approval',
-      `Student ${student ? student.full_name : 'Applicant'} (${student ? student.register_number : ''}) clearance has been fully verified by allocated staff and endorsed by HOD (${hodName}). Ready for Principal review.`,
+      `Student ${student ? student.full_name : 'Applicant'} (${student ? student.register_number : ''}) clearance has been fully verified by allocated staff and endorsed by HOD (${hodName}). Ready for Admin review.`,
       'info'
     );
   }
@@ -5472,7 +5593,7 @@ apiRouter.post('/hod/requests/:id/sign-off', authMiddleware, requireRole(['HOD',
   db.logAudit(req.user!.id, req.user!.email, 'HOD_REQUEST_SIGNED', 'NO_DUE_REQUEST', reqId, null, { hod: hodName, remarks: req.body.remarks }, getClientIp(req));
 
   res.json({
-    message: 'Official HOD Endorsement signed successfully. Forwarded to Principal.',
+    message: 'Official HOD Endorsement signed successfully. Forwarded to Admin.',
     request: noDueReq
   });
 });
@@ -5489,9 +5610,48 @@ apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-su
     return res.status(400).json({ detail: 'Slot name is required (e.g., Sub 1, Lab 2, COM-LIB).' });
   }
 
+  const student = db.students.find(s => s.id === noDueReq.student_id);
+  if (!noDueReq.subjects || !Array.isArray(noDueReq.subjects) || noDueReq.subjects.length === 0) {
+    noDueReq.subjects = defaultSubjectsForStudent(student, noDueReq.semester, true);
+  }
+  if (!noDueReq.labs || !Array.isArray(noDueReq.labs) || noDueReq.labs.length === 0) {
+    noDueReq.labs = defaultLabsForStudent(student, noDueReq.semester, true);
+  }
+  if (!noDueReq.common_nodes || !Array.isArray(noDueReq.common_nodes) || noDueReq.common_nodes.length === 0) {
+    noDueReq.common_nodes = defaultCommonNodesForStudent(student, true);
+  }
+
   const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
   const staffName = faculty_name || staff?.full_name || 'Faculty In-Charge';
   const todayStr = new Date().toLocaleDateString('en-GB');
+
+  // Strict staff authorization check: Staff can only clear items allocated to them
+  if (req.user!.role === 'STAFF') {
+    const allReqItems = [
+      ...(noDueReq.subjects || []),
+      ...(noDueReq.labs || []),
+      ...(noDueReq.common_nodes || [])
+    ];
+    const targetItem = allReqItems.find((item: any) => {
+      const subCode = (item.code || '').toLowerCase();
+      const slotName = (item.slot || '').toLowerCase();
+      const comKey = (item.category_key || '').toLowerCase();
+      const sLower = slot.toLowerCase();
+      return slotName === sLower || subCode === sLower || comKey === sLower || item.name?.toLowerCase().includes(sLower);
+    });
+
+    if (!targetItem) {
+      return res.status(404).json({
+        detail: `Clearance node '${slot}' not found in this request.`
+      });
+    }
+
+    if (!isItemAllocatedToStaff(targetItem, staff, req.user!.role)) {
+      return res.status(403).json({
+        detail: `Unauthorized: You are not the allocated staff member for '${targetItem.name || slot}'. Only the allocated staff can clear this node.`
+      });
+    }
+  }
 
   let updated = false;
   if (noDueReq.subjects && Array.isArray(noDueReq.subjects)) {
@@ -5548,7 +5708,6 @@ apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-su
     }
   }
 
-  const student = db.students.find(s => s.id === noDueReq.student_id);
   if (student) {
     db.createNotification(
       student.user_id,
@@ -5588,25 +5747,37 @@ apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-su
   });
 });
 
-apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-subject-due'], authMiddleware, requireRole(['HOD', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.post([
+  '/hod/requests/:id/mark-subject-due',
+  '/staff/requests/:id/mark-subject-due',
+  '/hod/requests/:id/reset-subject',
+  '/staff/requests/:id/reset-subject'
+], authMiddleware, requireRole(['HOD', 'STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
   const reqId = Number(req.params.id);
   const noDueReq = db.noDueRequests.find(r => r.id === reqId);
   if (!noDueReq) {
     return res.status(404).json({ detail: 'No Due request not found' });
   }
 
-  const { slot, amount, description } = req.body;
+  const { slot, amount, description, action, status } = req.body;
   if (!slot) {
     return res.status(400).json({ detail: 'Slot name is required.' });
   }
 
-  const dueText = amount && Number(amount) > 0 ? `Due: ₹${amount}` : (description || 'Pending Due');
+  const isReset = action === 'reset' || status === 'Pending Review' || req.path.includes('reset-subject');
+  const dueText = isReset
+    ? 'Pending Review'
+    : (amount && Number(amount) > 0 ? `Due: ₹${amount}` : (description || 'Pending Due'));
+  const sigText = isReset ? '-' : (amount && Number(amount) > 0 ? `Due: ₹${amount}` : 'Action Required');
+  const dateText = isReset ? '-' : new Date().toLocaleDateString('en-GB');
 
   if (noDueReq.subjects && Array.isArray(noDueReq.subjects)) {
     for (const sub of noDueReq.subjects) {
       const subCode = (sub as any).code || '';
       if (sub.slot?.toLowerCase() === slot.toLowerCase() || subCode.toLowerCase() === slot.toLowerCase()) {
         sub.dues_status = dueText;
+        (sub as any).staff_signature = sigText;
+        (sub as any).date = dateText;
       }
     }
   }
@@ -5616,6 +5787,8 @@ apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-
       const labCode = (lab as any).code || '';
       if (lab.slot?.toLowerCase() === slot.toLowerCase() || labCode.toLowerCase() === slot.toLowerCase()) {
         lab.dues_status = dueText;
+        (lab as any).staff_signature = sigText;
+        (lab as any).date = dateText;
       }
     }
   }
@@ -5631,6 +5804,8 @@ apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-
         com.name?.toLowerCase().includes(slot.toLowerCase())
       ) {
         com.dues_status = dueText;
+        (com as any).staff_signature = sigText;
+        (com as any).date = dateText;
 
         if (noDueReq.signatories) {
           if (comKey === 'library' || comCode.includes('LIB') || com.name?.toLowerCase().includes('library')) {
@@ -5647,9 +5822,44 @@ apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-
     }
   }
 
+  // Reset HOD endorsement if it was endorsed, since a subject now has a due or is pending
+  if (noDueReq.signatories?.hod) {
+    noDueReq.signatories.hod.signed = false;
+    noDueReq.signatories.hod.status = 'pending';
+    noDueReq.signatories.hod.remarks = isReset ? 'Clearance reset; pending staff re-verification' : `Pending due: ${dueText}`;
+  }
+  noDueReq.hod_approved_at = undefined;
+  noDueReq.hod_approved_by = undefined;
+  if (noDueReq.status === 'approved') {
+    noDueReq.status = 'under_review';
+  }
+
+  // If a monetary due was specified, also create a record in student dueRecords if not existing
+  if (!isReset && amount && Number(amount) > 0) {
+    const student = db.students.find(s => s.id === noDueReq.student_id);
+    if (student) {
+      const cat = db.dueCategories.find(c => c.name.toLowerCase().includes('breakage') || c.name.toLowerCase().includes('lab') || c.name.toLowerCase().includes('tuition')) || db.dueCategories[0];
+      const dept = db.departments.find(d => d.id === student.department_id) || db.departments[0];
+      const newDue: DueRecord = {
+        id: db.dueRecords.length > 0 ? Math.max(...db.dueRecords.map(d => d.id)) + 1 : 1,
+        student_id: student.id,
+        department_id: dept.id,
+        category_id: cat ? cat.id : 1,
+        amount: Number(amount),
+        status: 'pending',
+        description: description || `Outstanding fine/due for ${slot}`,
+        remarks: `Recorded via clearance review on ${new Date().toLocaleDateString('en-GB')}`,
+        created_by: req.user!.id,
+        updated_by: req.user!.id,
+        created_at: new Date().toISOString()
+      };
+      db.dueRecords.push(newDue);
+    }
+  }
+
   db.saveToFile();
   res.json({
-    message: `Due marked for ${slot}.`,
+    message: isReset ? `Clearance status reset to Pending Review for ${slot}.` : `Due marked for ${slot} (${dueText}).`,
     request: noDueReq
   });
 });

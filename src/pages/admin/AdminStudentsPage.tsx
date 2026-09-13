@@ -28,6 +28,8 @@ export const AdminStudentsPage: React.FC = () => {
   const [filterDept, setFilterDept] = useState('all');
   const [filterYear, setFilterYear] = useState('all');
   const [filterSem, setFilterSem] = useState('all');
+  const [filterSection, setFilterSection] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
   const [courses, setCourses] = useState<Course[]>([]);
   const [departments, setDepartments] = useState<Department[]>([]);
 
@@ -280,33 +282,80 @@ export const AdminStudentsPage: React.FC = () => {
 
   const safeStudents = Array.isArray(students) ? students : [];
 
+  const resetFilters = () => {
+    setSearch('');
+    setFilterCourse('all');
+    setFilterDept('all');
+    setFilterYear('all');
+    setFilterSem('all');
+    setFilterSection('all');
+    setFilterStatus('all');
+  };
+
+  const hasActiveFilters =
+    search.trim() !== '' ||
+    filterCourse !== 'all' ||
+    filterDept !== 'all' ||
+    filterYear !== 'all' ||
+    filterSem !== 'all' ||
+    filterSection !== 'all' ||
+    filterStatus !== 'all';
+
   const filteredStudents = safeStudents.filter((s) => {
+    const filterDeptStr = String(filterDept ?? 'all').trim();
+    const filterCourseStr = String(filterCourse ?? 'all').trim();
+    const filterYearStr = String(filterYear ?? 'all').trim();
+    const filterSemStr = String(filterSem ?? 'all').trim();
+    const filterSectionStr = String(filterSection ?? 'all').trim();
+    const searchStr = String(search ?? '').trim().toLowerCase();
+
     const matchesSearch =
-      search === '' ||
-      s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.register_number?.toLowerCase().includes(search.toLowerCase()) ||
-      s.email?.toLowerCase().includes(search.toLowerCase()) ||
-      s.department_name?.toLowerCase().includes(search.toLowerCase()) ||
-      s.course_name?.toLowerCase().includes(search.toLowerCase());
+      searchStr === '' ||
+      Boolean(s.full_name?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.register_number?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.email?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.department_name?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.department_code?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.course_name?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.course_code?.toLowerCase().includes(searchStr)) ||
+      Boolean(s.phone?.toLowerCase().includes(searchStr));
+
     const matchesCourse =
-      filterCourse === 'all' ||
-      !filterCourse ||
-      s.course_name?.toLowerCase().includes(filterCourse.toLowerCase());
+      filterCourseStr === 'all' ||
+      filterCourseStr === '' ||
+      String(s.course_id) === filterCourseStr ||
+      Boolean(s.course_name?.toLowerCase().includes(filterCourseStr.toLowerCase())) ||
+      Boolean(s.course_code?.toLowerCase().includes(filterCourseStr.toLowerCase()));
+
     const matchesDept =
-      filterDept === 'all' ||
-      !filterDept ||
-      String(s.department_id) === filterDept ||
-      s.department_name?.toLowerCase().includes(filterDept.toLowerCase());
+      filterDeptStr === 'all' ||
+      filterDeptStr === '' ||
+      String(s.department_id) === filterDeptStr ||
+      Boolean(s.department_name?.toLowerCase().includes(filterDeptStr.toLowerCase())) ||
+      Boolean(s.department_code?.toLowerCase().includes(filterDeptStr.toLowerCase()));
+
     const matchesYear =
-      filterYear === 'all' ||
-      !filterYear ||
-      String(s.year) === filterYear;
+      filterYearStr === 'all' ||
+      filterYearStr === '' ||
+      String(s.year) === filterYearStr;
+
     const studentSem = s.semester || (s.year ? s.year * 2 - 1 : 1);
     const matchesSem =
-      filterSem === 'all' ||
-      !filterSem ||
-      String(studentSem) === filterSem;
-    return matchesSearch && matchesCourse && matchesDept && matchesYear && matchesSem;
+      filterSemStr === 'all' ||
+      filterSemStr === '' ||
+      String(studentSem) === filterSemStr;
+
+    const matchesSection =
+      filterSectionStr === 'all' ||
+      filterSectionStr === '' ||
+      String(s.section || 'A').toUpperCase() === filterSectionStr.toUpperCase();
+
+    const matchesStatus =
+      filterStatus === 'all' ||
+      (filterStatus === 'active' && s.is_active !== false) ||
+      (filterStatus === 'disabled' && s.is_active === false);
+
+    return matchesSearch && matchesCourse && matchesDept && matchesYear && matchesSem && matchesSection && matchesStatus;
   });
 
   return (
@@ -320,38 +369,98 @@ export const AdminStudentsPage: React.FC = () => {
       )}
 
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h2 className="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
-            <Users className="w-6 h-6 text-indigo-600" />
-            Enrolled Students Registry
-          </h2>
-          <p className="text-xs text-slate-500 mt-0.5">
-            Manage student registrations, engineering degree programs, edit profiles, and clearance accounts
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="font-display font-bold text-xl text-slate-900 flex items-center gap-2">
+              <Users className="w-6 h-6 text-indigo-600" />
+              Enrolled Students Registry
+            </h2>
+            <p className="text-xs text-slate-500 mt-0.5">
+              Manage student registrations, engineering degree programs, edit profiles, and clearance accounts
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => fetchStudents()}
+              disabled={loading}
+              className="p-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+              title="Refresh student records from server"
+            >
+              <RotateCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+            </button>
+
+            <button
+              onClick={openCreateModal}
+              className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" /> Add Student
+            </button>
+          </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        {/* Filters Toolbar */}
+        <div className="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center gap-2.5">
+          {/* Search bar */}
+          <div className="relative min-w-[200px] flex-1">
+            <input
+              type="text"
+              placeholder="Search by name, reg no, email, dept..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full text-xs pl-8 pr-7 py-2 border border-slate-200 rounded-xl bg-slate-50/50 text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            />
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
           {/* Department Filter */}
-          <div className="min-w-[170px]">
+          <div className="w-48">
             <SearchableSelect
               value={filterDept}
-              onChange={(e) => setFilterDept(e.target.value)}
+              onChange={(e) => setFilterDept(String(e.target.value ?? 'all'))}
               placeholder="All Departments"
               searchPlaceholder="Filter department..."
               className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
               options={[
                 { value: 'all', label: 'All Departments' },
                 ...departments.map((d) => ({
-                  value: d.id,
+                  value: String(d.id),
                   label: `${d.name} (${d.code})`
                 }))
               ]}
             />
           </div>
 
+          {/* Course / Degree Filter */}
+          <div className="w-48">
+            <SearchableSelect
+              value={filterCourse}
+              onChange={(e) => setFilterCourse(String(e.target.value ?? 'all'))}
+              placeholder="All Degree Programs"
+              searchPlaceholder="Filter degree/course..."
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              options={[
+                { value: 'all', label: 'All Degree Programs' },
+                ...courses.map((c) => ({
+                  value: String(c.id),
+                  label: `${c.name} (${c.code})`
+                }))
+              ]}
+            />
+          </div>
+
           {/* Year Filter */}
-          <div className="min-w-[130px]">
+          <div className="w-32">
             <SearchableSelect
               value={filterYear}
               onChange={(e) => setFilterYear(e.target.value)}
@@ -369,7 +478,7 @@ export const AdminStudentsPage: React.FC = () => {
           </div>
 
           {/* Semester Filter */}
-          <div className="min-w-[140px]">
+          <div className="w-36">
             <SearchableSelect
               value={filterSem}
               onChange={(e) => setFilterSem(e.target.value)}
@@ -386,49 +495,50 @@ export const AdminStudentsPage: React.FC = () => {
             />
           </div>
 
-          <div className="relative">
-            <input
-              type="text"
-              list="students-filter-course-list"
-              placeholder="Degree / course..."
-              value={filterCourse === 'all' ? '' : filterCourse}
-              onChange={(e) => setFilterCourse(e.target.value || 'all')}
-              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 max-w-xs focus:outline-none focus:ring-1 focus:ring-indigo-500 w-44"
+          {/* Section Filter */}
+          <div className="w-32">
+            <SearchableSelect
+              value={filterSection}
+              onChange={(e) => setFilterSection(e.target.value)}
+              placeholder="All Sections"
+              searchPlaceholder="Filter section..."
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              options={[
+                { value: 'all', label: 'All Sections' },
+                { value: 'A', label: 'Section A' },
+                { value: 'B', label: 'Section B' },
+                { value: 'C', label: 'Section C' },
+                { value: 'D', label: 'Section D' }
+              ]}
             />
-            <datalist id="students-filter-course-list">
-              <option value="all">All Degree Programs</option>
-              {courses.map((c) => (
-                <option key={c.id} value={c.name} />
-              ))}
-            </datalist>
           </div>
 
-          <div className="relative">
-            <input
-              type="text"
-              placeholder="Search students, reg no..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="text-xs pl-8 pr-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-indigo-500 w-48"
+          {/* Account Status Filter */}
+          <div className="w-36">
+            <SearchableSelect
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              placeholder="All Accounts"
+              searchPlaceholder="Filter status..."
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              options={[
+                { value: 'all', label: 'All Accounts' },
+                { value: 'active', label: 'Active Only' },
+                { value: 'disabled', label: 'Disabled Only' }
+              ]}
             />
-            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
           </div>
 
-          <button
-            onClick={() => fetchStudents()}
-            disabled={loading}
-            className="p-2 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5 shadow-2xs"
-            title="Refresh student records"
-          >
-            <RotateCw className={`w-3.5 h-3.5 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
-          </button>
-
-          <button
-            onClick={openCreateModal}
-            className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5"
-          >
-            <PlusCircle className="w-3.5 h-3.5" /> Add Student
-          </button>
+          {/* Clear Filters Button */}
+          {hasActiveFilters && (
+            <button
+              onClick={resetFilters}
+              className="px-3 py-2 text-xs font-bold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl transition-colors inline-flex items-center gap-1.5 shrink-0 cursor-pointer"
+              title="Clear all active filters"
+            >
+              <X className="w-3.5 h-3.5" /> Clear Filters
+            </button>
+          )}
         </div>
       </div>
 
@@ -437,13 +547,18 @@ export const AdminStudentsPage: React.FC = () => {
         <div className="flex flex-wrap items-center gap-2 text-indigo-900">
           <span className="font-bold flex items-center gap-1.5">
             <GraduationCap className="w-4 h-4 text-indigo-600" />
-            Active Registry:
+            Registry Count:
           </span>
           <span className="bg-white text-indigo-700 font-bold px-2 py-0.5 rounded-full border border-indigo-200">
-            {safeStudents.length} Students Enrolled
+            Showing {filteredStudents.length} of {safeStudents.length} Students
           </span>
+          {hasActiveFilters && (
+            <span className="bg-indigo-100 text-indigo-800 font-semibold px-2 py-0.5 rounded-md text-[11px]">
+              Filtered results
+            </span>
+          )}
           <span className="text-indigo-600">•</span>
-          <span className="text-slate-600">All Academic Departments & Years 1–4 Configured</span>
+          <span className="text-slate-600">All registered student records persisted</span>
         </div>
         <div className="flex items-center gap-2">
           <span className="text-slate-500">Default Student Password:</span>
@@ -474,13 +589,28 @@ export const AdminStudentsPage: React.FC = () => {
       ) : filteredStudents.length === 0 ? (
         <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
           <Users className="w-10 h-10 text-slate-400 mx-auto mb-2" />
-          <p className="text-xs text-slate-500">No students found matching current filters.</p>
-          <button
-            onClick={openCreateModal}
-            className="mt-3 px-3.5 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg inline-flex items-center gap-1"
-          >
-            <PlusCircle className="w-3 h-3" /> Enroll First Student
-          </button>
+          <p className="text-sm font-semibold text-slate-700">No students found matching current filters</p>
+          <p className="text-xs text-slate-400 mt-1">
+            {hasActiveFilters
+              ? `There are ${safeStudents.length} students enrolled in the registry. Try clearing or adjusting your search filters.`
+              : 'No students enrolled yet.'}
+          </p>
+          <div className="mt-4 flex items-center justify-center gap-2">
+            {hasActiveFilters && (
+              <button
+                onClick={resetFilters}
+                className="px-3.5 py-1.5 text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl inline-flex items-center gap-1.5 cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" /> Clear Filters & View All {safeStudents.length} Students
+              </button>
+            )}
+            <button
+              onClick={openCreateModal}
+              className="px-3.5 py-1.5 text-xs font-semibold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl inline-flex items-center gap-1.5 cursor-pointer"
+            >
+              <PlusCircle className="w-3.5 h-3.5" /> Add New Student
+            </button>
+          </div>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">

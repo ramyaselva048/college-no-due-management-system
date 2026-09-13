@@ -253,13 +253,33 @@ export const AdminCertificatesPage: React.FC = () => {
     try {
       const res = await api.get('/no-due-requests/all');
       const allRequests = Array.isArray(res.data) ? res.data : [];
-      // Eligible: not completed, and formally approved by Admin
       const issuedReqIds = new Set(certificates.map(c => c.request_id));
+      const isCleared = (status?: string) => {
+        if (!status) return false;
+        const s = status.trim().toLowerCase();
+        if (s === '-' || s === 'pending review' || s === 'pending verification' || s === 'pending' || s.startsWith('due:') || s.includes('unpaid')) return false;
+        return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'waived' || s.startsWith('exempted') || s === 'verified';
+      };
+
+      // Strict institutional rule: Eligible only if formally approved by Admin, HOD endorsed, and all nodes cleared
       const eligible = allRequests.filter(r => {
         if (issuedReqIds.has(r.id)) return false;
         if (r.status === 'completed') return false;
-        // Only requests approved by Admin can have certificates issued
-        return r.status === 'approved';
+        if (r.status !== 'approved') return false;
+
+        const hasHOD = !!r.signatories?.hod?.signed || !!r.hod_approved_at;
+        if (!hasHOD) return false;
+
+        const allItems = [
+          ...(r.subjects || []),
+          ...(r.labs || []).filter((l: any) => l.name && l.name !== '-'),
+          ...(r.common_nodes || [])
+        ];
+        if (allItems.length === 0) return false;
+        const hasPending = allItems.some((i: any) => !isCleared(i.dues_status));
+        if (hasPending) return false;
+
+        return true;
       });
       setEligibleRequests(eligible);
     } catch {

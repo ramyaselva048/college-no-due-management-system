@@ -33,6 +33,16 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
     'All departmental theory subjects, laboratory records, and equipment clearances verified and approved.'
   );
 
+  // In-app modal for Marking Due or Resetting Node (replaces blocked window.prompt)
+  const [dueModalTarget, setDueModalTarget] = useState<{
+    slot: string;
+    name: string;
+    code?: string;
+    currentStatus: string;
+  } | null>(null);
+  const [dueAmount, setDueAmount] = useState<number>(250);
+  const [dueReason, setDueReason] = useState<string>('Pending laboratory manual / equipment dues');
+
   useEffect(() => {
     setCurrentRequest(request);
     setActionFeedback(null);
@@ -45,7 +55,11 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
-        onClose();
+        if (dueModalTarget) {
+          setDueModalTarget(null);
+        } else {
+          onClose();
+        }
       }
     };
     if (isOpen) {
@@ -56,7 +70,7 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
       window.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'unset';
     };
-  }, [isOpen, onClose]);
+  }, [isOpen, onClose, dueModalTarget]);
 
   if (!isOpen || !currentRequest) return null;
 
@@ -92,19 +106,47 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
     }
   };
 
-  const handleMarkSubjectDue = async (slot: string) => {
-    const amount = window.prompt(`Enter pending fee/breakage amount for ${slot} (in ₹):`, '250');
-    if (amount === null) return;
+  const openMarkDueModal = (slot: string, name: string, code?: string, currentStatus?: string) => {
+    setDueModalTarget({
+      slot,
+      name,
+      code,
+      currentStatus: currentStatus || 'Cleared'
+    });
+    setDueAmount(250);
+    setDueReason(`Pending ${slot} Due / Breakage fee`);
+  };
 
+  const handleResetSubject = async (slot: string) => {
+    try {
+      setActionLoading(true);
+      const res = await api.post(`/hod/requests/${currentRequest.id}/reset-subject`, {
+        slot,
+        action: 'reset'
+      });
+      setActionFeedback(`Clearance status successfully reset to Pending Review for ${slot}.`);
+      setCurrentRequest(res.data.request);
+      setDueModalTarget(null);
+      onUpdated();
+    } catch (err: any) {
+      setActionFeedback(err.response?.data?.detail || 'Failed to reset status.');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleConfirmMarkDue = async () => {
+    if (!dueModalTarget) return;
     try {
       setActionLoading(true);
       const res = await api.post(`/hod/requests/${currentRequest.id}/mark-subject-due`, {
-        slot,
-        amount: Number(amount) || 0,
-        description: `Pending ${slot} Due: ₹${amount}`
+        slot: dueModalTarget.slot,
+        amount: Number(dueAmount) || 0,
+        description: dueReason.trim() || `Pending ${dueModalTarget.slot} Due: ₹${dueAmount}`
       });
-      setActionFeedback(`Due registered for ${slot}.`);
+      setActionFeedback(`Due registered for ${dueModalTarget.slot} (${Number(dueAmount) > 0 ? `₹${dueAmount}` : 'Pending Due'}).`);
       setCurrentRequest(res.data.request);
+      setDueModalTarget(null);
       onUpdated();
     } catch (err: any) {
       setActionFeedback(err.response?.data?.detail || 'Failed to mark due.');
@@ -115,16 +157,18 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
 
   const isCleared = (status?: string) => {
     if (!status) return false;
-    const s = status.toLowerCase();
-    return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'nil' || s === 'approved';
+    const s = status.trim().toLowerCase();
+    if (s === '-' || s === 'pending review' || s === 'pending verification' || s === 'pending' || s.startsWith('due:') || s.includes('unpaid')) return false;
+    return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'waived' || s.startsWith('exempted') || s === 'verified';
   };
 
   const pendingSubjects = (currentRequest.subjects || []).filter((s: any) => !isCleared(s.dues_status));
   const pendingLabs = (currentRequest.labs || []).filter((l: any) => l.name !== '-' && !isCleared(l.dues_status));
   const pendingCommon = (currentRequest.common_nodes || []).filter((c: any) => !isCleared(c.dues_status));
 
-  const totalPendingNodes = pendingSubjects.length + pendingLabs.length + pendingCommon.length;
-  const canHODEndorse = totalPendingNodes === 0;
+  const totalPendingAcademic = pendingSubjects.length + pendingLabs.length;
+  const totalPendingNodes = totalPendingAcademic + pendingCommon.length;
+  const canHODEndorse = totalPendingAcademic === 0;
 
   return (
     <div
@@ -247,26 +291,53 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                               </span>
                             )}
                           </td>
-                          <td className="px-3.5 py-2.5 text-right space-x-1">
-                            {sub.dues_status === 'No Dues' ? (
-                              <button
-                                type="button"
-                                onClick={() => handleMarkSubjectDue(sub.slot)}
-                                disabled={actionLoading}
-                                className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
-                              >
-                                Mark Due
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleClearSubjectDue(sub.slot)}
-                                disabled={actionLoading}
-                                className="px-2.5 py-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-300 cursor-pointer"
-                              >
-                                Clear Due
-                              </button>
-                            )}
+                          <td className="px-3.5 py-2.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isCleared(sub.dues_status) ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openMarkDueModal(sub.slot, sub.subject_name || sub.title || sub.name, sub.code, sub.dues_status)}
+                                    disabled={actionLoading}
+                                    className="px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1"
+                                    title="Mark fine or due for this subject"
+                                    id={`btn-mark-due-${sub.slot}`}
+                                  >
+                                    Mark Due
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleResetSubject(sub.slot)}
+                                    disabled={actionLoading}
+                                    className="px-2.5 py-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-colors"
+                                    title="Reset status back to Pending Review"
+                                    id={`btn-reset-subject-${sub.slot}`}
+                                  >
+                                    Reset
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleClearSubjectDue(sub.slot)}
+                                    disabled={actionLoading}
+                                    className="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-300 cursor-pointer shadow-2xs"
+                                    id={`btn-clear-due-${sub.slot}`}
+                                  >
+                                    Clear Due
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openMarkDueModal(sub.slot, sub.subject_name || sub.title || sub.name, sub.code, sub.dues_status)}
+                                    disabled={actionLoading}
+                                    className="px-2 py-1 text-[11px] text-rose-600 hover:bg-rose-50 rounded-lg font-semibold cursor-pointer"
+                                  >
+                                    Edit Due
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -324,26 +395,53 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                               </span>
                             )}
                           </td>
-                          <td className="px-3.5 py-2.5 text-right space-x-1">
-                            {lab.dues_status === 'No Dues' ? (
-                              <button
-                                type="button"
-                                onClick={() => handleMarkSubjectDue(lab.slot)}
-                                disabled={actionLoading}
-                                className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
-                              >
-                                Mark Due
-                              </button>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => handleClearSubjectDue(lab.slot)}
-                                disabled={actionLoading}
-                                className="px-2.5 py-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-300 cursor-pointer"
-                              >
-                                Clear Due
-                              </button>
-                            )}
+                          <td className="px-3.5 py-2.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isCleared(lab.dues_status) ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => openMarkDueModal(lab.slot, lab.lab_name || lab.title || lab.name, lab.code, lab.dues_status)}
+                                    disabled={actionLoading}
+                                    className="px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1"
+                                    title="Mark fine or due for this laboratory"
+                                    id={`btn-mark-due-${lab.slot}`}
+                                  >
+                                    Mark Due
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleResetSubject(lab.slot)}
+                                    disabled={actionLoading}
+                                    className="px-2.5 py-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-colors"
+                                    title="Reset status back to Pending Review"
+                                    id={`btn-reset-lab-${lab.slot}`}
+                                  >
+                                    Reset
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleClearSubjectDue(lab.slot)}
+                                    disabled={actionLoading}
+                                    className="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-300 cursor-pointer shadow-2xs"
+                                    id={`btn-clear-due-${lab.slot}`}
+                                  >
+                                    Clear Due
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => openMarkDueModal(lab.slot, lab.lab_name || lab.title || lab.name, lab.code, lab.dues_status)}
+                                    disabled={actionLoading}
+                                    className="px-2 py-1 text-[11px] text-rose-600 hover:bg-rose-50 rounded-lg font-semibold cursor-pointer"
+                                  >
+                                    Edit Due
+                                  </button>
+                                </>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       ))}
@@ -396,7 +494,7 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                               {node.faculty_name || 'Designated Officer'}
                             </td>
                             <td className="px-3.5 py-2.5">
-                              {node.dues_status === 'No Dues' ? (
+                              {isCleared(node.dues_status) ? (
                                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
                                   <Check className="w-3 h-3" /> No Dues
                                 </span>
@@ -406,26 +504,53 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                                 </span>
                               )}
                             </td>
-                            <td className="px-3.5 py-2.5 text-right space-x-1">
-                              {node.dues_status === 'No Dues' ? (
-                                <button
-                                  type="button"
-                                  onClick={() => handleMarkSubjectDue(node.slot)}
-                                  disabled={actionLoading}
-                                  className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
-                                >
-                                  Mark Due
-                                </button>
-                              ) : (
-                                <button
-                                  type="button"
-                                  onClick={() => handleClearSubjectDue(node.slot)}
-                                  disabled={actionLoading}
-                                  className="px-2.5 py-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-300 cursor-pointer"
-                                >
-                                  Clear Due
-                                </button>
-                              )}
+                            <td className="px-3.5 py-2.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                {isCleared(node.dues_status) ? (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => openMarkDueModal(node.slot, node.name || node.title, node.code, node.dues_status)}
+                                      disabled={actionLoading}
+                                      className="px-2.5 py-1 text-[11px] font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg cursor-pointer transition-colors shadow-2xs inline-flex items-center gap-1"
+                                      title="Mark fine or due for this node"
+                                      id={`btn-mark-due-${node.slot}`}
+                                    >
+                                      Mark Due
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleResetSubject(node.slot)}
+                                      disabled={actionLoading}
+                                      className="px-2.5 py-1 text-[11px] font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg cursor-pointer transition-colors"
+                                      title="Reset status back to Pending Review"
+                                      id={`btn-reset-node-${node.slot}`}
+                                    >
+                                      Reset
+                                    </button>
+                                  </>
+                                ) : (
+                                  <>
+                                    <button
+                                      type="button"
+                                      onClick={() => handleClearSubjectDue(node.slot)}
+                                      disabled={actionLoading}
+                                      className="px-2.5 py-1 text-[11px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-lg border border-emerald-300 cursor-pointer shadow-2xs"
+                                      id={`btn-clear-due-${node.slot}`}
+                                    >
+                                      Clear Due
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() => openMarkDueModal(node.slot, node.name || node.title, node.code, node.dues_status)}
+                                      disabled={actionLoading}
+                                      className="px-2 py-1 text-[11px] text-rose-600 hover:bg-rose-50 rounded-lg font-semibold cursor-pointer"
+                                    >
+                                      Edit Due
+                                    </button>
+                                  </>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))
@@ -481,20 +606,20 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                   />
                 </div>
 
-                {!currentRequest.hod_endorsed && totalPendingNodes > 0 && (
+                {!currentRequest.hod_endorsed && !canHODEndorse && (
                   <div className="mt-3.5 p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 text-xs flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>
-                      <strong>HOD Authority Endorsement:</strong> {totalPendingNodes} clearance node(s) remain unverified by individual staff. Endorsing here will approve and clear all records under Head of Department authority.
+                      <strong>Awaiting Faculty Clearances:</strong> {totalPendingAcademic} departmental subject/lab node(s) remain unverified. Each allocated faculty member must verify and clear their subject before HOD endorsement can be signed.
                     </span>
                   </div>
                 )}
 
-                {!currentRequest.hod_endorsed && totalPendingNodes === 0 && (
+                {!currentRequest.hod_endorsed && canHODEndorse && (
                   <div className="mt-3.5 p-3 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-950 text-xs flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>
-                      <strong>All Clearances Accepted:</strong> Every allocated subject and lab has been cleared by faculty. Ready for HOD digital endorsement.
+                      <strong>All Department Subjects Cleared:</strong> Every allocated subject and lab has been cleared by faculty. Ready for Head of Department (HOD) digital endorsement.
                     </span>
                   </div>
                 )}
@@ -504,16 +629,16 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                     <button
                       type="button"
                       onClick={handleSignOffHOD}
-                      disabled={actionLoading}
-                      className="px-5 py-2.5 text-xs font-bold rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 text-white bg-amber-600 hover:bg-amber-700 cursor-pointer disabled:opacity-50"
+                      disabled={actionLoading || !canHODEndorse}
+                      className="px-5 py-2.5 text-xs font-bold rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 text-white bg-amber-600 hover:bg-amber-700 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                       id="btn-hod-sign-endorsement"
                     >
                       <Check className="w-4 h-4" />
                       {actionLoading
                         ? 'Signing Endorsement...'
-                        : totalPendingNodes > 0
-                        ? 'Approve & Endorse All (HOD Authority)'
-                        : 'Digitally Endorse & Forward to Principal'}
+                        : !canHODEndorse
+                        ? `Awaiting Faculty Clearances (${totalPendingAcademic} Pending)`
+                        : 'Digitally Endorse & Forward to Admin'}
                     </button>
                   </div>
                 )}
@@ -547,6 +672,149 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Interactive Mark Due & Reset Modal Dialog (replaces blocked window.prompt) */}
+      {dueModalTarget && (
+        <div
+          className="fixed inset-0 z-70 bg-slate-950/70 backdrop-blur-xs flex items-center justify-center p-4"
+          onClick={() => setDueModalTarget(null)}
+          id="dialog-mark-due-overlay"
+        >
+          <div
+            className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 space-y-4"
+            onClick={(e) => e.stopPropagation()}
+            id="dialog-mark-due-card"
+          >
+            <div className="flex items-start justify-between">
+              <div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-700 bg-rose-50 px-2 py-0.5 rounded-full border border-rose-200">
+                  Subject / Lab Action
+                </span>
+                <h3 className="font-display font-bold text-base text-slate-900 mt-1">
+                  Mark Due or Reset Clearance
+                </h3>
+                <p className="text-xs text-slate-500">
+                  Student: <strong className="text-slate-800">{currentRequest.student_name}</strong> ({currentRequest.student_reg_no})
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDueModalTarget(null)}
+                className="text-slate-400 hover:text-slate-700 p-1 rounded-lg hover:bg-slate-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Target Node Details */}
+            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1 text-xs">
+              <div className="font-bold text-slate-900 flex items-center justify-between">
+                <span>{dueModalTarget.slot}: {dueModalTarget.name}</span>
+                {dueModalTarget.code && (
+                  <span className="font-mono text-[11px] font-semibold text-slate-600 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    {dueModalTarget.code}
+                  </span>
+                )}
+              </div>
+              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 pt-0.5">
+                <span>Current status:</span>
+                <span className="font-semibold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[10px]">
+                  {dueModalTarget.currentStatus}
+                </span>
+              </div>
+            </div>
+
+            {/* Due Amount input */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Outstanding Due / Penalty Amount (₹)
+              </label>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-sm">₹</span>
+                <input
+                  type="number"
+                  min="0"
+                  step="10"
+                  value={dueAmount}
+                  onChange={(e) => setDueAmount(Math.max(0, Number(e.target.value)))}
+                  placeholder="250"
+                  className="w-full pl-8 pr-3 py-2 text-sm font-semibold border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                  id="input-due-amount"
+                />
+              </div>
+
+              {/* Quick Preset Buttons */}
+              <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                <span className="text-[10px] text-slate-400 font-medium">Presets:</span>
+                {[0, 100, 200, 250, 500, 1000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setDueAmount(amt)}
+                    className={`px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
+                      dueAmount === amt
+                        ? 'bg-rose-600 text-white border-rose-600 shadow-2xs'
+                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200'
+                    }`}
+                  >
+                    ₹{amt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Reason / Remarks */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                Reason / Breakdown Remarks
+              </label>
+              <input
+                type="text"
+                value={dueReason}
+                onChange={(e) => setDueReason(e.target.value)}
+                placeholder="e.g. Broken lab glassware, overdue library book, assignment pending"
+                className="w-full px-3 py-2 text-xs border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-rose-500/20 focus:border-rose-500"
+                id="input-due-reason"
+              />
+            </div>
+
+            {/* Dialog Footer Actions */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => handleResetSubject(dueModalTarget.slot)}
+                disabled={actionLoading}
+                className="px-3 py-2 text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
+                title="Reset status back to Pending Review without applying a fine"
+                id="btn-dialog-reset-pending"
+              >
+                <Clock className="w-3.5 h-3.5 text-slate-500" />
+                Reset to Pending (₹0)
+              </button>
+
+              <div className="flex items-center gap-2 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setDueModalTarget(null)}
+                  className="px-3 py-2 text-xs font-bold text-slate-500 hover:text-slate-800 rounded-xl cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  onClick={handleConfirmMarkDue}
+                  disabled={actionLoading}
+                  className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition-colors shadow-2xs inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                  id="btn-dialog-confirm-due"
+                >
+                  <AlertTriangle className="w-3.5 h-3.5" />
+                  {actionLoading ? 'Updating...' : dueAmount > 0 ? `Confirm Due (₹${dueAmount})` : 'Mark Pending Due'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   FileCheck2,
   Award,
@@ -19,7 +20,9 @@ import api from '../../services/api';
 import { NoDueRequest } from '../../types';
 
 export const AdminRequestsPage: React.FC = () => {
+  const navigate = useNavigate();
   const [requests, setRequests] = useState<NoDueRequest[]>([]);
+  const [certificates, setCertificates] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [search, setSearch] = useState('');
@@ -31,7 +34,7 @@ export const AdminRequestsPage: React.FC = () => {
   // Modals replacing browser window.prompt and window.confirm
   const [issuingCertReq, setIssuingCertReq] = useState<NoDueRequest | null>(null);
   const [approvingReq, setApprovingReq] = useState<NoDueRequest | null>(null);
-  const [approveRemarks, setApproveRemarks] = useState('Approved by Institutional Administration');
+  const [approveRemarks, setApproveRemarks] = useState('Approved by Institutional Administration / Principal');
   const [rejectingReq, setRejectingReq] = useState<NoDueRequest | null>(null);
   const [rejectRemarks, setRejectRemarks] = useState('Requirement unfulfilled or pending administrative verification');
   const [deletingReq, setDeletingReq] = useState<NoDueRequest | null>(null);
@@ -39,11 +42,17 @@ export const AdminRequestsPage: React.FC = () => {
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/no-due-requests');
-      const data = Array.isArray(res.data)
-        ? res.data
-        : (Array.isArray(res.data?.requests) ? res.data.requests : []);
+      const [resReqs, resCerts] = await Promise.all([
+        api.get('/no-due-requests'),
+        api.get('/certificates').catch(() => ({ data: [] }))
+      ]);
+      const data = Array.isArray(resReqs.data)
+        ? resReqs.data
+        : (Array.isArray(resReqs.data?.requests) ? resReqs.data.requests : []);
       setRequests(data);
+      if (Array.isArray(resCerts.data)) {
+        setCertificates(resCerts.data);
+      }
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to load clearance requests');
       setRequests([]);
@@ -66,6 +75,27 @@ export const AdminRequestsPage: React.FC = () => {
       await fetchRequests();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to issue certificate');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const confirmApproveAndIssueCertificate = async () => {
+    if (!issuingCertReq) return;
+    try {
+      setActionLoading(issuingCertReq.id);
+      if (issuingCertReq.status !== 'approved') {
+        await api.patch(`/no-due-requests/${issuingCertReq.id}`, {
+          status: 'approved',
+          remarks: 'Approved by Institutional Administration / Principal'
+        });
+      }
+      await api.post(`/certificates/issue/${issuingCertReq.id}`);
+      setSuccessMsg(`Application approved and Certificate successfully issued for ${issuingCertReq.student_name}!`);
+      setIssuingCertReq(null);
+      await fetchRequests();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Failed to approve and issue certificate');
     } finally {
       setActionLoading(null);
     }
@@ -126,11 +156,13 @@ export const AdminRequestsPage: React.FC = () => {
 
   const filteredRequests = safeRequests.filter((r) => {
     const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
+    const searchLower = String(search || '').toLowerCase().trim();
     const matchesSearch =
-      search === '' ||
-      r.student_name?.toLowerCase().includes(search.toLowerCase()) ||
-      r.student_reg_no?.toLowerCase().includes(search.toLowerCase()) ||
-      r.course_name?.toLowerCase().includes(search.toLowerCase());
+      searchLower === '' ||
+      Boolean(r.student_name?.toLowerCase().includes(searchLower)) ||
+      Boolean(r.student_reg_no?.toLowerCase().includes(searchLower)) ||
+      Boolean(r.course_name?.toLowerCase().includes(searchLower)) ||
+      Boolean(r.department_name?.toLowerCase().includes(searchLower));
     return matchesStatus && matchesSearch;
   });
 
@@ -218,13 +250,21 @@ export const AdminRequestsPage: React.FC = () => {
             const isExpanded = expandedId === req.id;
             const isCleared = (status?: string) => {
               if (!status) return false;
-              const s = status.toLowerCase();
-              return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'nil' || s === 'approved';
+              const s = status.trim().toLowerCase();
+              if (s === '-' || s === 'pending review' || s === 'pending verification' || s === 'pending' || s.startsWith('due:') || s.includes('unpaid')) return false;
+              return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'waived' || s.startsWith('exempted') || s === 'verified';
             };
-            const allItems = [...(req.subjects || []), ...(req.labs || []), ...(req.common_nodes || [])].filter((i: any) => i.name && i.name !== '-');
+            const subjects = req.subjects || [];
+            const labs = (req.labs || []).filter((l: any) => l.name && l.name !== '-');
+            const commonNodes = req.common_nodes || [];
+            const allItems = [...subjects, ...labs, ...commonNodes].filter((i: any) => i.name && i.name !== '-');
             const totalItems = allItems.length;
             const clearedItems = allItems.filter((i: any) => isCleared(i.dues_status)).length;
+            const pendingItems = allItems.filter((i: any) => !isCleared(i.dues_status));
             const isHODEndorsed = !!req.signatories?.hod?.signed || !!req.hod_approved_at;
+            const existingCert = certificates.find((c: any) => c.request_id === req.id);
+            const isCertIssued = !!existingCert || req.status === 'completed';
+            const isApproved = req.status === 'approved';
 
             return (
               <div
@@ -300,31 +340,52 @@ export const AdminRequestsPage: React.FC = () => {
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
 
-                    {req.status !== 'completed' && req.status !== 'rejected' && req.status !== 'approved' && (
+                    {/* Approve Button */}
+                    {isApproved ? (
+                      <span className="px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 rounded-lg inline-flex items-center gap-1 shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Approved
+                      </span>
+                    ) : req.status === 'completed' ? (
+                      <span className="px-3 py-1.5 text-xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-300 rounded-lg inline-flex items-center gap-1 shadow-2xs">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Completed
+                      </span>
+                    ) : req.status !== 'rejected' ? (
                       <button
                         onClick={() => {
                           setApprovingReq(req);
                           setApproveRemarks('Approved by Institutional Administration / Principal');
                         }}
-                        disabled={actionLoading === req.id || !isHODEndorsed}
-                        title={!isHODEndorsed ? 'Awaiting HOD endorsement first' : 'Admin must approve request before certificate can be issued'}
-                        className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
-                          !isHODEndorsed
-                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                            : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 cursor-pointer'
-                        }`}
+                        disabled={actionLoading === req.id}
+                        title="Admin review and approve clearance application"
+                        className="px-3.5 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        id={`btn-admin-approve-${req.id}`}
                       >
-                        {!isHODEndorsed ? 'Awaiting HOD' : 'Admin Approve'}
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Approve
                       </button>
-                    )}
+                    ) : null}
 
-                    {req.status === 'approved' && (
+                    {/* Issue Certificate Button */}
+                    {isCertIssued ? (
+                      <button
+                        onClick={() => navigate('/admin/certificates')}
+                        title="Official certificate has been issued and registered. Click to view."
+                        className="px-3.5 py-1.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
+                        id={`btn-admin-cert-issued-${req.id}`}
+                      >
+                        <Award className="w-3.5 h-3.5 text-indigo-600" />
+                        Certificate Issued ✓
+                      </button>
+                    ) : (
                       <button
                         onClick={() => setIssuingCertReq(req)}
                         disabled={actionLoading === req.id}
-                        className="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
+                        title={isApproved ? 'Issue Official No Due Certificate' : 'Approve & Issue Certificate'}
+                        className="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                        id={`btn-admin-issue-cert-${req.id}`}
                       >
-                        <Award className="w-3.5 h-3.5" /> Issue Certificate
+                        <Award className="w-3.5 h-3.5" />
+                        Issue Certificate
                       </button>
                     )}
 
@@ -335,7 +396,7 @@ export const AdminRequestsPage: React.FC = () => {
                           setRejectRemarks('Requirement unfulfilled or pending administrative verification');
                         }}
                         disabled={actionLoading === req.id}
-                        className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                        className="px-3 py-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
                       >
                         Reject
                       </button>
@@ -344,7 +405,7 @@ export const AdminRequestsPage: React.FC = () => {
                     <button
                       onClick={() => setDeletingReq(req)}
                       disabled={actionLoading === req.id}
-                      className="p-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors inline-flex items-center"
+                      className="p-1.5 text-xs font-bold text-rose-600 hover:bg-rose-50 border border-rose-200 rounded-lg transition-colors inline-flex items-center cursor-pointer"
                       title="Delete Application"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -460,8 +521,18 @@ export const AdminRequestsPage: React.FC = () => {
 
             <p className="text-xs text-slate-600 mb-4">
               Granting administrative clearance for student{' '}
-              <span className="font-bold text-slate-900">{approvingReq.student_name}</span> ({approvingReq.register_number}).
+              <span className="font-bold text-slate-900">{approvingReq.student_name}</span> ({approvingReq.student_reg_no || approvingReq.register_number}).
             </p>
+
+            <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs mb-4">
+              <p className="font-semibold flex items-center gap-1.5 text-emerald-800">
+                <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                Principal / Institutional Authority
+              </p>
+              <p className="text-[11px] mt-1 text-emerald-700 leading-relaxed">
+                Confirming administrative approval formally certifies clearance for this application. Once approved, you can immediately issue the verified No Due Certificate.
+              </p>
+            </div>
 
             <div className="mb-5">
               <label className="block text-xs font-bold text-slate-700 mb-1.5">
@@ -478,15 +549,16 @@ export const AdminRequestsPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setApprovingReq(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmAdminApprove}
                 disabled={actionLoading === approvingReq.id}
-                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl disabled:opacity-50"
+                className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
               >
+                <CheckCircle2 className="w-3.5 h-3.5" />
                 {actionLoading === approvingReq.id ? 'Approving...' : 'Confirm Approval'}
               </button>
             </div>
@@ -515,7 +587,7 @@ export const AdminRequestsPage: React.FC = () => {
 
             <p className="text-xs text-slate-600 mb-4">
               Reject clearance for student{' '}
-              <span className="font-bold text-slate-900">{rejectingReq.student_name}</span> ({rejectingReq.register_number}).
+              <span className="font-bold text-slate-900">{rejectingReq.student_name}</span> ({rejectingReq.student_reg_no || rejectingReq.register_number}).
             </p>
 
             <div className="mb-5">
@@ -534,14 +606,14 @@ export const AdminRequestsPage: React.FC = () => {
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setRejectingReq(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 onClick={confirmAdminReject}
                 disabled={actionLoading === rejectingReq.id || !rejectRemarks.trim()}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50"
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl disabled:opacity-50 cursor-pointer"
               >
                 {actionLoading === rejectingReq.id ? 'Rejecting...' : 'Confirm Rejection'}
               </button>
@@ -569,25 +641,57 @@ export const AdminRequestsPage: React.FC = () => {
               </button>
             </div>
 
-            <p className="text-xs text-slate-600 mb-6 leading-relaxed">
-              This will generate an official, cryptographically verifiable institutional certificate for student{' '}
-              <span className="font-bold text-slate-900">{issuingCertReq.student_name}</span> ({issuingCertReq.register_number}). The student will immediately be able to view and download their verified certificate.
-            </p>
+            {issuingCertReq.status !== 'approved' ? (
+              <div className="space-y-3 mb-6">
+                <div className="p-3.5 bg-indigo-50 border border-indigo-200 rounded-xl text-indigo-900 text-xs">
+                  <div className="font-bold flex items-center gap-1.5 text-indigo-800">
+                    <ShieldCheck className="w-4 h-4 text-indigo-600 shrink-0" />
+                    Admin Approval & Certificate Issuance
+                  </div>
+                  <p className="text-[11px] mt-1.5 text-indigo-700 leading-relaxed">
+                    Clearance application for <span className="font-bold">{issuingCertReq.student_name}</span> ({issuingCertReq.student_reg_no || issuingCertReq.register_number}) is currently in <span className="font-bold uppercase">{issuingCertReq.status.replace('_', ' ')}</span> status.
+                  </p>
+                  <p className="text-[11px] mt-1 text-indigo-700 leading-relaxed">
+                    Administrative approval will be recorded under Principal authority and the official certificate will be generated and signed immediately.
+                  </p>
+                </div>
+                <p className="text-xs text-slate-600">
+                  Click <strong>Approve & Issue Certificate</strong> to grant institutional clearance approval and instantly generate the official digitally verifiable certificate.
+                </p>
+              </div>
+            ) : (
+              <p className="text-xs text-slate-600 mb-6 leading-relaxed">
+                Clearance application is approved. This will generate an official, cryptographically verifiable institutional certificate for student{' '}
+                <span className="font-bold text-slate-900">{issuingCertReq.student_name}</span> ({issuingCertReq.student_reg_no || issuingCertReq.register_number}). The student will immediately be able to view and download their verified certificate.
+              </p>
+            )}
 
             <div className="flex items-center justify-end gap-2">
               <button
                 onClick={() => setIssuingCertReq(null)}
-                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl"
+                className="px-4 py-2 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl cursor-pointer"
               >
                 Cancel
               </button>
-              <button
-                onClick={confirmIssueCertificate}
-                disabled={actionLoading === issuingCertReq.id}
-                className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl disabled:opacity-50"
-              >
-                {actionLoading === issuingCertReq.id ? 'Issuing...' : 'Issue Certificate'}
-              </button>
+              {issuingCertReq.status !== 'approved' ? (
+                <button
+                  onClick={confirmApproveAndIssueCertificate}
+                  disabled={actionLoading === issuingCertReq.id}
+                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  {actionLoading === issuingCertReq.id ? 'Processing...' : 'Approve & Issue Certificate'}
+                </button>
+              ) : (
+                <button
+                  onClick={confirmIssueCertificate}
+                  disabled={actionLoading === issuingCertReq.id}
+                  className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl disabled:opacity-50 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <Award className="w-3.5 h-3.5" />
+                  {actionLoading === issuingCertReq.id ? 'Issuing...' : 'Issue Certificate'}
+                </button>
+              )}
             </div>
           </div>
         </div>
