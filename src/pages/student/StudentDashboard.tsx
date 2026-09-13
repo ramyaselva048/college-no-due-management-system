@@ -181,26 +181,40 @@ export const StudentDashboard: React.FC = () => {
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <Clock className="w-5 h-5 text-indigo-600" />
-              <h3 className="font-display font-bold text-slate-900 text-base">
-                Active Clearance Application (Request #{activeRequest.id})
-              </h3>
+              <div>
+                <h3 className="font-display font-bold text-slate-900 text-base">
+                  Active Clearance Application (#{activeRequest.id})
+                </h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Academic theory & lab nodes allocated by HOD + Common institutional clearance nodes
+                </p>
+              </div>
             </div>
             <span
               className={`text-xs font-bold px-2.5 py-1 rounded-full uppercase ${
                 activeRequest.status === 'completed' || activeRequest.status === 'approved'
-                  ? 'bg-emerald-50 text-emerald-700'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                   : activeRequest.status === 'rejected'
-                  ? 'bg-rose-50 text-rose-700'
-                  : 'bg-amber-50 text-amber-700'
+                  ? 'bg-rose-50 text-rose-700 border border-rose-200'
+                  : 'bg-amber-50 text-amber-700 border border-amber-200'
               }`}
             >
               {activeRequest.status.replace('_', ' ')}
             </span>
           </div>
 
-          <p className="text-xs text-slate-600 mb-4">
-            Submitted on {new Date(activeRequest.submitted_at).toLocaleDateString()} • Multi-department review checkpoints:
-          </p>
+          <div className="bg-slate-50 p-4 rounded-xl border border-slate-200 mb-4 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-xs text-slate-700">
+              <span className="font-bold text-slate-900">Your Clearance Scope: </span>
+              Clear your HOD-allocated academic subjects & labs along with universal common nodes (Library, Accounts, Transport, Hostel, Sports, CoE) to receive your official No Due certificate.
+            </div>
+            <Link
+              to="/student/request"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shrink-0 transition-colors shadow-2xs"
+            >
+              View My Clearance Nodes &rarr;
+            </Link>
+          </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {activeRequest.approvals?.map((app: any) => (

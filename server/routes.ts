@@ -592,7 +592,7 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
   const clearancePct = totalDepts > 0 ? Math.round((clearedDeptsCount / totalDepts) * 100) : 100;
   const canRequestNoDue = pendingAmount === 0 && (!activeReq || activeReq.status === 'rejected');
 
-  const cert = db.certificates.slice().reverse().find(c => c.student_id === student.id && c.is_valid);
+  let cert = db.certificates.slice().reverse().find(c => c.student_id === student.id && c.is_valid);
   const dept = db.departments.find(d => d.id === student.department_id);
   const course = db.courses.find(c => c.id === student.course_id);
 
@@ -613,6 +613,26 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
         created_at: a.created_at
       };
     });
+
+    const targetSem = activeReq.semester || student.semester || (student.year === 4 ? 7 : student.year * 2 - 1);
+    const reqSubs = activeReq.subjects && activeReq.subjects.length > 0 ? activeReq.subjects : defaultSubjectsForStudent(student, targetSem);
+    const reqLabs = activeReq.labs && activeReq.labs.length > 0 ? activeReq.labs : defaultLabsForStudent(student, targetSem);
+    const reqCommon = activeReq.common_nodes && activeReq.common_nodes.length > 0 ? activeReq.common_nodes : defaultCommonNodesForStudent(student);
+
+    const isCleared = (status?: string) => {
+      if (!status) return true;
+      const s = status.trim().toLowerCase();
+      return s === '-' || s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'waived' || s === 'exempted' || s === 'verified';
+    };
+
+    const pendingSubs = reqSubs.filter(s => !isCleared(s.dues_status));
+    const pendingLabsList = reqLabs.filter(l => !isCleared(l.dues_status));
+    const pendingCommonList = reqCommon.filter(c => !isCleared(c.dues_status));
+    const allClearanceNodesCleared = pendingSubs.length === 0 && pendingLabsList.length === 0 && pendingCommonList.length === 0;
+
+    const totalNodesCount = reqSubs.length + reqLabs.length + reqCommon.length;
+    const clearedNodesCount = (reqSubs.length - pendingSubs.length) + (reqLabs.length - pendingLabsList.length) + (reqCommon.length - pendingCommonList.length);
+
     activeReqOut = {
       id: activeReq.id,
       student_id: activeReq.student_id,
@@ -626,7 +646,22 @@ apiRouter.get('/student/summary', authMiddleware, requireRole(['STUDENT']), (req
       reviewed_by: activeReq.reviewed_by,
       remarks: activeReq.remarks,
       approvals,
-      created_at: activeReq.created_at
+      created_at: activeReq.created_at,
+      exam_type: activeReq.exam_type || 'CIAT - I',
+      academic_year: activeReq.academic_year || '2025-26',
+      year: activeReq.year || student.year || 4,
+      semester: targetSem,
+      student_type: activeReq.student_type || student.student_type || 'day_scholar',
+      attendance_percentage: activeReq.attendance_percentage ?? student.attendance_percentage ?? 98,
+      subjects: reqSubs,
+      labs: reqLabs,
+      common_nodes: reqCommon,
+      signatories: activeReq.signatories || defaultSignatoriesForStudent(activeReq),
+      all_clearance_nodes_cleared: allClearanceNodesCleared,
+      total_nodes_count: totalNodesCount,
+      cleared_nodes_count: clearedNodesCount,
+      pending_nodes_count: totalNodesCount - clearedNodesCount,
+      clearance_percentage: totalNodesCount > 0 ? Math.round((clearedNodesCount / totalNodesCount) * 100) : 100
     };
   }
 
@@ -1269,6 +1304,177 @@ function defaultSignatoriesForStudent(reqObj?: any) {
   };
 }
 
+export function defaultCommonNodesForStudent(student?: any): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string; requirement_description?: string; category_key?: string }> {
+  const dateStr = new Date().toLocaleDateString('en-GB');
+  const studentType = (student?.student_type || 'dayscholar').toLowerCase();
+  const isHostel = studentType.includes('hostel');
+
+  const commonFromDb = db.subjectCourses.filter(c => c.course_type === 'common' && c.is_active !== false);
+
+  if (commonFromDb.length > 0) {
+    return commonFromDb
+      .filter(c => {
+        if (c.applies_to === 'hostel' && !isHostel) return false;
+        if (c.applies_to === 'day_scholar' && isHostel) return false;
+        return true;
+      })
+      .map((c, idx) => ({
+        slot: c.slot || `COM-${idx + 1}`,
+        name: c.title,
+        code: c.code,
+        dues_status: 'No Dues',
+        faculty_name: c.faculty_name || 'Officer In-Charge',
+        signature_date: dateStr,
+        requirement_description: c.requirement_description || 'All institutional dues cleared',
+        category_key: c.category_key || c.code.toLowerCase()
+      }));
+  }
+
+  return [
+    { slot: 'COM-LIB', name: 'Central Library & Book Bank', code: 'LIB-101', dues_status: 'No Dues', faculty_name: 'D. Vinoth (Chief Librarian)', signature_date: dateStr, requirement_description: 'Return all library books & clear overdue fines', category_key: 'library' },
+    { slot: 'COM-ACC', name: 'Accounts & College Finance Office', code: 'ACC-101', dues_status: 'No Dues', faculty_name: 'S. Accounts (Finance Officer)', signature_date: dateStr, requirement_description: 'Tuition & examination fees clearance', category_key: 'accounts' },
+    { slot: 'COM-TRN', name: 'College Bus & Transport Section', code: 'TRN-101', dues_status: 'No Dues', faculty_name: 'K. Murugesan (Transport In-Charge)', signature_date: dateStr, requirement_description: 'Bus pass surrender or transport route fee clearance', category_key: 'transport' },
+    { slot: 'COM-HST', name: 'Campus Hostel & Mess Section', code: 'HST-101', dues_status: isHostel ? 'No Dues' : '-', faculty_name: 'Dr. R. Warden', signature_date: dateStr, requirement_description: 'Hostel room inventory & mess fee clearance', category_key: 'hostel' },
+    { slot: 'COM-PED', name: 'Physical Education & Sports Department', code: 'PED-101', dues_status: 'No Dues', faculty_name: 'P. Ravichandran', signature_date: dateStr, requirement_description: 'Sports equipment & kit clearance', category_key: 'sports' },
+    { slot: 'COM-COE', name: 'Office of Controller of Examinations (CoE)', code: 'COE-101', dues_status: 'No Dues', faculty_name: 'Dr. H. Sasipal CoE', signature_date: dateStr, requirement_description: 'Exam registration confirmation', category_key: 'exam_cell' }
+  ];
+}
+
+export function isNodeClearedStatus(status?: string): boolean {
+  if (!status) return false;
+  const s = status.trim().toLowerCase();
+  return s === '-' || s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'waived' || s === 'exempted' || s === 'verified';
+}
+
+export function checkAndIssueCertificateIfCleared(reqId: number): CertificateRecord | null {
+  // STRICT INSTITUTIONAL PROTOCOL:
+  // Automated certificate issuance is completely disabled.
+  // Certificates can ONLY be reviewed and issued manually by the Principal (Admin)
+  // after staff clearances and HOD digital sign-off.
+  return db.certificates.find(c => c.request_id === reqId && c.is_valid) || null;
+}
+
+// Dedicated Student Clearance Nodes View Endpoint (Only academic nodes allocated by HOD + common institutional nodes)
+apiRouter.get('/student/clearance-nodes', authMiddleware, requireRole(['STUDENT']), (req: AuthRequest, res: Response) => {
+  const student = req.studentProfile!;
+  const activeReq = db.noDueRequests.slice().reverse().find(r => r.student_id === student.id && r.status !== 'rejected') || db.noDueRequests.slice().reverse().find(r => r.student_id === student.id);
+  const targetSem = activeReq?.semester || student.semester || (student.year === 4 ? 7 : student.year * 2 - 1);
+  const targetYear = activeReq?.year || student.year || 4;
+
+  const academicTheory = activeReq?.subjects && activeReq.subjects.length > 0 ? activeReq.subjects : defaultSubjectsForStudent(student, targetSem);
+  const academicLabs = activeReq?.labs && activeReq.labs.length > 0 ? activeReq.labs : defaultLabsForStudent(student, targetSem);
+  const commonNodes = activeReq?.common_nodes && activeReq.common_nodes.length > 0 ? activeReq.common_nodes : defaultCommonNodesForStudent(student);
+
+  const pendingTheory = academicTheory.filter(s => !isNodeClearedStatus(s.dues_status));
+  const pendingLabs = academicLabs.filter(l => !isNodeClearedStatus(l.dues_status));
+  const pendingCommon = commonNodes.filter(c => !isNodeClearedStatus(c.dues_status));
+
+  const totalNodesCount = academicTheory.length + academicLabs.length + commonNodes.length;
+  const pendingCount = pendingTheory.length + pendingLabs.length + pendingCommon.length;
+  const clearedCount = totalNodesCount - pendingCount;
+  const allCleared = pendingCount === 0;
+
+  let cert = db.certificates.slice().reverse().find(c => c.student_id === student.id && c.is_valid);
+
+  const dept = db.departments.find(d => d.id === student.department_id);
+  const course = db.courses.find(c => c.id === student.course_id);
+
+  res.json({
+    student: {
+      id: student.id,
+      full_name: student.full_name,
+      register_number: student.register_number,
+      department_name: dept?.name || '',
+      department_code: dept?.code || '',
+      course_name: course?.name || '',
+      year: targetYear,
+      semester: targetSem,
+      section: student.section,
+      student_type: activeReq?.student_type || student.student_type || 'day_scholar'
+    },
+    active_request: activeReq ? {
+      id: activeReq.id,
+      status: activeReq.status,
+      exam_type: activeReq.exam_type || 'CIAT - I',
+      academic_year: activeReq.academic_year || '2025-26',
+      submitted_at: activeReq.submitted_at,
+      attendance_percentage: activeReq.attendance_percentage ?? student.attendance_percentage ?? 98,
+      hod_endorsed: Boolean(activeReq.signatories?.hod?.signed),
+      hod_name: activeReq.signatories?.hod?.name || null,
+      principal_issued: Boolean(activeReq.signatories?.principal?.signed)
+    } : null,
+    academic_nodes: {
+      theory: academicTheory,
+      labs: academicLabs
+    },
+    common_nodes: commonNodes,
+    stats: {
+      total_nodes: totalNodesCount,
+      cleared_nodes: clearedCount,
+      pending_nodes: pendingCount,
+      percentage: totalNodesCount > 0 ? Math.round((clearedCount / totalNodesCount) * 100) : 100,
+      all_cleared: allCleared,
+      hod_endorsed: Boolean(activeReq?.signatories?.hod?.signed),
+      principal_issued: Boolean(activeReq?.signatories?.principal?.signed)
+    },
+    certificate: cert ? {
+      id: cert.id,
+      certificate_number: cert.certificate_number,
+      verification_code: cert.verification_code,
+      issued_at: cert.issued_at,
+      is_valid: cert.is_valid
+    } : null
+  });
+});
+
+// Student Check Certificate status endpoint (manual Principal issuance protocol)
+apiRouter.post('/certificates/my/claim', authMiddleware, requireRole(['STUDENT']), (req: AuthRequest, res: Response) => {
+  const student = req.studentProfile!;
+  const activeReq = db.noDueRequests.slice().reverse().find(r => r.student_id === student.id);
+  if (!activeReq) {
+    return res.status(400).json({ detail: 'No clearance application found. Please initiate a clearance request first.' });
+  }
+
+  const existingCert = db.certificates.find(c => c.request_id === activeReq.id && c.is_valid);
+  if (existingCert) {
+    return res.json({
+      success: true,
+      message: 'Certificate has already been officially issued by the Principal.',
+      certificate: existingCert
+    });
+  }
+
+  const targetSem = activeReq.semester || student.semester || (student.year === 4 ? 7 : student.year * 2 - 1);
+  const subjects = activeReq.subjects && activeReq.subjects.length > 0 ? activeReq.subjects : defaultSubjectsForStudent(student, targetSem);
+  const labs = activeReq.labs && activeReq.labs.length > 0 ? activeReq.labs : defaultLabsForStudent(student, targetSem);
+  const common = activeReq.common_nodes && activeReq.common_nodes.length > 0 ? activeReq.common_nodes : defaultCommonNodesForStudent(student);
+
+  const pending = [
+    ...subjects.filter(s => !isNodeClearedStatus(s.dues_status)).map(s => `${s.slot}: ${s.name} (${s.dues_status})`),
+    ...labs.filter(l => !isNodeClearedStatus(l.dues_status)).map(l => `${l.slot}: ${l.name} (${l.dues_status})`),
+    ...common.filter(c => !isNodeClearedStatus(c.dues_status)).map(c => `${c.name} (${c.dues_status})`)
+  ];
+
+  if (pending.length > 0) {
+    return res.status(400).json({
+      detail: `Cannot generate certificate. You still have ${pending.length} uncleared clearance node(s). Please clear these first with the respective allocated staff: ${pending.slice(0, 3).join(', ')}${pending.length > 3 ? '...' : ''}`,
+      pending_nodes: pending
+    });
+  }
+
+  if (!activeReq.signatories?.hod?.signed) {
+    return res.status(400).json({
+      detail: 'All academic subjects & common nodes are cleared! Your application is currently awaiting formal HOD acceptance and digital endorsement.',
+      status: 'pending_hod'
+    });
+  }
+
+  return res.status(400).json({
+    detail: 'Application has been accepted by HOD and forwarded to the Principal (College Administrator) for manual certificate issuance. Automatic issuance is disabled per college policy.',
+    status: 'pending_principal'
+  });
+});
+
 // ----------------------------------------------------
 // No Due Requests (/api/no-due-requests)
 // ----------------------------------------------------
@@ -1313,6 +1519,7 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
     undertaking_status: undertakingStatus,
     subjects: req.body.subjects && req.body.subjects.length > 0 ? req.body.subjects : defaultSubjectsForStudent(student, targetSemester),
     labs: req.body.labs && req.body.labs.length > 0 ? req.body.labs : defaultLabsForStudent(student, targetSemester),
+    common_nodes: req.body.common_nodes && req.body.common_nodes.length > 0 ? req.body.common_nodes : defaultCommonNodesForStudent(student),
     signatories: req.body.signatories || defaultSignatoriesForStudent()
   };
   db.noDueRequests.push(newReq);
@@ -1371,6 +1578,7 @@ apiRouter.post('/no-due-requests', authMiddleware, requireRole(['STUDENT']), (re
     undertaking_status: newReq.undertaking_status,
     subjects: newReq.subjects,
     labs: newReq.labs,
+    common_nodes: newReq.common_nodes,
     signatories: newReq.signatories
   });
 });
@@ -1421,6 +1629,7 @@ apiRouter.get('/no-due-requests/my', authMiddleware, requireRole(['STUDENT']), (
       undertaking_status: r.undertaking_status || ((Number(r.attendance_percentage ?? student.attendance_percentage ?? 98) >= 80) ? 'Exempted' : 'Submitted'),
       subjects: r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(student),
       labs: r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(student),
+      common_nodes: r.common_nodes && r.common_nodes.length > 0 ? r.common_nodes : defaultCommonNodesForStudent(student),
       signatories: r.signatories || defaultSignatoriesForStudent(r)
     };
   });
@@ -1497,8 +1706,9 @@ apiRouter.get(['/no-due-requests', '/no-due-requests/all'], authMiddleware, requ
       attendance_percentage: r.attendance_percentage ?? (st ? st.attendance_percentage : 98),
       attendance_month: r.attendance_month || 'August',
       undertaking_status: r.undertaking_status || ((Number(r.attendance_percentage ?? st?.attendance_percentage ?? 98) >= 80) ? 'Exempted' : 'Submitted'),
-      subjects: r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(st),
-      labs: r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(st),
+      subjects: r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(st, r.semester),
+      labs: r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(st, r.semester),
+      common_nodes: r.common_nodes && r.common_nodes.length > 0 ? r.common_nodes : defaultCommonNodesForStudent(st),
       signatories: r.signatories || defaultSignatoriesForStudent(r)
     };
   });
@@ -1731,6 +1941,24 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
     return res.status(400).json({ detail: `Cannot issue certificate. Clearances pending from: ${unapproved.join(', ')}` });
   }
 
+  const st = db.students.find(s => s.id === r.student_id);
+  const targetSem = r.semester || st?.semester || (st?.year === 4 ? 7 : st?.year ? st.year * 2 - 1 : 7);
+  const subjects = r.subjects && r.subjects.length > 0 ? r.subjects : defaultSubjectsForStudent(st, targetSem);
+  const labs = r.labs && r.labs.length > 0 ? r.labs : defaultLabsForStudent(st, targetSem);
+  const common = r.common_nodes && r.common_nodes.length > 0 ? r.common_nodes : defaultCommonNodesForStudent(st);
+
+  const pendingNodes = [
+    ...subjects.filter(s => !isNodeClearedStatus(s.dues_status)).map(s => `${s.slot}: ${s.name}`),
+    ...labs.filter(l => !isNodeClearedStatus(l.dues_status)).map(l => `${l.slot}: ${l.name}`),
+    ...common.filter(c => !isNodeClearedStatus(c.dues_status)).map(c => `${c.name}`)
+  ];
+
+  if (pendingNodes.length > 0) {
+    return res.status(400).json({
+      detail: `Cannot issue certificate. Pending clearance nodes: ${pendingNodes.slice(0, 3).join(', ')}${pendingNodes.length > 3 ? ` and ${pendingNodes.length - 3} more` : ''}`
+    });
+  }
+
   const existing = db.certificates.find(c => c.request_id === reqId);
   if (existing) {
     return res.status(400).json({ detail: 'Certificate has already been issued for this request' });
@@ -1761,7 +1989,6 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
   r.reviewed_at = now;
   r.reviewed_by = req.user!.id;
 
-  const st = db.students.find(s => s.id === r.student_id);
   const dept = st ? db.departments.find(d => d.id === st.department_id) : null;
   const course = st ? db.courses.find(c => c.id === st.course_id) : null;
 
@@ -1803,7 +2030,8 @@ apiRouter.post(['/certificates/request/:request_id/issue', '/certificates/issue/
 
 apiRouter.get('/certificates/my', authMiddleware, requireRole(['STUDENT']), (req: AuthRequest, res: Response) => {
   const student = req.studentProfile!;
-  const certs = db.certificates.filter(c => c.student_id === student.id).slice().reverse();
+  const certs = db.certificates.filter(c => c.student_id === student.id && c.is_valid).slice().reverse();
+
   const dept = db.departments.find(d => d.id === student.department_id);
   const course = db.courses.find(c => c.id === student.course_id);
 
@@ -3979,19 +4207,29 @@ apiRouter.get('/hod/clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMIN
   const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
   const deptId = staff?.department_id || 1;
   
-  let nodes = db.subjectCourses.filter(c => c.department_id === deptId);
+  const courseType = req.query.course_type as string | undefined;
+
+  let nodes = db.subjectCourses.filter(c => {
+    if (courseType === 'common' || c.course_type === 'common') {
+      return c.course_type === 'common';
+    }
+    return c.department_id === deptId;
+  });
   
-  if (req.query.year) {
+  if (req.query.year && courseType !== 'common') {
     nodes = nodes.filter(c => c.year === Number(req.query.year));
   }
-  if (req.query.semester) {
+  if (req.query.semester && courseType !== 'common') {
     nodes = nodes.filter(c => c.semester === Number(req.query.semester));
   }
-  if (req.query.course_type) {
-    nodes = nodes.filter(c => c.course_type === req.query.course_type);
+  if (courseType) {
+    nodes = nodes.filter(c => c.course_type === courseType);
   }
 
   const sorted = nodes.slice().sort((a, b) => {
+    if (a.course_type === 'common' && b.course_type === 'common') {
+      return (a.slot || '').localeCompare(b.slot || '');
+    }
     if (a.semester !== b.semester) return a.semester - b.semester;
     const aType = a.course_type || 'theory';
     const bType = b.course_type || 'theory';
@@ -4006,10 +4244,14 @@ apiRouter.post('/hod/clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMI
   const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
   const deptId = staff?.department_id || 1;
 
-  const { title, code, year, semester, course_type, slot, faculty_name, faculty_id, faculty_email, is_elective } = req.body;
+  const { title, code, year, semester, course_type, slot, faculty_name, faculty_id, faculty_email, is_elective, applies_to, requirement_description, category_key } = req.body;
 
-  if (!title || !code || !year || !semester) {
-    return res.status(400).json({ detail: 'Title, Code, Year, and Semester are required to allocate a clearance node.' });
+  const isCommon = course_type === 'common';
+  if (!title || !code) {
+    return res.status(400).json({ detail: 'Title and Code are required to allocate a clearance node.' });
+  }
+  if (!isCommon && (!year || !semester)) {
+    return res.status(400).json({ detail: 'Title, Code, Year, and Semester are required to allocate an academic clearance node.' });
   }
 
   const nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
@@ -4017,16 +4259,19 @@ apiRouter.post('/hod/clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMI
     id: nextId,
     title: title.trim(),
     code: code.trim().toUpperCase(),
-    department_id: deptId,
-    year: Number(year),
-    semester: Number(semester),
+    department_id: isCommon ? 0 : deptId,
+    year: isCommon ? 0 : Number(year),
+    semester: isCommon ? 0 : Number(semester),
     course_type: course_type || 'theory',
-    slot: slot || (course_type === 'lab' ? `Lab ${nextId % 4 + 1}` : `Sub ${nextId % 6 + 1}`),
-    faculty_name: faculty_name || 'Department Faculty',
+    slot: slot || (course_type === 'common' ? `COM-${code.substring(0, 3).toUpperCase()}` : (course_type === 'lab' ? `Lab ${nextId % 4 + 1}` : `Sub ${nextId % 6 + 1}`)),
+    faculty_name: faculty_name || (isCommon ? 'Officer In-Charge' : 'Department Faculty'),
     faculty_id: faculty_id ? Number(faculty_id) : undefined,
     faculty_email: faculty_email || undefined,
     is_elective: Boolean(is_elective),
     is_active: true,
+    applies_to: applies_to || 'all',
+    requirement_description: requirement_description?.trim() || undefined,
+    category_key: category_key || undefined,
     created_at: new Date().toISOString()
   };
 
@@ -4136,6 +4381,292 @@ apiRouter.post('/hod/clearance-nodes/populate-semester', authMiddleware, require
   res.json({
     message: `Successfully allocated ${createdNodes.length} clearance nodes for Year ${year}, Semester ${semester}.`,
     nodes: createdNodes
+  });
+});
+
+function ensureDefaultCommonNodes(): SubjectCourseRecord[] {
+  let commonNodes = db.subjectCourses.filter(c => c.course_type === 'common');
+  if (commonNodes.length > 0) return commonNodes;
+
+  let nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
+  const now = new Date().toISOString();
+  const standardCommonNodes = [
+    {
+      title: 'Central Library & Book Bank',
+      code: 'LIB-101',
+      slot: 'COM-LIB',
+      faculty_name: 'D. Vinoth (Chief Librarian)',
+      faculty_email: 'vinoth.library@sasurie.edu',
+      requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
+      applies_to: 'all' as const,
+      category_key: 'library'
+    },
+    {
+      title: 'Accounts & College Finance Office',
+      code: 'ACC-101',
+      slot: 'COM-ACC',
+      faculty_name: 'S. Accounts (Finance Officer)',
+      faculty_email: 'accounts@sasurie.edu',
+      requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
+      applies_to: 'all' as const,
+      category_key: 'accounts'
+    },
+    {
+      title: 'College Bus & Transport Section',
+      code: 'TRN-101',
+      slot: 'COM-TRN',
+      faculty_name: 'K. Murugesan (Transport In-Charge)',
+      faculty_email: 'transport@sasurie.edu',
+      requirement_description: 'Bus pass surrender or transport route fee clearance.',
+      applies_to: 'all' as const,
+      category_key: 'transport'
+    },
+    {
+      title: 'Campus Hostel & Mess Section',
+      code: 'HST-101',
+      slot: 'COM-HST',
+      faculty_name: 'Dr. R. Warden (Chief Warden)',
+      faculty_email: 'hostel@sasurie.edu',
+      requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
+      applies_to: 'hostel' as const,
+      category_key: 'hostel'
+    },
+    {
+      title: 'Physical Education & Sports Department',
+      code: 'PED-101',
+      slot: 'COM-PED',
+      faculty_name: 'P. Ravichandran (Physical Director)',
+      faculty_email: 'sports@sasurie.edu',
+      requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
+      applies_to: 'all' as const,
+      category_key: 'sports'
+    },
+    {
+      title: 'Office of Controller of Examinations (CoE)',
+      code: 'COE-101',
+      slot: 'COM-COE',
+      faculty_name: 'Dr. H. Sasipal CoE',
+      faculty_email: 'coe@sasurie.edu',
+      requirement_description: 'Exam registration confirmation & hall ticket verification.',
+      applies_to: 'all' as const,
+      category_key: 'exam_cell'
+    }
+  ];
+
+  for (const item of standardCommonNodes) {
+    const node: SubjectCourseRecord = {
+      id: nextId++,
+      title: item.title,
+      code: item.code,
+      department_id: 0,
+      year: 0,
+      semester: 0,
+      course_type: 'common',
+      slot: item.slot,
+      faculty_name: item.faculty_name,
+      faculty_email: item.faculty_email,
+      is_elective: false,
+      is_active: true,
+      applies_to: item.applies_to,
+      requirement_description: item.requirement_description,
+      category_key: item.category_key,
+      created_at: now
+    };
+    db.subjectCourses.push(node);
+  }
+  db.saveToFile();
+  return db.subjectCourses.filter(c => c.course_type === 'common');
+}
+
+// Dedicated endpoints for Common Institutional Clearance Nodes (Universal across all students: Library, Accounts, Transport, Hostel, Sports, Exam Cell)
+apiRouter.get('/hod/common-clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMIN', 'STAFF']), (req: AuthRequest, res: Response) => {
+  const commonNodes = ensureDefaultCommonNodes();
+
+  const order = ['COM-LIB', 'COM-ACC', 'COM-TRN', 'COM-HST', 'COM-PED', 'COM-COE'];
+  const sorted = commonNodes.slice().sort((a, b) => {
+    const aIdx = order.indexOf(a.slot || '');
+    const bIdx = order.indexOf(b.slot || '');
+    if (aIdx !== -1 && bIdx !== -1) return aIdx - bIdx;
+    if (aIdx !== -1) return -1;
+    if (bIdx !== -1) return 1;
+    return (a.slot || a.title).localeCompare(b.slot || b.title);
+  });
+
+  res.json(sorted);
+});
+
+apiRouter.post('/hod/common-clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const { title, code, slot, faculty_name, faculty_email, requirement_description, applies_to, category_key } = req.body;
+
+  if (!title || !code) {
+    return res.status(400).json({ detail: 'Node Title and Code are required (e.g. Central Library, LIB-101).' });
+  }
+
+  const nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
+  const newNode: SubjectCourseRecord = {
+    id: nextId,
+    title: title.trim(),
+    code: code.trim().toUpperCase(),
+    department_id: 0,
+    year: 0,
+    semester: 0,
+    course_type: 'common',
+    slot: slot?.trim() || `COM-${code.trim().substring(0, 3).toUpperCase()}`,
+    faculty_name: faculty_name?.trim() || 'Officer In-Charge',
+    faculty_email: faculty_email?.trim() || undefined,
+    is_elective: false,
+    is_active: true,
+    applies_to: applies_to || 'all',
+    requirement_description: requirement_description?.trim() || 'All departmental and institutional dues cleared',
+    category_key: category_key || undefined,
+    created_at: new Date().toISOString()
+  };
+
+  db.subjectCourses.push(newNode);
+  db.saveToFile();
+
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_CREATED', 'SUBJECT_COURSE', newNode.id, null, newNode, getClientIp(req));
+
+  res.status(201).json(newNode);
+});
+
+apiRouter.put('/hod/common-clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const node = db.subjectCourses.find(c => c.id === id);
+  if (!node) {
+    return res.status(404).json({ detail: 'Common clearance node not found' });
+  }
+
+  const { title, code, slot, faculty_name, faculty_email, requirement_description, applies_to, is_active } = req.body;
+
+  if (title !== undefined) node.title = title.trim();
+  if (code !== undefined) node.code = code.trim().toUpperCase();
+  if (slot !== undefined) node.slot = slot.trim();
+  if (faculty_name !== undefined) node.faculty_name = faculty_name.trim();
+  if (faculty_email !== undefined) node.faculty_email = faculty_email.trim();
+  if (requirement_description !== undefined) node.requirement_description = requirement_description.trim();
+  if (applies_to !== undefined) node.applies_to = applies_to;
+  if (is_active !== undefined) node.is_active = Boolean(is_active);
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_UPDATED', 'SUBJECT_COURSE', node.id, null, node, getClientIp(req));
+
+  res.json(node);
+});
+
+apiRouter.delete('/hod/common-clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const id = Number(req.params.id);
+  const index = db.subjectCourses.findIndex(c => c.id === id);
+  if (index === -1) {
+    return res.status(404).json({ detail: 'Common clearance node not found' });
+  }
+
+  const deleted = db.subjectCourses.splice(index, 1)[0];
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_DELETED', 'SUBJECT_COURSE', id, deleted, null, getClientIp(req));
+
+  res.json({ message: 'Common clearance node removed successfully' });
+});
+
+apiRouter.post('/hod/common-clearance-nodes/populate-defaults', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  db.subjectCourses = db.subjectCourses.filter(c => c.course_type !== 'common');
+
+  let nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
+  const now = new Date().toISOString();
+
+  const standardCommonNodes = [
+    {
+      title: 'Central Library & Book Bank',
+      code: 'LIB-101',
+      slot: 'COM-LIB',
+      faculty_name: 'D. Vinoth (Chief Librarian)',
+      faculty_email: 'vinoth.library@sasurie.edu',
+      requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
+      applies_to: 'all' as const,
+      category_key: 'library'
+    },
+    {
+      title: 'Accounts & College Finance Office',
+      code: 'ACC-101',
+      slot: 'COM-ACC',
+      faculty_name: 'S. Accounts (Finance Officer)',
+      faculty_email: 'accounts@sasurie.edu',
+      requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
+      applies_to: 'all' as const,
+      category_key: 'accounts'
+    },
+    {
+      title: 'College Bus & Transport Section',
+      code: 'TRN-101',
+      slot: 'COM-TRN',
+      faculty_name: 'K. Murugesan (Transport In-Charge)',
+      faculty_email: 'transport@sasurie.edu',
+      requirement_description: 'Bus pass surrender or transport route fee clearance.',
+      applies_to: 'all' as const,
+      category_key: 'transport'
+    },
+    {
+      title: 'Campus Hostel & Mess Section',
+      code: 'HST-101',
+      slot: 'COM-HST',
+      faculty_name: 'Dr. R. Warden (Chief Warden)',
+      faculty_email: 'hostel@sasurie.edu',
+      requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
+      applies_to: 'hostel' as const,
+      category_key: 'hostel'
+    },
+    {
+      title: 'Physical Education & Sports Department',
+      code: 'PED-101',
+      slot: 'COM-PED',
+      faculty_name: 'P. Ravichandran (Physical Director)',
+      faculty_email: 'sports@sasurie.edu',
+      requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
+      applies_to: 'all' as const,
+      category_key: 'sports'
+    },
+    {
+      title: 'Office of Controller of Examinations (CoE)',
+      code: 'COE-101',
+      slot: 'COM-COE',
+      faculty_name: 'Dr. H. Sasipal CoE',
+      faculty_email: 'coe@sasurie.edu',
+      requirement_description: 'Exam registration confirmation & hall ticket verification.',
+      applies_to: 'all' as const,
+      category_key: 'exam_cell'
+    }
+  ];
+
+  const created: SubjectCourseRecord[] = [];
+  for (const item of standardCommonNodes) {
+    const node: SubjectCourseRecord = {
+      id: nextId++,
+      title: item.title,
+      code: item.code,
+      department_id: 0,
+      year: 0,
+      semester: 0,
+      course_type: 'common',
+      slot: item.slot,
+      faculty_name: item.faculty_name,
+      faculty_email: item.faculty_email,
+      is_elective: false,
+      is_active: true,
+      applies_to: item.applies_to,
+      requirement_description: item.requirement_description,
+      category_key: item.category_key,
+      created_at: now
+    };
+    db.subjectCourses.push(node);
+    created.push(node);
+  }
+
+  db.saveToFile();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_POPULATE_DEFAULT_COMMON_NODES', 'SUBJECT_COURSE', 0, null, { count: created.length }, getClientIp(req));
+
+  res.json({
+    message: `Standard Common Institutional Clearance Nodes loaded successfully (${created.length} nodes for all students).`,
+    nodes: created
   });
 });
 
@@ -4380,10 +4911,12 @@ apiRouter.get('/hod/requests', authMiddleware, requireRole(['HOD', 'ADMIN']), (r
     const course = student ? db.courses.find(c => c.id === student.course_id) : null;
     const subjects = r.subjects || defaultSubjectsForStudent(student, r.semester);
     const labs = r.labs || defaultLabsForStudent(student, r.semester);
+    const common_nodes = r.common_nodes && r.common_nodes.length > 0 ? r.common_nodes : defaultCommonNodesForStudent(student);
     const signatories = r.signatories || defaultSignatoriesForStudent(r);
 
     const pendingSubjects = subjects.filter((s: any) => s.dues_status && s.dues_status !== 'No Dues' && s.dues_status !== '-');
     const pendingLabs = labs.filter((l: any) => l.dues_status && l.dues_status !== 'No Dues' && l.dues_status !== '-');
+    const pendingCommon = common_nodes.filter((c: any) => c.dues_status && c.dues_status !== 'No Dues' && c.dues_status !== '-');
 
     return {
       ...r,
@@ -4399,9 +4932,11 @@ apiRouter.get('/hod/requests', authMiddleware, requireRole(['HOD', 'ADMIN']), (r
       attendance_percentage: r.attendance_percentage ?? student?.attendance_percentage ?? 95,
       subjects,
       labs,
+      common_nodes,
       signatories,
       all_subjects_cleared: pendingSubjects.length === 0,
       all_labs_cleared: pendingLabs.length === 0,
+      all_common_cleared: pendingCommon.length === 0,
       hod_endorsed: Boolean(signatories?.hod?.signed),
       created_at: r.created_at || r.submitted_at
     };
@@ -4458,7 +4993,7 @@ apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-su
 
   const { slot, faculty_name } = req.body;
   if (!slot) {
-    return res.status(400).json({ detail: 'Slot name is required (e.g., Sub 1, Lab 2).' });
+    return res.status(400).json({ detail: 'Slot name is required (e.g., Sub 1, Lab 2, COM-LIB).' });
   }
 
   const staff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id);
@@ -4490,12 +5025,46 @@ apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-su
     }
   }
 
+  if (noDueReq.common_nodes && Array.isArray(noDueReq.common_nodes)) {
+    for (const com of noDueReq.common_nodes) {
+      const comCode = (com as any).code || '';
+      const comKey = (com as any).category_key || '';
+      if (
+        com.slot?.toLowerCase() === slot.toLowerCase() ||
+        comCode.toLowerCase() === slot.toLowerCase() ||
+        comKey.toLowerCase() === slot.toLowerCase() ||
+        com.name?.toLowerCase().includes(slot.toLowerCase())
+      ) {
+        com.dues_status = 'No Dues';
+        com.faculty_name = staffName;
+        com.signature_date = todayStr;
+        updated = true;
+
+        if (noDueReq.signatories) {
+          if (comKey === 'library' || comCode.includes('LIB') || com.name?.toLowerCase().includes('library')) {
+            noDueReq.signatories.library = { signed: true, name: staffName, date: todayStr, status: 'No Due' };
+          } else if (comKey === 'accounts' || comCode.includes('ACC') || com.name?.toLowerCase().includes('account')) {
+            noDueReq.signatories.office_accounts = { signed: true, name: staffName, date: todayStr, status: 'No Dues' };
+          } else if (comKey === 'transport' || comCode.includes('TRN') || com.name?.toLowerCase().includes('transport')) {
+            noDueReq.signatories.transport = { signed: true, name: staffName, date: todayStr, status: 'No Dues' };
+          } else if (comKey === 'hostel' || comCode.includes('HST') || com.name?.toLowerCase().includes('hostel')) {
+            noDueReq.signatories.hostel = { signed: true, name: staffName, date: todayStr, status: 'No Dues' };
+          }
+        }
+      }
+    }
+  }
+
   db.saveToFile();
   db.logAudit(req.user!.id, req.user!.email, 'SUBJECT_DUE_CLEARED', 'NO_DUE_REQUEST', reqId, null, { slot, staff: staffName }, getClientIp(req));
 
+  const issuedCert = checkAndIssueCertificateIfCleared(reqId);
+
   res.json({
-    message: `Dues cleared for ${slot} by ${staffName}.`,
-    request: noDueReq
+    message: `Dues cleared for ${slot} by ${staffName}.${issuedCert ? ' All clearances complete - official certificate generated!' : ''}`,
+    request: noDueReq,
+    certificate_issued: Boolean(issuedCert),
+    certificate: issuedCert
   });
 });
 
@@ -4511,7 +5080,7 @@ apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-
     return res.status(400).json({ detail: 'Slot name is required.' });
   }
 
-  const dueText = amount && Number(amount) > 0 ? `Due: ₹${amount}` : (description || 'Pending Lab/Subject Due');
+  const dueText = amount && Number(amount) > 0 ? `Due: ₹${amount}` : (description || 'Pending Due');
 
   if (noDueReq.subjects && Array.isArray(noDueReq.subjects)) {
     for (const sub of noDueReq.subjects) {
@@ -4527,6 +5096,33 @@ apiRouter.post(['/hod/requests/:id/mark-subject-due', '/staff/requests/:id/mark-
       const labCode = (lab as any).code || '';
       if (lab.slot?.toLowerCase() === slot.toLowerCase() || labCode.toLowerCase() === slot.toLowerCase()) {
         lab.dues_status = dueText;
+      }
+    }
+  }
+
+  if (noDueReq.common_nodes && Array.isArray(noDueReq.common_nodes)) {
+    for (const com of noDueReq.common_nodes) {
+      const comCode = (com as any).code || '';
+      const comKey = (com as any).category_key || '';
+      if (
+        com.slot?.toLowerCase() === slot.toLowerCase() ||
+        comCode.toLowerCase() === slot.toLowerCase() ||
+        comKey.toLowerCase() === slot.toLowerCase() ||
+        com.name?.toLowerCase().includes(slot.toLowerCase())
+      ) {
+        com.dues_status = dueText;
+
+        if (noDueReq.signatories) {
+          if (comKey === 'library' || comCode.includes('LIB') || com.name?.toLowerCase().includes('library')) {
+            noDueReq.signatories.library = { signed: false, name: '-', date: '-', status: dueText };
+          } else if (comKey === 'accounts' || comCode.includes('ACC') || com.name?.toLowerCase().includes('account')) {
+            noDueReq.signatories.office_accounts = { signed: false, name: '-', date: '-', status: dueText };
+          } else if (comKey === 'transport' || comCode.includes('TRN') || com.name?.toLowerCase().includes('transport')) {
+            noDueReq.signatories.transport = { signed: false, name: '-', date: '-', status: dueText };
+          } else if (comKey === 'hostel' || comCode.includes('HST') || com.name?.toLowerCase().includes('hostel')) {
+            noDueReq.signatories.hostel = { signed: false, name: '-', date: '-', status: dueText };
+          }
+        }
       }
     }
   }

@@ -1,32 +1,82 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import {
-  FileCheck2,
+  Award,
   CheckCircle2,
   Clock,
   AlertTriangle,
-  Award,
-  ArrowRight,
-  ShieldAlert,
   Send,
+  BookOpen,
+  FlaskConical,
   Building2,
   Check,
-  FileText,
-  Eye,
+  FileCheck2,
+  Sparkles,
+  ArrowRight,
+  ShieldCheck,
+  Printer,
   Calendar,
-  School,
-  UserCheck
+  User,
+  GraduationCap
 } from 'lucide-react';
 import api from '../../services/api';
-import { NoDueRequest, StudentDuesSummary } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { SasurieSubjectEntry, StudentDuesSummary } from '../../types';
+
+interface ClearanceNodesResponse {
+  student: {
+    id: number;
+    full_name: string;
+    register_number: string;
+    department_name: string;
+    department_code: string;
+    course_name: string;
+    year: number;
+    semester: number;
+    section: string;
+    student_type: string;
+  };
+  active_request: {
+    id: number;
+    status: string;
+    exam_type: string;
+    academic_year: string;
+    submitted_at: string;
+    attendance_percentage: number;
+  } | null;
+  academic_nodes: {
+    theory: SasurieSubjectEntry[];
+    labs: SasurieSubjectEntry[];
+  };
+  common_nodes: SasurieSubjectEntry[];
+  stats: {
+    total_nodes: number;
+    cleared_nodes: number;
+    pending_nodes: number;
+    percentage: number;
+    all_cleared: boolean;
+  };
+  certificate: {
+    id: number;
+    certificate_number: string;
+    verification_code: string;
+    issued_at: string;
+    is_valid: boolean;
+  } | null;
+}
 
 export const StudentRequestPage: React.FC = () => {
   const { studentProfile } = useAuth();
+  const [data, setData] = useState<ClearanceNodesResponse | null>(null);
   const [summary, setSummary] = useState<StudentDuesSummary | null>(null);
-  const [requests, setRequests] = useState<NoDueRequest[]>([]);
-  const [remarks, setRemarks] = useState('');
-  const [purpose, setPurpose] = useState('CIAT - I Examination No Due Form');
+  const [loading, setLoading] = useState(true);
+  const [claiming, setClaiming] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [claimSuccess, setClaimSuccess] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  // Application form fields if no active request
+  const [purpose, setPurpose] = useState('CIAT - I Examination No Due Clearance');
   const [examType, setExamType] = useState('CIAT - I');
   const [academicYear, setAcademicYear] = useState('2025-26');
   const [studentType, setStudentType] = useState<'day_scholar' | 'hosteller'>(
@@ -36,35 +86,42 @@ export const StudentRequestPage: React.FC = () => {
     studentProfile?.attendance_percentage ?? 98
   );
   const [attendanceMonth, setAttendanceMonth] = useState('August');
+  const [remarks, setRemarks] = useState('');
 
-  const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const loadData = async () => {
+  const loadClearanceData = async () => {
     try {
       setLoading(true);
       setError(null);
-      const [sumRes, reqRes] = await Promise.all([
-        api.get('/student/summary'),
-        api.get('/no-due-requests').catch(() => api.get('/no-due-requests/my'))
+      const [nodesRes, sumRes] = await Promise.all([
+        api.get('/student/clearance-nodes'),
+        api.get('/student/summary').catch(() => null)
       ]);
-      setSummary(sumRes.data);
-      const reqList = Array.isArray(reqRes.data)
-        ? reqRes.data
-        : (Array.isArray(reqRes.data?.requests) ? reqRes.data.requests : []);
-      setRequests(reqList);
+      setData(nodesRes.data);
+      if (sumRes) setSummary(sumRes.data);
     } catch (err: any) {
-      setError(err.response?.data?.detail || 'Failed to load request status');
-      setRequests([]);
+      setError(err.response?.data?.detail || 'Failed to load clearance nodes data');
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadData();
+    loadClearanceData();
   }, []);
+
+  const handleClaimCertificate = async () => {
+    try {
+      setClaiming(true);
+      setError(null);
+      const res = await api.post('/certificates/my/claim');
+      setClaimSuccess(res.data?.message || 'Certificate issued successfully!');
+      await loadClearanceData();
+    } catch (err: any) {
+      setError(err.response?.data?.detail || 'Unable to issue certificate yet.');
+    } finally {
+      setClaiming(false);
+    }
+  };
 
   const handleApply = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -81,7 +138,7 @@ export const StudentRequestPage: React.FC = () => {
         attendance_percentage: Number(attendancePercent),
         attendance_month: attendanceMonth
       });
-      await loadData();
+      await loadClearanceData();
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Failed to submit clearance request');
     } finally {
@@ -89,24 +146,99 @@ export const StudentRequestPage: React.FC = () => {
     }
   };
 
+  const isCleared = (status?: string) => {
+    if (!status) return true;
+    const s = status.trim().toLowerCase();
+    return (
+      s === '-' ||
+      s === 'no dues' ||
+      s === 'no due' ||
+      s === 'cleared' ||
+      s === 'waived' ||
+      s === 'exempted' ||
+      s === 'verified'
+    );
+  };
+
   if (loading) {
-    return <div className="py-20 text-center text-xs text-slate-400">Loading clearance workflow...</div>;
+    return (
+      <div className="flex flex-col items-center justify-center py-24 space-y-3">
+        <div className="w-8 h-8 border-3 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs font-semibold text-slate-500">Loading student clearance nodes...</p>
+      </div>
+    );
   }
 
-  const safeRequests = Array.isArray(requests) ? requests : [];
-  const activeRequest = safeRequests.find((r) => r.status !== 'rejected') || safeRequests[0];
-  const pendingDueAmount = Number(summary?.pending_due_amount ?? (summary as any)?.pending_dues_amount ?? 0);
-  const hasPendingDues = pendingDueAmount > 0;
+  const student = data?.student || {
+    full_name: studentProfile?.full_name || 'Student',
+    register_number: studentProfile?.register_number || '',
+    department_name: studentProfile?.department_name || '',
+    course_name: studentProfile?.course_name || '',
+    year: studentProfile?.year || 4,
+    semester: studentProfile?.semester || 7,
+    section: studentProfile?.section || 'A',
+    student_type: studentProfile?.student_type || 'day_scholar'
+  };
+
+  const theoryNodes = data?.academic_nodes?.theory || [];
+  const labNodes = data?.academic_nodes?.labs || [];
+  const commonNodes = data?.common_nodes || [];
+  const stats = data?.stats || {
+    total_nodes: theoryNodes.length + labNodes.length + commonNodes.length,
+    cleared_nodes: 0,
+    pending_nodes: 0,
+    percentage: 0,
+    all_cleared: false
+  };
+
+  const hasCertificate = Boolean(data?.certificate);
+  const activeReq = data?.active_request;
+  const pendingDueAmount = Number(summary?.pending_due_amount ?? 0);
+  const hasUnpaidLedgerDues = pendingDueAmount > 0;
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
-      <div>
-        <h2 className="font-display font-bold text-xl text-slate-900">
-          Institutional Clearance & No Due Form
-        </h2>
-        <p className="text-xs text-slate-500 mt-0.5">
-          College of Engineering (Autonomous) — CIAT / End Semester Clearance System
-        </p>
+    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+      {/* Header Bar */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="text-xs font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2.5 py-0.5 rounded-md">
+              Student Clearance Dashboard
+            </span>
+            <span className="text-xs font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
+              Year {student.year} • Semester {student.semester}
+            </span>
+            <span className="text-xs font-medium text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md capitalize">
+              {student.student_type?.replace('_', ' ')}
+            </span>
+          </div>
+          <h2 className="font-display font-black text-xl text-slate-900 tracking-tight">
+            Academic & Common Clearance Nodes
+          </h2>
+          <p className="text-xs text-slate-500 mt-1">
+            {student.full_name} ({student.register_number}) • {student.course_name}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3">
+          {hasCertificate || stats.all_cleared ? (
+            <Link
+              to="/student/certificate"
+              id="btn-view-certificate"
+              className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-2 shadow-sm"
+            >
+              <Award className="w-4 h-4" /> Download Certificate
+            </Link>
+          ) : activeReq ? (
+            <button
+              onClick={handleClaimCertificate}
+              disabled={claiming}
+              className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" /> {claiming ? 'Checking...' : 'Check & Mint Certificate'}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {error && (
@@ -116,191 +248,378 @@ export const StudentRequestPage: React.FC = () => {
         </div>
       )}
 
-      {/* If Active Request Exists -> Display Live Progress Tracker & Digital Clearance Matrix */}
-      {activeRequest ? (
-        <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-mono font-bold text-indigo-700">
-                    Application #{activeRequest.id}
-                  </span>
-                  <span
-                    className={`text-xs font-bold px-2.5 py-0.5 rounded-full uppercase ${
-                      activeRequest.status === 'completed' || activeRequest.status === 'approved'
-                        ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                        : activeRequest.status === 'rejected'
-                        ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                        : 'bg-amber-50 text-amber-700 border border-amber-200'
-                    }`}
-                  >
-                    {activeRequest.status.replace('_', ' ')}
-                  </span>
-                  <span className="text-[11px] font-bold px-2 py-0.5 bg-blue-50 text-blue-800 border border-blue-200 rounded-md">
-                    {activeRequest.exam_type || 'CIAT - I'}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 mt-1">
-                  Submitted on {new Date(activeRequest.submitted_at).toLocaleDateString('en-GB')} • Academic Year: {activeRequest.academic_year || '2025-26'}
-                </p>
-              </div>
+      {claimSuccess && (
+        <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-xs flex items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            <span>{claimSuccess}</span>
+          </div>
+          <Link
+            to="/student/certificate"
+            className="text-xs font-bold text-emerald-700 underline hover:text-emerald-900"
+          >
+            View Certificate &rarr;
+          </Link>
+        </div>
+      )}
 
-              <div className="flex items-center gap-3">
-                {(activeRequest.status === 'completed' || activeRequest.status === 'approved') && (
-                  <Link
-                    to="/student/certificate"
-                    className="px-4 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-2"
-                  >
-                    <Award className="w-4 h-4" /> Download Certificate
-                  </Link>
-                )}
+      {/* TOP BANNER: When all academic and common nodes are cleared vs pending */}
+      {stats.all_cleared || hasCertificate ? (
+        <div className="bg-linear-to-r from-emerald-500 via-teal-600 to-emerald-700 text-white rounded-2xl p-6 sm:p-8 shadow-md relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 relative z-10">
+            <div className="space-y-2">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold backdrop-blur-xs">
+                <Sparkles className="w-3.5 h-3.5" /> All Clearance Nodes Cleared (100%)
               </div>
+              <h3 className="font-display font-extrabold text-xl sm:text-2xl text-white tracking-tight">
+                Your Official No Due Certificate is Ready!
+              </h3>
+              <p className="text-xs sm:text-sm text-emerald-50 max-w-xl leading-relaxed">
+                All HOD-allocated academic courses (Theory & Labs) for Year {student.year} Sem {student.semester} and all universal common institutional nodes have zero outstanding dues. Your verified clearance certificate has been issued!
+              </p>
             </div>
 
-            {/* Digital Department Sign-off Matrix */}
-            <div className="border-b border-slate-100 pb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
-                <Building2 className="w-4 h-4 text-indigo-600" />
-                <span>Digital Department Clearance Matrix</span>
-              </div>
-              <span className="text-[11px] font-semibold text-slate-500 bg-slate-100 px-2.5 py-1 rounded-lg">
-                Cleared: {activeRequest.approvals.filter((a) => a.status === 'approved').length} of {activeRequest.approvals.length} Departments
-              </span>
-            </div>
-
-            {/* Matrix Content */}
-            <div className="space-y-4 pt-2">
-              {activeRequest.remarks && (
-                <div className="p-3 bg-slate-50 rounded-xl text-xs text-slate-700 border border-slate-200">
-                  <span className="font-semibold text-slate-500">Application Remarks: </span>
-                  {activeRequest.remarks}
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {activeRequest.approvals.map((app) => (
-                  <div
-                    key={app.id}
-                    className={`p-4 rounded-xl border flex items-start justify-between transition-all ${
-                      app.status === 'approved'
-                        ? 'bg-emerald-50/50 border-emerald-200'
-                        : app.status === 'rejected'
-                        ? 'bg-rose-50/50 border-rose-200'
-                        : 'bg-slate-50 border-slate-200'
-                    }`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${
-                          app.status === 'approved'
-                            ? 'bg-emerald-100 text-emerald-700'
-                            : app.status === 'rejected'
-                            ? 'bg-rose-100 text-rose-700'
-                            : 'bg-white text-slate-400 border border-slate-200'
-                        }`}
-                      >
-                        <Building2 className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">{app.department_name}</p>
-                        <p
-                          className={`text-[11px] font-semibold mt-0.5 capitalize ${
-                            app.status === 'approved'
-                              ? 'text-emerald-700'
-                              : app.status === 'rejected'
-                              ? 'text-rose-700'
-                              : 'text-slate-500'
-                          }`}
-                        >
-                          {app.status === 'approved'
-                            ? 'Clearance Granted'
-                            : app.status === 'rejected'
-                            ? 'Rejected'
-                            : 'Pending Review'}
-                        </p>
-                        {app.remarks && (
-                          <p className="text-[10px] text-slate-500 italic mt-1">"{app.remarks}"</p>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="shrink-0">
-                      {app.status === 'approved' ? (
-                        <span className="w-5 h-5 rounded-full bg-emerald-600 text-white flex items-center justify-center">
-                          <Check className="w-3 h-3 stroke-[3]" />
-                        </span>
-                      ) : app.status === 'rejected' ? (
-                        <span className="w-5 h-5 rounded-full bg-rose-600 text-white flex items-center justify-center">
-                          <AlertTriangle className="w-3 h-3" />
-                        </span>
-                      ) : (
-                        <span className="w-5 h-5 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center">
-                          <Clock className="w-3 h-3" />
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
+            <div className="shrink-0 flex flex-col gap-2.5">
+              <Link
+                to="/student/certificate"
+                className="px-6 py-3 rounded-xl bg-white text-emerald-800 hover:bg-emerald-50 text-xs font-black transition-all shadow-md inline-flex items-center justify-center gap-2 text-center"
+              >
+                <Award className="w-4 h-4" /> View Verified Certificate
+              </Link>
+              <button
+                onClick={() => window.print()}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5"
+              >
+                <Printer className="w-3.5 h-3.5" /> Print Clearance Summary
+              </button>
             </div>
           </div>
         </div>
       ) : (
-        /* Clearance Application Wizard */
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 sm:p-8 space-y-6">
-          {/* Pre-requisite step check */}
-          <div className="border-b border-slate-100 pb-6">
-            <h3 className="font-display font-bold text-base text-slate-900 mb-2">
-              Clearance Pre-requisites Verification
-            </h3>
-            <p className="text-xs text-slate-500 leading-relaxed mb-4">
-              College institutional policy requires zero outstanding dues across all academic departments, laboratories, library, and accounts before submitting a No Due Form.
-            </p>
-
-            {hasPendingDues ? (
-              <div className="p-4 bg-rose-50 border border-rose-200 rounded-xl flex items-start gap-3">
-                <ShieldAlert className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="text-xs font-bold text-rose-800">Clearance Application Blocked</h4>
-                  <p className="text-xs text-rose-700 mt-1">
-                    You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues. You must settle all dues before your digital No Due Form can be dispatched to faculty and department heads.
-                  </p>
-                  <div className="mt-3">
-                    <Link
-                      to="/student/dues"
-                      className="px-3 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg inline-flex items-center gap-1.5 transition-colors"
-                    >
-                      Clear Dues Online Now <ArrowRight className="w-3 h-3" />
-                    </Link>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-                <div>
-                  <h4 className="text-xs font-bold text-emerald-800">Pre-requisites Satisfied</h4>
-                  <p className="text-xs text-emerald-700 mt-0.5">
-                    Zero outstanding dues recorded! You are fully eligible to apply for your digital No Due Form.
-                  </p>
-                </div>
-              </div>
-            )}
+        /* Clearance Progress Card */
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h3 className="font-display font-bold text-slate-900 text-base flex items-center gap-2">
+                <FileCheck2 className="w-5 h-5 text-indigo-600" />
+                Clearance Progress Status
+              </h3>
+              <p className="text-xs text-slate-500 mt-0.5">
+                Clear these allocated academic and common nodes to unlock your official No Due certificate
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-extrabold text-indigo-700">
+                {stats.cleared_nodes} of {stats.total_nodes} Nodes Cleared
+              </span>
+              <span className="text-xs font-bold text-slate-400 ml-2">
+                ({stats.percentage}%)
+              </span>
+            </div>
           </div>
 
-          {/* Form */}
+          {/* Progress Bar */}
+          <div className="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5">
+            <div
+              className="bg-linear-to-r from-indigo-500 to-emerald-500 h-2 rounded-full transition-all duration-500"
+              style={{ width: `${stats.percentage}%` }}
+            ></div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-3 pt-2 text-xs text-slate-500 border-t border-slate-100">
+            <div className="flex items-center gap-4">
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                <strong className="text-slate-700">{stats.cleared_nodes}</strong> Cleared Nodes
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                <strong className="text-slate-700">{stats.pending_nodes}</strong> Pending Verification
+              </span>
+            </div>
+            <span className="text-[11px] text-slate-400 italic">
+              *Only academic courses + common institutional nodes are required for certificate issuance.
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* SECTION 1: Academic Clearance Nodes (Theory Subjects allocated by HOD) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center">
+              <BookOpen className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-slate-900 text-sm">
+                Academic Clearance: Theory Courses
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Allocated by HOD for Year {student.year} • Semester {student.semester}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+            {theoryNodes.filter((s) => isCleared(s.dues_status)).length} / {theoryNodes.length} Cleared
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="py-3 px-4">Slot</th>
+                <th className="py-3 px-4">Subject & Course Code</th>
+                <th className="py-3 px-4">In-Charge Faculty</th>
+                <th className="py-3 px-4">Clearance Status</th>
+                <th className="py-3 px-4 text-right">Verification Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {theoryNodes.map((sub, idx) => {
+                const cleared = isCleared(sub.dues_status);
+                return (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-indigo-700">
+                      {sub.slot}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-900">{sub.name}</div>
+                      {sub.code && (
+                        <span className="text-[10px] text-slate-400 font-mono">{sub.code}</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-700">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{sub.faculty_name || 'Department Faculty In-Charge'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ${
+                          cleared
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {cleared ? (
+                          <>
+                            <Check className="w-3 h-3 stroke-[3]" /> No Dues
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3 h-3" /> {sub.dues_status || 'Pending Verification'}
+                          </>
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right text-slate-500 font-mono text-[11px]">
+                      {sub.signature_date || '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECTION 2: Academic Clearance Nodes (Laboratories & Practicals allocated by HOD) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center">
+              <FlaskConical className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-slate-900 text-sm">
+                Academic Clearance: Laboratory & Practical Sessions
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Allocated by HOD for Year {student.year} • Semester {student.semester}
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+            {labNodes.filter((l) => isCleared(l.dues_status)).length} / {labNodes.length} Cleared
+          </span>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/30 text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                <th className="py-3 px-4">Slot</th>
+                <th className="py-3 px-4">Laboratory Course</th>
+                <th className="py-3 px-4">Lab In-Charge Faculty</th>
+                <th className="py-3 px-4">Clearance Status</th>
+                <th className="py-3 px-4 text-right">Verification Date</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100 text-xs">
+              {labNodes.map((lab, idx) => {
+                const cleared = isCleared(lab.dues_status);
+                return (
+                  <tr key={idx} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="py-3.5 px-4 font-mono font-bold text-teal-700">
+                      {lab.slot}
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <div className="font-bold text-slate-900">{lab.name}</div>
+                      {lab.code && (
+                        <span className="text-[10px] text-slate-400 font-mono">{lab.code}</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-slate-700">
+                      <div className="flex items-center gap-1.5 font-medium">
+                        <User className="w-3.5 h-3.5 text-slate-400" />
+                        <span>{lab.faculty_name || 'Lab In-Charge'}</span>
+                      </div>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      <span
+                        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold ${
+                          cleared
+                            ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                            : 'bg-amber-50 text-amber-700 border border-amber-200'
+                        }`}
+                      >
+                        {cleared ? (
+                          <>
+                            <Check className="w-3 h-3 stroke-[3]" /> No Dues
+                          </>
+                        ) : (
+                          <>
+                            <Clock className="w-3 h-3" /> {lab.dues_status || 'Pending Lab Clearance'}
+                          </>
+                        )}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4 text-right text-slate-500 font-mono text-[11px]">
+                      {lab.signature_date || '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* SECTION 3: Common Clearance Nodes (Universal to All Students) */}
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center">
+              <Building2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="font-display font-bold text-slate-900 text-sm">
+                Common Institutional Clearance Nodes
+              </h3>
+              <p className="text-[11px] text-slate-500">
+                Universal requirements for all students across departments
+              </p>
+            </div>
+          </div>
+          <span className="text-xs font-bold text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 self-start sm:self-auto">
+            {commonNodes.filter((c) => isCleared(c.dues_status)).length} / {commonNodes.length} Cleared
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+          {commonNodes.map((com, idx) => {
+            const cleared = isCleared(com.dues_status);
+            return (
+              <div
+                key={idx}
+                className={`p-4 rounded-xl border flex flex-col justify-between transition-all ${
+                  cleared
+                    ? 'bg-emerald-50/30 border-emerald-200'
+                    : 'bg-slate-50/50 border-slate-200'
+                }`}
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div>
+                      <span className="text-[10px] font-mono font-bold text-indigo-700 bg-indigo-50 border border-indigo-100 px-2 py-0.5 rounded">
+                        {com.slot}
+                      </span>
+                      <h4 className="font-bold text-slate-900 text-xs mt-1.5">{com.name}</h4>
+                    </div>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                        cleared
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-amber-100 text-amber-800'
+                      }`}
+                    >
+                      {cleared ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : <Clock className="w-2.5 h-2.5" />}
+                      {cleared ? 'No Dues' : com.dues_status || 'Pending'}
+                    </span>
+                  </div>
+
+                  <p className="text-[11px] text-slate-500 mt-1">
+                    {com.requirement_description || 'Standard institutional clearance'}
+                  </p>
+                </div>
+
+                <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                  <span className="font-medium text-slate-700 truncate max-w-[200px]">
+                    {com.faculty_name}
+                  </span>
+                  <span className="font-mono text-[10px] text-slate-400">
+                    {com.signature_date || '—'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* If No Active Application -> Submit No Due Request Wizard */}
+      {!activeReq && (
+        <div className="bg-white rounded-2xl border border-slate-200 shadow-xs p-6 sm:p-8 space-y-6">
+          <div className="border-b border-slate-100 pb-4">
+            <h3 className="font-display font-bold text-base text-slate-900 mb-1">
+              Submit Digital No Due Application
+            </h3>
+            <p className="text-xs text-slate-500">
+              Submit your clearance request. Your allocated academic theory courses, laboratory sessions, and universal common nodes will be submitted for institutional clearance.
+            </p>
+          </div>
+
+          {hasUnpaidLedgerDues && (
+            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  You have ₹{pendingDueAmount.toFixed(2)} in outstanding dues on your fee ledger. You can clear them via the Dues page.
+                </span>
+              </div>
+              <Link
+                to="/student/dues"
+                className="px-3 py-1.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shrink-0"
+              >
+                Pay Dues
+              </Link>
+            </div>
+          )}
+
           <form onSubmit={handleApply} className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Examination Name
+                  Examination / Clearance Type
                 </label>
                 <select
                   value={examType}
                   onChange={(e) => setExamType(e.target.value)}
-                  disabled={hasPendingDues}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                  disabled={hasUnpaidLedgerDues}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   <option value="CIAT - I">CIAT - I</option>
                   <option value="CIAT - II">CIAT - II</option>
@@ -317,9 +636,8 @@ export const StudentRequestPage: React.FC = () => {
                   type="text"
                   value={academicYear}
                   onChange={(e) => setAcademicYear(e.target.value)}
-                  disabled={hasPendingDues}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                  placeholder="2025-26"
+                  disabled={hasUnpaidLedgerDues}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                 />
               </div>
 
@@ -330,8 +648,8 @@ export const StudentRequestPage: React.FC = () => {
                 <select
                   value={studentType}
                   onChange={(e) => setStudentType(e.target.value as any)}
-                  disabled={hasPendingDues}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                  disabled={hasUnpaidLedgerDues}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                 >
                   <option value="day_scholar">Day Scholar</option>
                   <option value="hosteller">Hosteller</option>
@@ -351,8 +669,8 @@ export const StudentRequestPage: React.FC = () => {
                     max="100"
                     value={attendancePercent}
                     onChange={(e) => setAttendancePercent(Number(e.target.value))}
-                    disabled={hasPendingDues}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                    disabled={hasUnpaidLedgerDues}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                   />
                   <span
                     className={`text-[11px] px-2.5 py-1 rounded-lg font-bold shrink-0 ${
@@ -364,9 +682,6 @@ export const StudentRequestPage: React.FC = () => {
                     {Number(attendancePercent) >= 80 ? 'Exempted' : 'Undertaking Req.'}
                   </span>
                 </div>
-                <p className="text-[10px] text-slate-400 mt-1">
-                  Students with attendance ≥ 80% are exempted from Undertaking Form (Clause 4 of Clearance Regulation).
-                </p>
               </div>
 
               <div>
@@ -377,9 +692,8 @@ export const StudentRequestPage: React.FC = () => {
                   type="text"
                   value={attendanceMonth}
                   onChange={(e) => setAttendanceMonth(e.target.value)}
-                  disabled={hasPendingDues}
-                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                  placeholder="e.g. August"
+                  disabled={hasUnpaidLedgerDues}
+                  className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
                 />
               </div>
             </div>
@@ -390,47 +704,36 @@ export const StudentRequestPage: React.FC = () => {
               </label>
               <input
                 type="text"
-                list="student-clearance-purpose-list"
-                placeholder="Type reason or purpose of clearance..."
                 value={purpose}
                 onChange={(e) => setPurpose(e.target.value)}
-                disabled={hasPendingDues}
-                className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
+                disabled={hasUnpaidLedgerDues}
+                className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
               />
-              <datalist id="student-clearance-purpose-list">
-                <option value="CIAT - I Examination No Due Clearance" />
-                <option value="CIAT - II Examination No Due Clearance" />
-                <option value="End Semester Examinations Hall Ticket" />
-                <option value="Final Course Completion & Degree Clearance" />
-              </datalist>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">
-                Additional Student Remarks (Optional)
+                Additional Remarks (Optional)
               </label>
               <textarea
                 rows={2}
-                placeholder="Mention any specific elective or laboratory details..."
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
-                disabled={hasPendingDues}
-                className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 resize-none disabled:opacity-50"
+                disabled={hasUnpaidLedgerDues}
+                placeholder="Any special remarks or elective course details..."
+                className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 resize-none disabled:opacity-50"
               />
             </div>
 
-            <div className="pt-2 flex items-center justify-end">
+            <div className="pt-2 flex justify-end">
               <button
-                id="btn-submit-clearance"
                 type="submit"
-                disabled={hasPendingDues || submitting}
-                className="px-6 py-2.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors shadow-sm inline-flex items-center gap-2 disabled:opacity-50 cursor-pointer"
+                disabled={hasUnpaidLedgerDues || submitting}
+                className="px-6 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors inline-flex items-center gap-2 shadow-xs disabled:opacity-50 cursor-pointer"
               >
-                {submitting ? (
-                  'Dispatching Application...'
-                ) : (
+                {submitting ? 'Submitting Application...' : (
                   <>
-                    <Send className="w-4 h-4" /> Submit Digital No Due Form
+                    <Send className="w-4 h-4" /> Submit Digital Clearance Form
                   </>
                 )}
               </button>

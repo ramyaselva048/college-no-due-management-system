@@ -339,6 +339,95 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                 </div>
               </div>
 
+              {/* Common Institutional Dues Section (Library, Accounts, Transport, Hostel, Sports, Exam Cell) */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-indigo-600" />
+                    <h4 className="text-xs font-bold text-slate-800 uppercase tracking-wide">
+                      Common Institutional Clearance Nodes (Library, Accounts, Transport...)
+                    </h4>
+                  </div>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    Universal Across All Students
+                  </span>
+                </div>
+
+                <div className="border border-slate-200 rounded-xl overflow-hidden shadow-2xs">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 border-b border-slate-200 text-[10px] font-bold text-slate-600 uppercase">
+                      <tr>
+                        <th className="px-3.5 py-2.5">Slot</th>
+                        <th className="px-3.5 py-2.5">Institutional Section & Requirement</th>
+                        <th className="px-3.5 py-2.5">Officer In-Charge</th>
+                        <th className="px-3.5 py-2.5">Dues Status</th>
+                        <th className="px-3.5 py-2.5 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {(currentRequest.common_nodes && currentRequest.common_nodes.length > 0) ? (
+                        currentRequest.common_nodes.map((node: any, idx: number) => (
+                          <tr key={idx} className="hover:bg-slate-50/60">
+                            <td className="px-3.5 py-2.5 font-mono font-bold text-indigo-700">
+                              {node.slot}
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              <div className="font-semibold text-slate-900">
+                                {node.name || node.title}
+                              </div>
+                              <div className="text-[10px] text-slate-500">
+                                {node.requirement || node.requirement_description || 'Zero institutional dues'}
+                              </div>
+                            </td>
+                            <td className="px-3.5 py-2.5 text-slate-600">
+                              {node.faculty_name || 'Designated Officer'}
+                            </td>
+                            <td className="px-3.5 py-2.5">
+                              {node.dues_status === 'No Dues' ? (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                  <Check className="w-3 h-3" /> No Dues
+                                </span>
+                              ) : (
+                                <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                  {node.dues_status || 'Pending Dues'}
+                                </span>
+                              )}
+                            </td>
+                            <td className="px-3.5 py-2.5 text-right space-x-1">
+                              {node.dues_status === 'No Dues' ? (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMarkSubjectDue(node.slot)}
+                                  disabled={actionLoading}
+                                  className="text-[10px] text-rose-600 hover:underline font-semibold cursor-pointer"
+                                >
+                                  Mark Due
+                                </button>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => handleClearSubjectDue(node.slot)}
+                                  disabled={actionLoading}
+                                  className="px-2.5 py-1 text-[10px] font-bold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 rounded-md border border-emerald-300 cursor-pointer"
+                                >
+                                  Clear Due
+                                </button>
+                              )}
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={5} className="px-3.5 py-4 text-center text-xs text-slate-400">
+                            No common institutional nodes attached to this request yet. Standard defaults apply.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
               {/* Head of Department Digital Endorsement Card */}
               <div className="bg-linear-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-5 shadow-2xs">
                 <div className="flex items-center justify-between">

@@ -50,13 +50,16 @@ export interface SubjectCourse {
   department_code?: string;
   year: number;
   semester: number;
-  course_type?: 'theory' | 'lab';
+  course_type?: 'theory' | 'lab' | 'common';
   slot?: string;
   faculty_name?: string;
   faculty_id?: number;
   faculty_email?: string;
   is_elective?: boolean;
   is_active: boolean;
+  applies_to?: 'all' | 'day_scholar' | 'hostel';
+  requirement_description?: string;
+  category_key?: string;
   created_at?: string;
 }
 
@@ -150,12 +153,15 @@ export interface StudentDuesSummary {
 }
 
 export interface SasurieSubjectEntry {
-  slot: string; // 'Sub 1', 'Sub 2', ..., 'Sub 6', 'Lab 1', ..., 'Lab 4'
+  slot: string;
   name: string;
-  dues_status: string; // 'No Dues', 'Verified', 'Pending', '-'
+  dues_status: string;
   faculty_name?: string;
   signature?: string;
   signature_date?: string;
+  code?: string;
+  requirement_description?: string;
+  category_key?: string;
 }
 
 export interface SasurieSignatories {
@@ -208,6 +214,7 @@ export interface NoDueRequest {
   undertaking_status?: 'Submitted' | 'Not Submitted' | 'Exempted';
   subjects?: SasurieSubjectEntry[];
   labs?: SasurieSubjectEntry[];
+  common_nodes?: SasurieSubjectEntry[];
   signatories?: SasurieSignatories;
 }
 

@@ -45,13 +45,16 @@ export interface SubjectCourseRecord {
   department_id: number;
   year: number;
   semester: number;
-  course_type?: 'theory' | 'lab';
+  course_type?: 'theory' | 'lab' | 'common';
   slot?: string;
   faculty_name?: string;
   faculty_id?: number;
   faculty_email?: string;
   is_elective?: boolean;
   is_active: boolean;
+  applies_to?: 'all' | 'day_scholar' | 'hostel';
+  requirement_description?: string;
+  category_key?: string;
   created_at: string;
 }
 
@@ -166,6 +169,16 @@ export interface NoDueRequestRecord {
     dues_status: string;
     faculty_name?: string;
     signature_date?: string;
+  }>;
+  common_nodes?: Array<{
+    slot: string;
+    name: string;
+    dues_status: string;
+    faculty_name?: string;
+    faculty_signature?: string;
+    signature_date?: string;
+    category_key?: string;
+    requirement?: string;
   }>;
   signatories?: {
     chief_mentor?: { signed: boolean; name?: string; date?: string; status?: string; remarks?: string };
@@ -774,6 +787,100 @@ class InMemoryDatabase {
       }
       if (!c.faculty_name) {
         c.faculty_name = 'Staff In-charge';
+      }
+    }
+
+    // 4. Ensure standard Common Institutional Clearance Nodes exist (Library, Accounts, Transport, Hostel, Sports, Exam Cell)
+    const existingCommon = this.subjectCourses.filter(c => c.course_type === 'common');
+    if (existingCommon.length === 0) {
+      const standardCommonNodes = [
+        {
+          title: 'Central Library & Book Bank',
+          code: 'LIB-101',
+          slot: 'COM-LIB',
+          course_type: 'common' as const,
+          faculty_name: 'D. Vinoth (Chief Librarian)',
+          faculty_email: 'vinoth.library@sasurie.edu',
+          requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
+          applies_to: 'all' as const,
+          category_key: 'library'
+        },
+        {
+          title: 'Accounts & College Finance Office',
+          code: 'ACC-101',
+          slot: 'COM-ACC',
+          course_type: 'common' as const,
+          faculty_name: 'S. Accounts (Finance Officer)',
+          faculty_email: 'accounts@sasurie.edu',
+          requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
+          applies_to: 'all' as const,
+          category_key: 'accounts'
+        },
+        {
+          title: 'College Bus & Transport Section',
+          code: 'TRN-101',
+          slot: 'COM-TRN',
+          course_type: 'common' as const,
+          faculty_name: 'K. Murugesan (Transport In-Charge)',
+          faculty_email: 'transport@sasurie.edu',
+          requirement_description: 'Bus pass surrender or transport route fee clearance.',
+          applies_to: 'all' as const,
+          category_key: 'transport'
+        },
+        {
+          title: 'Campus Hostel & Mess Section',
+          code: 'HST-101',
+          slot: 'COM-HST',
+          course_type: 'common' as const,
+          faculty_name: 'Dr. R. Warden (Chief Warden)',
+          faculty_email: 'hostel@sasurie.edu',
+          requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
+          applies_to: 'hostel' as const,
+          category_key: 'hostel'
+        },
+        {
+          title: 'Physical Education & Sports Department',
+          code: 'PED-101',
+          slot: 'COM-PED',
+          course_type: 'common' as const,
+          faculty_name: 'P. Ravichandran (Physical Director)',
+          faculty_email: 'sports@sasurie.edu',
+          requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
+          applies_to: 'all' as const,
+          category_key: 'sports'
+        },
+        {
+          title: 'Office of Controller of Examinations (CoE)',
+          code: 'COE-101',
+          slot: 'COM-COE',
+          course_type: 'common' as const,
+          faculty_name: 'Dr. H. Sasipal CoE',
+          faculty_email: 'coe@sasurie.edu',
+          requirement_description: 'Exam registration confirmation & hall ticket verification.',
+          applies_to: 'all' as const,
+          category_key: 'exam_cell'
+        }
+      ];
+
+      for (const item of standardCommonNodes) {
+        this.subjectCourses.push({
+          id: nextId++,
+          title: item.title,
+          code: item.code,
+          department_id: 0,
+          year: 0,
+          semester: 0,
+          course_type: 'common',
+          slot: item.slot,
+          faculty_name: item.faculty_name,
+          faculty_email: item.faculty_email,
+          is_elective: false,
+          is_active: true,
+          applies_to: item.applies_to,
+          requirement_description: item.requirement_description,
+          category_key: item.category_key,
+          created_at: now
+        });
       }
     }
   }

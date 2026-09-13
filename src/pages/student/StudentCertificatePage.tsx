@@ -108,22 +108,39 @@ export const StudentCertificatePage: React.FC = () => {
       )}
 
       {!activeCert ? (
-        <div className="bg-white rounded-2xl p-12 text-center border border-slate-200">
-          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-4">
+        <div className="bg-white rounded-2xl p-10 text-center border border-slate-200 space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto shadow-xs">
             <Award className="w-7 h-7" />
           </div>
-          <h3 className="font-display font-bold text-base text-slate-900">
-            No Due Certificate Not Yet Issued
-          </h3>
-          <p className="text-xs text-slate-500 max-w-md mx-auto mt-2 leading-relaxed">
-            Your digital certificate will be automatically minted once all designated department clearance officers and the college administrator complete their sign-off.
-          </p>
-          <div className="mt-6 flex justify-center gap-3">
+          <div>
+            <h3 className="font-display font-bold text-base text-slate-900">
+              No Due Certificate Pending Clearance
+            </h3>
+            <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
+              Your official certificate will be automatically minted as soon as all HOD-allocated academic courses (theory and labs) and common institutional nodes are cleared.
+            </p>
+          </div>
+
+          <div className="pt-3 flex flex-wrap items-center justify-center gap-3">
+            <button
+              onClick={async () => {
+                try {
+                  setError(null);
+                  await api.post('/certificates/my/claim');
+                  await fetchCerts();
+                } catch (err: any) {
+                  setError(err.response?.data?.detail || 'Some nodes are still pending clearance.');
+                }
+              }}
+              className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-2 cursor-pointer"
+            >
+              <ShieldCheck className="w-4 h-4" /> Check Clearance & Generate Certificate
+            </button>
             <Link
               to="/student/request"
-              className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl transition-colors"
+              className="px-5 py-2.5 text-xs font-bold text-indigo-700 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-xl transition-colors inline-flex items-center gap-1.5"
             >
-              Track Application Progress
+              View Clearance Nodes &rarr;
             </Link>
           </div>
         </div>
