@@ -147,15 +147,26 @@ export const StudentRequestPage: React.FC = () => {
   };
 
   const isCleared = (status?: string) => {
-    if (!status) return true;
+    if (!status) return false;
     const s = status.trim().toLowerCase();
-    return (
+    if (
       s === '-' ||
+      s === 'pending review' ||
+      s === 'pending verification' ||
+      s === 'pending' ||
+      s === 'under review' ||
+      s.startsWith('due:') ||
+      s.includes('unpaid')
+    ) {
+      return false;
+    }
+    return (
       s === 'no dues' ||
       s === 'no due' ||
       s === 'cleared' ||
       s === 'waived' ||
       s === 'exempted' ||
+      s.startsWith('exempted') ||
       s === 'verified'
     );
   };
@@ -550,14 +561,14 @@ export const StudentRequestPage: React.FC = () => {
                       <h4 className="font-bold text-slate-900 text-xs mt-1.5">{com.name}</h4>
                     </div>
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
                         cleared
                           ? 'bg-emerald-100 text-emerald-800'
-                          : 'bg-amber-100 text-amber-800'
+                          : 'bg-amber-100 text-amber-800 border border-amber-200'
                       }`}
                     >
                       {cleared ? <Check className="w-2.5 h-2.5 stroke-[3]" /> : <Clock className="w-2.5 h-2.5" />}
-                      {cleared ? 'No Dues' : com.dues_status || 'Pending'}
+                      {cleared ? 'No Dues' : (com.dues_status || 'Pending Review')}
                     </span>
                   </div>
 
@@ -567,11 +578,17 @@ export const StudentRequestPage: React.FC = () => {
                 </div>
 
                 <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-                  <span className="font-medium text-slate-700 truncate max-w-[200px]">
-                    {com.faculty_name}
+                  <span className="font-medium text-slate-700 truncate max-w-[200px]" title={com.faculty_name}>
+                    {com.faculty_name || 'Allocated Officer'}
                   </span>
-                  <span className="font-mono text-[10px] text-slate-400">
-                    {com.signature_date || '—'}
+                  <span className="font-mono text-[10px]">
+                    {cleared && com.signature_date && com.signature_date !== '-' ? (
+                      <span className="text-emerald-700 font-semibold">{com.signature_date}</span>
+                    ) : (
+                      <span className="text-amber-700 font-medium bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded text-[10px]">
+                        Pending Review
+                      </span>
+                    )}
                   </span>
                 </div>
               </div>

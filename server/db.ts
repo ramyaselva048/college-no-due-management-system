@@ -566,8 +566,17 @@ class InMemoryDatabase {
       if (duePaymentsRes.rows) {
         this.duePayments = duePaymentsRes.rows;
       }
-      if (noDueRequestsRes.rows) {
+      if (noDueRequestsRes.rows && noDueRequestsRes.rows.length >= this.noDueRequests.length) {
         this.noDueRequests = noDueRequestsRes.rows;
+      } else if (noDueRequestsRes.rows && noDueRequestsRes.rows.length > 0) {
+        for (const r of noDueRequestsRes.rows) {
+          const idx = this.noDueRequests.findIndex(x => x.id === r.id);
+          if (idx === -1) {
+            this.noDueRequests.push(r);
+          } else {
+            this.noDueRequests[idx] = { ...this.noDueRequests[idx], ...r };
+          }
+        }
       }
       if (noDueApprovalsRes.rows) {
         this.noDueApprovals = noDueApprovalsRes.rows;

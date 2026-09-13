@@ -481,16 +481,16 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                   />
                 </div>
 
-                {!currentRequest.hod_endorsed && !canHODEndorse && (
+                {!currentRequest.hod_endorsed && totalPendingNodes > 0 && (
                   <div className="mt-3.5 p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 text-xs flex items-center gap-2">
                     <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
                     <span>
-                      <strong>Staff Clearances Incomplete:</strong> {totalPendingNodes} clearance node(s) are still pending staff acceptance. HOD can only endorse once all subjects, labs, and institutional nodes are cleared.
+                      <strong>HOD Authority Endorsement:</strong> {totalPendingNodes} clearance node(s) remain unverified by individual staff. Endorsing here will approve and clear all records under Head of Department authority.
                     </span>
                   </div>
                 )}
 
-                {!currentRequest.hod_endorsed && canHODEndorse && (
+                {!currentRequest.hod_endorsed && totalPendingNodes === 0 && (
                   <div className="mt-3.5 p-3 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-950 text-xs flex items-center gap-2">
                     <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
                     <span>
@@ -504,19 +504,15 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                     <button
                       type="button"
                       onClick={handleSignOffHOD}
-                      disabled={!canHODEndorse || actionLoading}
-                      className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 ${
-                        !canHODEndorse
-                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
-                          : 'text-white bg-amber-600 hover:bg-amber-700 cursor-pointer'
-                      }`}
+                      disabled={actionLoading}
+                      className="px-5 py-2.5 text-xs font-bold rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 text-white bg-amber-600 hover:bg-amber-700 cursor-pointer disabled:opacity-50"
                       id="btn-hod-sign-endorsement"
                     >
                       <Check className="w-4 h-4" />
-                      {!canHODEndorse
-                        ? `Cannot Endorse (${totalPendingNodes} Staff Clearances Pending)`
-                        : actionLoading
+                      {actionLoading
                         ? 'Signing Endorsement...'
+                        : totalPendingNodes > 0
+                        ? 'Approve & Endorse All (HOD Authority)'
                         : 'Digitally Endorse & Forward to Principal'}
                     </button>
                   </div>

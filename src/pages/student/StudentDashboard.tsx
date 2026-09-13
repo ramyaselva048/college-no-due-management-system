@@ -216,36 +216,67 @@ export const StudentDashboard: React.FC = () => {
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {activeRequest.approvals?.map((app: any) => (
-              <div
-                key={app.id}
-                className={`p-3 rounded-xl border text-xs ${
-                  app.status === 'approved'
-                    ? 'bg-emerald-50/50 border-emerald-200 text-emerald-900'
-                    : app.status === 'rejected'
-                    ? 'bg-rose-50/50 border-rose-200 text-rose-900'
-                    : 'bg-slate-50 border-slate-200 text-slate-700'
-                }`}
-              >
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-bold truncate">{app.department_name}</span>
-                  {app.status === 'approved' ? (
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                  ) : app.status === 'rejected' ? (
-                    <AlertTriangle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                  ) : (
-                    <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  )}
-                </div>
-                <span className="text-[10px] uppercase font-semibold block">
-                  {app.status}
+          {/* HOD Endorsement Status */}
+          {activeRequest.signatories?.hod?.signed ? (
+            <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-950 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>
+                  <strong>HOD Approved & Endorsed:</strong> Signed off by {activeRequest.signatories.hod.name || 'Head of Department'}. Ready for certificate issuance.
                 </span>
-                {app.remarks && (
-                  <p className="text-[10px] text-slate-500 mt-1 italic truncate">"{app.remarks}"</p>
-                )}
               </div>
-            ))}
+              <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full">
+                {activeRequest.signatories.hod.date || 'Endorsed'}
+              </span>
+            </div>
+          ) : (
+            <div className="mb-4 p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-950 text-xs flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Clock className="w-4 h-4 text-amber-600 shrink-0" />
+                <span>
+                  <strong>Pending HOD Endorsement:</strong> Subject faculty clearances will be submitted to the Head of Department for endorsement.
+                </span>
+              </div>
+              <span className="text-[10px] font-bold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                In Review
+              </span>
+            </div>
+          )}
+
+          {/* Allocated Subjects Preview */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {[...(activeRequest.subjects || []), ...(activeRequest.labs || [])]
+              .filter((i: any) => i.name && i.name !== '-')
+              .slice(0, 6)
+              .map((item: any, idx: number) => {
+                const s = (item.dues_status || '').toLowerCase();
+                const isCleared = s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'nil' || s === 'approved';
+                return (
+                  <div
+                    key={idx}
+                    className={`p-3 rounded-xl border text-xs ${
+                      isCleared
+                        ? 'bg-emerald-50/50 border-emerald-200 text-emerald-900'
+                        : 'bg-slate-50 border-slate-200 text-slate-700'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-bold truncate">{item.slot ? `${item.slot}: ` : ''}{item.name}</span>
+                      {isCleared ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      ) : (
+                        <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between text-[10px]">
+                      <span className="text-slate-500 truncate max-w-[130px]">{item.faculty_name || 'Faculty In-Charge'}</span>
+                      <span className={`font-semibold uppercase ${isCleared ? 'text-emerald-700' : 'text-slate-500'}`}>
+                        {item.dues_status || 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
           </div>
 
           <div className="mt-4 pt-4 border-t border-slate-100 flex justify-end">

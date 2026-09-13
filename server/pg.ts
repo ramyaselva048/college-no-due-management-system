@@ -106,6 +106,7 @@ async function executeWithRetry<T>(fn: () => Promise<T>, maxRetries = 3): Promis
 }
 
 const tableColumnCache = new Map<string, Set<string>>();
+const tableDateColumnCache = new Map<string, Set<string>>();
 
 export async function getTableColumns(tableName: string): Promise<Set<string> | null> {
   if (tableColumnCache.has(tableName)) {
@@ -114,13 +115,22 @@ export async function getTableColumns(tableName: string): Promise<Set<string> | 
   const pool = getPool();
   if (!pool) return null;
   try {
-    const res = await pool.query<{ column_name: string }>(
-      'SELECT column_name FROM information_schema.columns WHERE table_name = $1',
+    const res = await pool.query<{ column_name: string; data_type: string }>(
+      'SELECT column_name, data_type FROM information_schema.columns WHERE table_name = $1',
       [tableName]
     );
     if (res.rows && res.rows.length > 0) {
       const colSet = new Set(res.rows.map((r) => r.column_name));
+      const dateCols = new Set(
+        res.rows
+          .filter((r) => {
+            const dt = (r.data_type || '').toLowerCase();
+            return dt.includes('timestamp') || dt.includes('date') || dt.includes('time');
+          })
+          .map((r) => r.column_name)
+      );
       tableColumnCache.set(tableName, colSet);
+      tableDateColumnCache.set(tableName, dateCols);
       return colSet;
     }
   } catch (err) {
@@ -131,6 +141,46 @@ export async function getTableColumns(tableName: string): Promise<Set<string> | 
 
 export function clearTableColumnCache() {
   tableColumnCache.clear();
+  tableDateColumnCache.clear();
+}
+
+// Safely normalize and sanitize field values before sending to PostgreSQL
+export function sanitizeValueForPostgres(tableName: string, colName: string, value: any): any {
+  if (value === undefined || value === null) return null;
+
+  if (typeof value === 'object' && !(value instanceof Date)) {
+    return JSON.stringify(value);
+  }
+
+  const dateCols = tableDateColumnCache.get(tableName);
+  const isDate = dateCols
+    ? dateCols.has(colName)
+    : (colName.endsWith('_at') || colName.endsWith('_date') || colName === 'date' || colName.includes('timestamp'));
+
+  if (isDate) {
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed || trimmed === '-' || trimmed === 'null' || trimmed === 'undefined') {
+        return null;
+      }
+      // Matches DD/MM/YYYY or DD-MM-YYYY, with optional time
+      const dmyMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s+(\d{1,2}:\d{1,2}(?::\d{1,2})?))?$/);
+      if (dmyMatch) {
+        const [, day, month, year, time] = dmyMatch;
+        const isoDate = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+        return time ? `${isoDate}T${time}Z` : `${isoDate}T00:00:00.000Z`;
+      }
+      if (/^\d{4}-\d{2}-\d{2}/.test(trimmed)) {
+        return trimmed;
+      }
+      const parsed = new Date(trimmed);
+      if (!isNaN(parsed.getTime())) {
+        return parsed.toISOString();
+      }
+    }
+  }
+
+  return value;
 }
 
 // Utility to safely insert or update PostgreSQL records in fast, low-lock batches
@@ -176,12 +226,7 @@ export async function syncTableToPostgres(tableName: string, records: any[]): Pr
       for (const record of batch) {
         const rowParams: string[] = [];
         for (const k of allKeys) {
-          let v = record[k];
-          if (v !== undefined && v !== null && typeof v === 'object' && !(v instanceof Date)) {
-            v = JSON.stringify(v);
-          } else if (v === undefined) {
-            v = null;
-          }
+          const v = sanitizeValueForPostgres(tableName, k, record[k]);
           values.push(v);
           rowParams.push(`$${paramIndex++}`);
         }
@@ -225,13 +270,7 @@ export async function syncSingleRecordToPostgres(tableName: string, record: any)
     if (keys.length === 0) return;
 
     await executeWithRetry(async () => {
-      const values = keys.map((k) => {
-        const v = record[k];
-        if (v !== null && typeof v === 'object' && !(v instanceof Date)) {
-          return JSON.stringify(v);
-        }
-        return v;
-      });
+      const values = keys.map((k) => sanitizeValueForPostgres(tableName, k, record[k]));
 
       const placeholders = keys.map((_, i) => `$${i + 1}`).join(', ');
       const quotedKeys = keys.map((k) => `"${k}"`).join(', ');

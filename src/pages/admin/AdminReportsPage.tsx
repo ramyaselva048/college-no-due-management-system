@@ -729,7 +729,7 @@ export const AdminReportsPage: React.FC = () => {
                     Reset Clearance Cycle (New Academic Semester)
                   </span>
                   <p className="text-[11px] text-slate-500 mt-0.5">
-                    Clears student clearance applications, department approvals, and issued certificates. Keeps all student accounts, staff, departments, and dues intact.
+                    Clears student clearance applications, staff subject clearances, and issued certificates. Keeps all student accounts, staff, departments, and dues intact.
                   </p>
                 </div>
               </label>

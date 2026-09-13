@@ -117,7 +117,7 @@ export const StudentCertificatePage: React.FC = () => {
               No Due Certificate Pending Clearance
             </h3>
             <p className="text-xs text-slate-500 max-w-md mx-auto mt-1 leading-relaxed">
-              Your official certificate will be automatically minted as soon as all HOD-allocated academic courses (theory and labs) and common institutional nodes are cleared.
+              Your official certificate will be issued once staff clearances, HOD endorsement, and formal Admin approval are completed.
             </p>
           </div>
 
@@ -129,12 +129,12 @@ export const StudentCertificatePage: React.FC = () => {
                   await api.post('/certificates/my/claim');
                   await fetchCerts();
                 } catch (err: any) {
-                  setError(err.response?.data?.detail || 'Some nodes are still pending clearance.');
+                  setError(err.response?.data?.detail || 'Clearance or Admin approval is still pending.');
                 }
               }}
               className="px-5 py-2.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-2 cursor-pointer"
             >
-              <ShieldCheck className="w-4 h-4" /> Check Clearance & Generate Certificate
+              <ShieldCheck className="w-4 h-4" /> Check Clearance & Admin Approval Status
             </button>
             <Link
               to="/student/request"

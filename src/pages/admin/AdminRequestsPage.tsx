@@ -216,10 +216,15 @@ export const AdminRequestsPage: React.FC = () => {
         <div className="space-y-4">
           {filteredRequests.map((req) => {
             const isExpanded = expandedId === req.id;
-            const totalDepts = req.approvals?.length || 0;
-            const approvedDepts = req.approvals?.filter((a) => a.status === 'approved').length || 0;
-            const hasRejections = req.approvals?.some((a) => a.status === 'rejected');
-            const allApproved = totalDepts > 0 && approvedDepts === totalDepts;
+            const isCleared = (status?: string) => {
+              if (!status) return false;
+              const s = status.toLowerCase();
+              return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'nil' || s === 'approved';
+            };
+            const allItems = [...(req.subjects || []), ...(req.labs || []), ...(req.common_nodes || [])].filter((i: any) => i.name && i.name !== '-');
+            const totalItems = allItems.length;
+            const clearedItems = allItems.filter((i: any) => isCleared(i.dues_status)).length;
+            const isHODEndorsed = !!req.signatories?.hod?.signed || !!req.hod_approved_at;
 
             return (
               <div
@@ -249,7 +254,7 @@ export const AdminRequestsPage: React.FC = () => {
                         >
                           {req.status.replace('_', ' ')}
                         </span>
-                        {req.signatories?.hod?.signed ? (
+                        {isHODEndorsed ? (
                           <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
                             <CheckCircle2 className="w-3 h-3 text-emerald-600" /> HOD Endorsed
                           </span>
@@ -271,17 +276,27 @@ export const AdminRequestsPage: React.FC = () => {
                   {/* Actions & Progress Summary */}
                   <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                     <div className="text-left sm:text-right mr-2">
-                      <span className="text-[11px] font-bold text-slate-700 block">
-                        {approvedDepts}/{totalDepts} Cleared
+                      <span className="text-[11px] font-bold block text-slate-800">
+                        {isHODEndorsed ? (
+                          <span className="text-emerald-700 font-bold inline-flex items-center gap-1">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-600" /> HOD Endorsed
+                          </span>
+                        ) : (
+                          <span className="text-amber-700 font-bold inline-flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-amber-600" /> Awaiting HOD
+                          </span>
+                        )}
                       </span>
-                      <span className="text-[10px] text-slate-400">Department approvals</span>
+                      <span className="text-[10px] text-slate-400">
+                        {totalItems > 0 ? `${clearedItems}/${totalItems} Subjects Cleared` : 'Clearance Workflow'}
+                      </span>
                     </div>
 
                     <button
                       onClick={() => setExpandedId(isExpanded ? null : req.id)}
                       className="px-3 py-1.5 text-xs font-semibold rounded-lg border border-slate-200 bg-slate-50 hover:bg-slate-100 text-slate-700 inline-flex items-center gap-1 cursor-pointer"
                     >
-                      {isExpanded ? 'Hide Details' : 'View Approvals'}{' '}
+                      {isExpanded ? 'Hide Ledger' : 'View Clearance Ledger'}{' '}
                       {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                     </button>
 
@@ -289,17 +304,17 @@ export const AdminRequestsPage: React.FC = () => {
                       <button
                         onClick={() => {
                           setApprovingReq(req);
-                          setApproveRemarks('Approved by Principal / Institutional Administration');
+                          setApproveRemarks('Approved by Institutional Administration / Principal');
                         }}
-                        disabled={actionLoading === req.id || !req.signatories?.hod?.signed}
-                        title={!req.signatories?.hod?.signed ? 'Awaiting HOD endorsement first' : 'Grant Principal Approval'}
+                        disabled={actionLoading === req.id || !isHODEndorsed}
+                        title={!isHODEndorsed ? 'Awaiting HOD endorsement first' : 'Admin must approve request before certificate can be issued'}
                         className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-colors ${
-                          !req.signatories?.hod?.signed
+                          !isHODEndorsed
                             ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
                             : 'text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border-emerald-200 cursor-pointer'
                         }`}
                       >
-                        {!req.signatories?.hod?.signed ? 'Awaiting HOD' : 'Principal Approve'}
+                        {!isHODEndorsed ? 'Awaiting HOD' : 'Admin Approve'}
                       </button>
                     )}
 
@@ -309,7 +324,7 @@ export const AdminRequestsPage: React.FC = () => {
                         disabled={actionLoading === req.id}
                         className="px-3.5 py-1.5 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors shadow-2xs inline-flex items-center gap-1 cursor-pointer disabled:opacity-50"
                       >
-                        <Award className="w-3.5 h-3.5" /> Issue Certificate (Principal)
+                        <Award className="w-3.5 h-3.5" /> Issue Certificate
                       </button>
                     )}
 
@@ -337,51 +352,84 @@ export const AdminRequestsPage: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Expanded Department Sign-Offs Drawer */}
+                {/* Expanded Clearance Ledger Drawer */}
                 {isExpanded && (
                   <div className="p-5 bg-slate-50 border-t border-slate-100">
-                    <h5 className="font-bold text-xs text-slate-700 uppercase tracking-wider mb-3">
-                      Departmental Clearance Status & Verification Ledger
-                    </h5>
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
+                      <div>
+                        <h5 className="font-bold text-xs text-slate-900 uppercase tracking-wider">
+                          Allocated Subjects & HOD Endorsement Ledger
+                        </h5>
+                        <p className="text-[11px] text-slate-500">
+                          Clearance verified by allocated course faculty and endorsed by Head of Department
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {isHODEndorsed ? (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1.5">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            HOD Endorsement Complete ({req.signatories?.hod?.name || req.hod_name || 'HOD'})
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-100 text-amber-800 border border-amber-300 inline-flex items-center gap-1.5">
+                            <Clock className="w-3.5 h-3.5 text-amber-600" />
+                            Awaiting HOD Endorsement
+                          </span>
+                        )}
+                      </div>
+                    </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                      {req.approvals?.map((app) => (
-                        <div
-                          key={app.id}
-                          className={`p-3 rounded-xl border text-xs ${
-                            app.status === 'approved'
-                              ? 'bg-white border-emerald-200'
-                              : app.status === 'rejected'
-                              ? 'bg-white border-rose-200'
-                              : 'bg-white border-slate-200'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between mb-1">
-                            <span className="font-bold text-slate-900 truncate">{app.department_name}</span>
-                            {app.status === 'approved' ? (
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                            ) : app.status === 'rejected' ? (
-                              <XCircle className="w-3.5 h-3.5 text-rose-600 shrink-0" />
-                            ) : (
-                              <Clock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                            )}
-                          </div>
-                          <span
-                            className={`text-[10px] font-bold uppercase ${
-                              app.status === 'approved'
-                                ? 'text-emerald-700'
-                                : app.status === 'rejected'
-                                ? 'text-rose-700'
-                                : 'text-slate-500'
+                    {req.signatories?.hod?.remarks && (
+                      <div className="mb-4 p-3 rounded-xl bg-emerald-50/70 border border-emerald-200 text-emerald-950 text-xs flex items-start gap-2">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                        <div>
+                          <p className="font-bold text-[11px] text-emerald-900">
+                            Head of Department Sign-Off ({req.signatories?.hod?.date || 'Recorded'}):
+                          </p>
+                          <p className="text-xs text-emerald-800 italic mt-0.5">"{req.signatories.hod.remarks}"</p>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {allItems.map((item: any, idx: number) => {
+                        const cleared = isCleared(item.dues_status);
+                        return (
+                          <div
+                            key={idx}
+                            className={`p-3 rounded-xl border text-xs ${
+                              cleared
+                                ? 'bg-white border-emerald-200'
+                                : 'bg-white border-amber-200'
                             }`}
                           >
-                            {app.status}
-                          </span>
-                          {app.remarks && (
-                            <p className="text-[10px] text-slate-500 italic mt-1 truncate">"{app.remarks}"</p>
-                          )}
-                        </div>
-                      ))}
+                            <div className="flex items-start justify-between gap-2 mb-1">
+                              <span className="font-bold text-slate-900 truncate">
+                                {item.slot ? `${item.slot}: ` : ''}{item.name}
+                              </span>
+                              {cleared ? (
+                                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                              ) : (
+                                <Clock className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                              )}
+                            </div>
+                            <div className="flex items-center justify-between mt-1 text-[11px]">
+                              <span className="text-slate-500 truncate max-w-[140px]" title={item.faculty_name || 'Faculty In-Charge'}>
+                                {item.faculty_name || 'Faculty In-Charge'}
+                              </span>
+                              <span
+                                className={`font-bold px-2 py-0.5 rounded-full text-[10px] ${
+                                  cleared
+                                    ? 'bg-emerald-50 text-emerald-700'
+                                    : 'bg-amber-50 text-amber-700'
+                                }`}
+                              >
+                                {item.dues_status || 'Pending'}
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 )}

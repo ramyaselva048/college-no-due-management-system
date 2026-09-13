@@ -253,13 +253,13 @@ export const AdminCertificatesPage: React.FC = () => {
     try {
       const res = await api.get('/no-due-requests/all');
       const allRequests = Array.isArray(res.data) ? res.data : [];
-      // Eligible: not completed, and all approvals approved
+      // Eligible: not completed, and formally approved by Admin
       const issuedReqIds = new Set(certificates.map(c => c.request_id));
       const eligible = allRequests.filter(r => {
         if (issuedReqIds.has(r.id)) return false;
         if (r.status === 'completed') return false;
-        const approvals = r.approvals || [];
-        return approvals.length > 0 && approvals.every((a: any) => a.status === 'approved');
+        // Only requests approved by Admin can have certificates issued
+        return r.status === 'approved';
       });
       setEligibleRequests(eligible);
     } catch {
@@ -671,7 +671,7 @@ export const AdminCertificatesPage: React.FC = () => {
               <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
                 {hasActiveFilters
                   ? 'No certificate records matched the search query or filter criteria. Try adjusting your search or resetting filters.'
-                  : 'No student certificates have been issued yet. Issue certificates when all departmental clearance signs are approved.'}
+                  : 'No student certificates have been issued yet. Issue certificates once clearance requests are approved by Admin.'}
               </p>
               {hasActiveFilters ? (
                 <button
@@ -1552,7 +1552,7 @@ export const AdminCertificatesPage: React.FC = () => {
               <div>
                 <h4 className="font-bold text-slate-900 text-base">Issue New Certificate</h4>
                 <p className="text-xs text-slate-500">
-                  Select an eligible clearance request where all departments have signed off
+                  Select an Admin-approved clearance request to generate its official certificate
                 </p>
               </div>
               <button
@@ -1574,7 +1574,7 @@ export const AdminCertificatesPage: React.FC = () => {
                   <Award className="w-10 h-10 text-slate-300 mx-auto" />
                   <p className="font-bold text-slate-800">No Eligible Requests Pending Issuance</p>
                   <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
-                    Certificates can only be issued once all departmental clearance officers approve the student's request.
+                    Certificates can only be issued after Admin formally approves the clearance request.
                   </p>
                 </div>
               ) : (
@@ -1588,8 +1588,8 @@ export const AdminCertificatesPage: React.FC = () => {
                           <span className="text-slate-400">•</span>
                           <span className="text-slate-600">{req.department_name}</span>
                         </div>
-                        <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.2 rounded">
-                          All Department Approvals Complete
+                        <span className="inline-block mt-1 text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                          Admin Approved • Ready for Certificate
                         </span>
                       </div>
 
