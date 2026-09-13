@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, StudentProfile } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 export const AdminDuesPage: React.FC = () => {
   const [dues, setDues] = useState<any[]>([]);
@@ -866,26 +867,24 @@ export const AdminDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Target Department *
                 </label>
-                <select
-                  required
+                <SearchableSelect
                   value={deptFormData.department_id}
                   onChange={(e) =>
                     setDeptFormData({ ...deptFormData, department_id: Number(e.target.value) })
                   }
+                  placeholder="Select Department..."
+                  searchPlaceholder="Type department name..."
                   className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-xl bg-white text-slate-800 font-semibold focus:ring-1 focus:ring-emerald-500"
-                >
-                  <option value={0} disabled>Select Department</option>
-                  {departments
+                  options={departments
                     .filter((d) => d.is_active)
                     .map((d) => {
                       const deptStudentCount = students.filter((s) => s.department_id === d.id).length;
-                      return (
-                        <option key={d.id} value={d.id}>
-                          {d.name} ({d.code || 'DEPT'}) — {deptStudentCount} Enrolled Students
-                        </option>
-                      );
+                      return {
+                        value: d.id,
+                        label: `${d.name} (${d.code || 'DEPT'}) — ${deptStudentCount} Enrolled Students`
+                      };
                     })}
-                </select>
+                />
                 <p className="text-[11px] text-slate-400 mt-1">
                   Only students enrolled in this academic department will receive these clearance dues.
                 </p>
@@ -897,59 +896,67 @@ export const AdminDuesPage: React.FC = () => {
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     Academic Year
                   </label>
-                  <select
+                  <SearchableSelect
                     value={deptFormData.year}
                     onChange={(e) =>
                       setDeptFormData({ ...deptFormData, year: e.target.value })
                     }
+                    placeholder="All Years"
+                    searchPlaceholder="Type year..."
                     className="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    <option value="ALL">All Years (1 - 4)</option>
-                    <option value="1">1st Year</option>
-                    <option value="2">2nd Year</option>
-                    <option value="3">3rd Year</option>
-                    <option value="4">4th Year</option>
-                  </select>
+                    options={[
+                      { value: 'ALL', label: 'All Years (1 - 4)' },
+                      { value: '1', label: '1st Year' },
+                      { value: '2', label: '2nd Year' },
+                      { value: '3', label: '3rd Year' },
+                      { value: '4', label: '4th Year' }
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     Section
                   </label>
-                  <select
+                  <SearchableSelect
                     value={deptFormData.section}
                     onChange={(e) =>
                       setDeptFormData({ ...deptFormData, section: e.target.value })
                     }
+                    placeholder="All Sections"
+                    searchPlaceholder="Type section..."
                     className="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    <option value="ALL">All Sections</option>
-                    <option value="A">Section A</option>
-                    <option value="B">Section B</option>
-                    <option value="C">Section C</option>
-                  </select>
+                    options={[
+                      { value: 'ALL', label: 'All Sections' },
+                      { value: 'A', label: 'Section A' },
+                      { value: 'B', label: 'Section B' },
+                      { value: 'C', label: 'Section C' }
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-[11px] font-semibold text-slate-600 mb-1">
                     Degree / Course
                   </label>
-                  <select
+                  <SearchableSelect
                     value={deptFormData.course_id}
                     onChange={(e) =>
                       setDeptFormData({ ...deptFormData, course_id: e.target.value })
                     }
+                    placeholder="All Courses"
+                    searchPlaceholder="Type course..."
                     className="w-full text-xs px-2.5 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    <option value="ALL">All Courses</option>
-                    {courses
-                      .filter((c) => !deptFormData.department_id || c.department_id === deptFormData.department_id)
-                      .map((c) => (
-                        <option key={c.id} value={c.id}>
-                          {c.code || c.name}
-                        </option>
-                      ))}
-                  </select>
+                    options={[
+                      { value: 'ALL', label: 'All Courses' },
+                      ...courses
+                        .filter((c) => !deptFormData.department_id || c.department_id === deptFormData.department_id)
+                        .map((c) => ({
+                          value: c.id,
+                          label: c.code || c.name
+                        }))
+                    ]}
+                  />
                 </div>
               </div>
 
@@ -1003,20 +1010,19 @@ export const AdminDuesPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Due Category *
                   </label>
-                  <select
-                    required
+                  <SearchableSelect
                     value={deptFormData.category_id}
                     onChange={(e) =>
                       setDeptFormData({ ...deptFormData, category_id: Number(e.target.value) })
                     }
+                    placeholder="Select Category..."
+                    searchPlaceholder="Type category name..."
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 focus:ring-1 focus:ring-emerald-500"
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={categories.map((cat) => ({
+                      value: cat.id,
+                      label: cat.name
+                    }))}
+                  />
                 </div>
 
                 <div>

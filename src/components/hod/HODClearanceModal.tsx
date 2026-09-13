@@ -113,6 +113,19 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
     }
   };
 
+  const isCleared = (status?: string) => {
+    if (!status) return false;
+    const s = status.toLowerCase();
+    return s === 'no dues' || s === 'no due' || s === 'cleared' || s === 'nil' || s === 'approved';
+  };
+
+  const pendingSubjects = (currentRequest.subjects || []).filter((s: any) => !isCleared(s.dues_status));
+  const pendingLabs = (currentRequest.labs || []).filter((l: any) => l.name !== '-' && !isCleared(l.dues_status));
+  const pendingCommon = (currentRequest.common_nodes || []).filter((c: any) => !isCleared(c.dues_status));
+
+  const totalPendingNodes = pendingSubjects.length + pendingLabs.length + pendingCommon.length;
+  const canHODEndorse = totalPendingNodes === 0;
+
   return (
     <div
       className="fixed inset-0 z-50 bg-slate-900/70 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto"
@@ -224,13 +237,13 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                             {sub.faculty_name || 'Staff In-Charge'}
                           </td>
                           <td className="px-3.5 py-2.5">
-                            {sub.dues_status === 'No Dues' ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
-                                <Check className="w-3 h-3" /> No Dues
+                            {isCleared(sub.dues_status) ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-600" /> Accepted & Cleared
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                {sub.dues_status || 'Pending Dues'}
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-600" /> Pending Staff Acceptance
                               </span>
                             )}
                           </td>
@@ -301,13 +314,13 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                             {lab.faculty_name || 'Lab Instructor'}
                           </td>
                           <td className="px-3.5 py-2.5">
-                            {lab.dues_status === 'No Dues' ? (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
-                                <Check className="w-3 h-3" /> No Dues
+                            {isCleared(lab.dues_status) ? (
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 inline-flex items-center gap-1">
+                                <Check className="w-3 h-3 text-emerald-600" /> Accepted & Cleared
                               </span>
                             ) : (
-                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                {lab.dues_status || 'Pending Dues'}
+                              <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200 inline-flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-amber-600" /> Pending Lab Staff
                               </span>
                             )}
                           </td>
@@ -468,17 +481,43 @@ export const HODClearanceModal: React.FC<HODClearanceModalProps> = ({
                   />
                 </div>
 
+                {!currentRequest.hod_endorsed && !canHODEndorse && (
+                  <div className="mt-3.5 p-3 rounded-xl bg-amber-100/80 border border-amber-300 text-amber-950 text-xs flex items-center gap-2">
+                    <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                    <span>
+                      <strong>Staff Clearances Incomplete:</strong> {totalPendingNodes} clearance node(s) are still pending staff acceptance. HOD can only endorse once all subjects, labs, and institutional nodes are cleared.
+                    </span>
+                  </div>
+                )}
+
+                {!currentRequest.hod_endorsed && canHODEndorse && (
+                  <div className="mt-3.5 p-3 rounded-xl bg-emerald-100/80 border border-emerald-300 text-emerald-950 text-xs flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-700 shrink-0" />
+                    <span>
+                      <strong>All Clearances Accepted:</strong> Every allocated subject and lab has been cleared by faculty. Ready for HOD digital endorsement.
+                    </span>
+                  </div>
+                )}
+
                 {!currentRequest.hod_endorsed && (
                   <div className="mt-3.5 flex justify-end">
                     <button
                       type="button"
                       onClick={handleSignOffHOD}
-                      disabled={actionLoading}
-                      className="px-5 py-2.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 cursor-pointer"
+                      disabled={!canHODEndorse || actionLoading}
+                      className={`px-5 py-2.5 text-xs font-bold rounded-xl transition-colors shadow-xs inline-flex items-center gap-1.5 ${
+                        !canHODEndorse
+                          ? 'bg-slate-200 text-slate-400 cursor-not-allowed border border-slate-300'
+                          : 'text-white bg-amber-600 hover:bg-amber-700 cursor-pointer'
+                      }`}
                       id="btn-hod-sign-endorsement"
                     >
                       <Check className="w-4 h-4" />
-                      {actionLoading ? 'Signing Endorsement...' : 'Digitally Endorse Clearance Form'}
+                      {!canHODEndorse
+                        ? `Cannot Endorse (${totalPendingNodes} Staff Clearances Pending)`
+                        : actionLoading
+                        ? 'Signing Endorsement...'
+                        : 'Digitally Endorse & Forward to Principal'}
                     </button>
                   </div>
                 )}

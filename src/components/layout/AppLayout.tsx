@@ -17,7 +17,9 @@ import {
   UserCheck,
   CheckCircle2,
   ExternalLink,
-  BookOpen
+  BookOpen,
+  KeyRound,
+  User
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationsDropdown } from './NotificationsDropdown';
@@ -75,6 +77,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
       { label: 'Certificates Ledger', href: '/admin/certificates', icon: Award },
       { label: 'Audit Trail', href: '/admin/audit-logs', icon: History },
       { label: 'Reports & Analytics', href: '/admin/reports', icon: BarChart3 },
+      { label: 'Profile & Security', href: '/admin/profile', icon: KeyRound },
     ];
   }
 
@@ -88,14 +91,17 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
     : 'bg-purple-50 text-purple-700 border-purple-200';
 
   const userDisplayName =
+    (isAdmin ? (user?.full_name || 'Dr. T. Senthilvel (Principal / Admin)') : '') ||
     studentProfile?.full_name ||
     staffProfile?.full_name ||
-    (isAdmin ? 'Administrator' : user?.email?.split('@')[0] || 'User');
+    user?.full_name ||
+    user?.email?.split('@')[0] || 'User';
 
   const subLabel =
+    (isAdmin ? (user?.username ? `@${user.username}` : user?.email || 'Institutional Control') : '') ||
     studentProfile?.register_number ||
     staffProfile?.department_name ||
-    (isAdmin ? 'Institutional Control' : user?.email);
+    user?.email;
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-50 text-slate-900">
@@ -117,25 +123,34 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         {/* User Card */}
         <div className="p-4 border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm">
+            <div className="w-10 h-10 rounded-full bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-sm shrink-0">
               {userDisplayName.charAt(0)}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-900 truncate">{userDisplayName}</p>
-              <p className="text-xs text-slate-500 truncate">{subLabel}</p>
+              <p className="text-sm font-semibold text-slate-900 truncate" title={userDisplayName}>{userDisplayName}</p>
+              <p className="text-xs text-slate-500 truncate" title={subLabel}>{subLabel}</p>
             </div>
           </div>
           <div className="mt-2.5 flex items-center justify-between">
             <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full border ${roleBadgeColor}`}>
               {roleLabel}
             </span>
-            <Link
-              to="/verify"
-              className="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1"
-              target="_blank"
-            >
-              Verify QR <ExternalLink className="w-2.5 h-2.5" />
-            </Link>
+            {isAdmin ? (
+              <Link
+                to="/admin/profile"
+                className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold inline-flex items-center gap-1 hover:underline"
+              >
+                Edit Profile →
+              </Link>
+            ) : (
+              <Link
+                to="/verify"
+                className="text-[11px] text-indigo-600 hover:text-indigo-800 font-medium inline-flex items-center gap-1"
+                target="_blank"
+              >
+                Verify QR <ExternalLink className="w-2.5 h-2.5" />
+              </Link>
+            )}
           </div>
         </div>
 
@@ -258,6 +273,21 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
           </div>
 
           <div className="flex items-center gap-4">
+            {isAdmin && (
+              <Link
+                to="/admin/profile"
+                className={`text-xs font-semibold px-3 py-1.5 rounded-md transition-colors inline-flex items-center gap-1.5 ${
+                  location.pathname === '/admin/profile'
+                    ? 'bg-indigo-50 text-indigo-700 border border-indigo-200'
+                    : 'text-slate-600 hover:text-indigo-600 hover:bg-slate-100'
+                }`}
+                title="Manage Admin Profile, Username & Password"
+              >
+                <KeyRound className="w-3.5 h-3.5 text-indigo-600" />
+                Admin Profile & Password
+              </Link>
+            )}
+
             <Link
               to="/verify"
               className="text-xs text-slate-600 hover:text-indigo-600 font-semibold px-3 py-1.5 rounded-md hover:bg-slate-100 transition-colors inline-flex items-center gap-1.5"

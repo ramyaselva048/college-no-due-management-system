@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, SubjectCourse } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 // Anna University / AICTE common course quick suggestion catalog
 const QUICK_COURSE_SUGGESTIONS = [
@@ -460,68 +461,78 @@ export const AdminCoursesPage: React.FC = () => {
           </div>
 
           {/* Department Filter */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 min-w-[200px]">
             <Building2 className="w-4 h-4 text-slate-400 shrink-0 hidden sm:block" />
-            <select
+            <SearchableSelect
               id="dept-filter-select"
               value={selectedDeptFilter}
               onChange={e => setSelectedDeptFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Departments</option>
-              {departments.map(d => (
-                <option key={d.id} value={String(d.id)}>
-                  {d.name} ({d.code})
-                </option>
-              ))}
-            </select>
+              placeholder="All Departments"
+              searchPlaceholder="Filter department..."
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none"
+              options={[
+                { value: 'ALL', label: 'All Departments' },
+                ...departments.map(d => ({
+                  value: String(d.id),
+                  label: `${d.name} (${d.code})`
+                }))
+              ]}
+            />
           </div>
 
           {/* Year Filter */}
-          <div className="flex items-center gap-2">
-            <select
+          <div className="flex items-center gap-2 min-w-[140px]">
+            <SearchableSelect
               id="year-filter-select"
               value={selectedYearFilter}
               onChange={e => setSelectedYearFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Years</option>
-              <option value="1">Year 1 (1st Yr)</option>
-              <option value="2">Year 2 (2nd Yr)</option>
-              <option value="3">Year 3 (3rd Yr)</option>
-              <option value="4">Year 4 (Final Yr)</option>
-            </select>
+              placeholder="All Years"
+              searchPlaceholder="Filter year..."
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none"
+              options={[
+                { value: 'ALL', label: 'All Years' },
+                { value: '1', label: 'Year 1 (1st Yr)' },
+                { value: '2', label: 'Year 2 (2nd Yr)' },
+                { value: '3', label: 'Year 3 (3rd Yr)' },
+                { value: '4', label: 'Year 4 (Final Yr)' }
+              ]}
+            />
           </div>
 
           {/* Semester Filter */}
-          <div className="flex items-center gap-2">
-            <select
+          <div className="flex items-center gap-2 min-w-[150px]">
+            <SearchableSelect
               id="sem-filter-select"
               value={selectedSemFilter}
               onChange={e => setSelectedSemFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Semesters</option>
-              {[1, 2, 3, 4, 5, 6, 7, 8].map(s => (
-                <option key={s} value={String(s)}>
-                  Semester {s}
-                </option>
-              ))}
-            </select>
+              placeholder="All Semesters"
+              searchPlaceholder="Filter semester..."
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none"
+              options={[
+                { value: 'ALL', label: 'All Semesters' },
+                ...[1, 2, 3, 4, 5, 6, 7, 8].map(s => ({
+                  value: String(s),
+                  label: `Semester ${s}`
+                }))
+              ]}
+            />
           </div>
 
           {/* Type Filter */}
-          <div className="flex items-center gap-2">
-            <select
+          <div className="flex items-center gap-2 min-w-[150px]">
+            <SearchableSelect
               id="type-filter-select"
               value={selectedTypeFilter}
               onChange={e => setSelectedTypeFilter(e.target.value)}
-              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none cursor-pointer"
-            >
-              <option value="ALL">All Types</option>
-              <option value="theory">Theory Subjects</option>
-              <option value="lab">Practical / Labs</option>
-            </select>
+              placeholder="All Types"
+              searchPlaceholder="Filter type..."
+              className="px-3 py-2 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-700 focus:outline-none"
+              options={[
+                { value: 'ALL', label: 'All Types' },
+                { value: 'theory', label: 'Theory Subjects' },
+                { value: 'lab', label: 'Practical / Labs' }
+              ]}
+            />
           </div>
 
           {(selectedDeptFilter !== 'ALL' || selectedYearFilter !== 'ALL' || selectedSemFilter !== 'ALL' || selectedTypeFilter !== 'ALL' || search) && (
@@ -861,7 +872,7 @@ export const AdminCoursesPage: React.FC = () => {
                     </div>
                   ) : (
                     <div>
-                      <select
+                      <SearchableSelect
                         id="form-course-department-select"
                         value={formDeptId}
                         onChange={e => {
@@ -870,15 +881,14 @@ export const AdminCoursesPage: React.FC = () => {
                           const d = departments.find(x => x.id === id);
                           if (d) setFormDeptName(`${d.name} (${d.code})`);
                         }}
-                        required
-                        className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all cursor-pointer"
-                      >
-                        {departments.map(d => (
-                          <option key={d.id} value={d.id}>
-                            {d.name} ({d.code})
-                          </option>
-                        ))}
-                      </select>
+                        placeholder="Select Department..."
+                        searchPlaceholder="Type department name or code..."
+                        className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all"
+                        options={departments.map(d => ({
+                          value: d.id,
+                          label: `${d.name} (${d.code})`
+                        }))}
+                      />
                     </div>
                   )}
                 </div>
@@ -921,7 +931,7 @@ export const AdminCoursesPage: React.FC = () => {
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Course Type <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <SearchableSelect
                       id="form-course-type"
                       value={formCourseType}
                       onChange={e => {
@@ -933,11 +943,14 @@ export const AdminCoursesPage: React.FC = () => {
                           setFormSlot('Sub 1');
                         }
                       }}
-                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none cursor-pointer"
-                    >
-                      <option value="theory">Theory Subject</option>
-                      <option value="lab">Practical / Laboratory</option>
-                    </select>
+                      placeholder="Select course type..."
+                      searchPlaceholder="Type to filter..."
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none"
+                      options={[
+                        { value: 'theory', label: 'Theory Subject' },
+                        { value: 'lab', label: 'Practical / Laboratory' }
+                      ]}
+                    />
                   </div>
 
                   <div>
@@ -1014,40 +1027,41 @@ export const AdminCoursesPage: React.FC = () => {
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Year <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <SearchableSelect
                       id="form-course-year"
                       value={formYear}
                       onChange={e => handleYearChange(Number(e.target.value))}
-                      required
-                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none cursor-pointer"
-                    >
-                      <option value={1}>1st Year (Year 1)</option>
-                      <option value={2}>2nd Year (Year 2)</option>
-                      <option value={3}>3rd Year (Year 3)</option>
-                      <option value={4}>4th Year (Final Year)</option>
-                    </select>
+                      placeholder="Select Year..."
+                      searchPlaceholder="Type year..."
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none"
+                      options={[
+                        { value: 1, label: '1st Year (Year 1)' },
+                        { value: 2, label: '2nd Year (Year 2)' },
+                        { value: 3, label: '3rd Year (Year 3)' },
+                        { value: 4, label: '4th Year (Final Year)' }
+                      ]}
+                    />
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Semester <span className="text-rose-500">*</span>
                     </label>
-                    <select
+                    <SearchableSelect
                       id="form-course-semester"
                       value={formSemester}
                       onChange={e => setFormSemester(Number(e.target.value))}
-                      required
-                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none cursor-pointer"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7, 8].map(sem => {
+                      placeholder="Select Semester..."
+                      searchPlaceholder="Type semester..."
+                      className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none"
+                      options={[1, 2, 3, 4, 5, 6, 7, 8].map(sem => {
                         const isExpectedForYear = Math.ceil(sem / 2) === formYear;
-                        return (
-                          <option key={sem} value={sem}>
-                            Semester {sem} {isExpectedForYear ? '★' : ''}
-                          </option>
-                        );
+                        return {
+                          value: sem,
+                          label: `Semester ${sem} ${isExpectedForYear ? '★' : ''}`
+                        };
                       })}
-                    </select>
+                    />
                   </div>
                 </div>
               </div>

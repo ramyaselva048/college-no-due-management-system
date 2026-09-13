@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, Course } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 export const AdminStudentsPage: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
@@ -332,48 +333,58 @@ export const AdminStudentsPage: React.FC = () => {
 
         <div className="flex flex-wrap items-center gap-2.5">
           {/* Department Filter */}
-          <select
-            value={filterDept}
-            onChange={(e) => setFilterDept(e.target.value)}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All Departments</option>
-            {departments.map((d) => (
-              <option key={d.id} value={d.id}>
-                {d.name} ({d.code})
-              </option>
-            ))}
-          </select>
+          <div className="min-w-[170px]">
+            <SearchableSelect
+              value={filterDept}
+              onChange={(e) => setFilterDept(e.target.value)}
+              placeholder="All Departments"
+              searchPlaceholder="Filter department..."
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              options={[
+                { value: 'all', label: 'All Departments' },
+                ...departments.map((d) => ({
+                  value: d.id,
+                  label: `${d.name} (${d.code})`
+                }))
+              ]}
+            />
+          </div>
 
           {/* Year Filter */}
-          <select
-            value={filterYear}
-            onChange={(e) => setFilterYear(e.target.value)}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All Years</option>
-            <option value="1">1st Year</option>
-            <option value="2">2nd Year</option>
-            <option value="3">3rd Year</option>
-            <option value="4">4th Year</option>
-          </select>
+          <div className="min-w-[130px]">
+            <SearchableSelect
+              value={filterYear}
+              onChange={(e) => setFilterYear(e.target.value)}
+              placeholder="All Years"
+              searchPlaceholder="Filter year..."
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              options={[
+                { value: 'all', label: 'All Years' },
+                { value: '1', label: '1st Year' },
+                { value: '2', label: '2nd Year' },
+                { value: '3', label: '3rd Year' },
+                { value: '4', label: '4th Year' }
+              ]}
+            />
+          </div>
 
           {/* Semester Filter */}
-          <select
-            value={filterSem}
-            onChange={(e) => setFilterSem(e.target.value)}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-          >
-            <option value="all">All Semesters</option>
-            <option value="1">Sem 1</option>
-            <option value="2">Sem 2</option>
-            <option value="3">Sem 3</option>
-            <option value="4">Sem 4</option>
-            <option value="5">Sem 5</option>
-            <option value="6">Sem 6</option>
-            <option value="7">Sem 7</option>
-            <option value="8">Sem 8</option>
-          </select>
+          <div className="min-w-[140px]">
+            <SearchableSelect
+              value={filterSem}
+              onChange={(e) => setFilterSem(e.target.value)}
+              placeholder="All Semesters"
+              searchPlaceholder="Filter semester..."
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+              options={[
+                { value: 'all', label: 'All Semesters' },
+                ...[1, 2, 3, 4, 5, 6, 7, 8].map(s => ({
+                  value: String(s),
+                  label: `Sem ${s}`
+                }))
+              ]}
+            />
+          </div>
 
           <div className="relative">
             <input
@@ -779,7 +790,7 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year *</label>
-                  <select
+                  <SearchableSelect
                     value={formData.year}
                     onChange={(e) => {
                       const yr = Number(e.target.value) || 1;
@@ -787,35 +798,41 @@ export const AdminStudentsPage: React.FC = () => {
                       const newSem = validSems.includes(formData.semester) ? formData.semester : yr * 2 - 1;
                       setFormData({ ...formData, year: yr, semester: newSem });
                     }}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
-                  >
-                    <option value={1}>1st Year</option>
-                    <option value={2}>2nd Year</option>
-                    <option value={3}>3rd Year</option>
-                    <option value={4}>4th Year</option>
-                  </select>
+                    placeholder="Select Year..."
+                    searchPlaceholder="Type year..."
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
+                    options={[
+                      { value: 1, label: '1st Year' },
+                      { value: 2, label: '2nd Year' },
+                      { value: 3, label: '3rd Year' },
+                      { value: 4, label: '4th Year' }
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Semester *</label>
-                  <select
+                  <SearchableSelect
                     value={formData.semester}
                     onChange={(e) => {
                       const sem = Number(e.target.value) || 1;
                       const calculatedYear = Math.ceil(sem / 2);
                       setFormData({ ...formData, semester: sem, year: calculatedYear });
                     }}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
-                  >
-                    <option value={1}>Sem 1 (1st Yr)</option>
-                    <option value={2}>Sem 2 (1st Yr)</option>
-                    <option value={3}>Sem 3 (2nd Yr)</option>
-                    <option value={4}>Sem 4 (2nd Yr)</option>
-                    <option value={5}>Sem 5 (3rd Yr)</option>
-                    <option value={6}>Sem 6 (3rd Yr)</option>
-                    <option value={7}>Sem 7 (4th Yr)</option>
-                    <option value={8}>Sem 8 (4th Yr)</option>
-                  </select>
+                    placeholder="Select Semester..."
+                    searchPlaceholder="Type semester..."
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
+                    options={[
+                      { value: 1, label: 'Sem 1 (1st Yr)' },
+                      { value: 2, label: 'Sem 2 (1st Yr)' },
+                      { value: 3, label: 'Sem 3 (2nd Yr)' },
+                      { value: 4, label: 'Sem 4 (2nd Yr)' },
+                      { value: 5, label: 'Sem 5 (3rd Yr)' },
+                      { value: 6, label: 'Sem 6 (3rd Yr)' },
+                      { value: 7, label: 'Sem 7 (4th Yr)' },
+                      { value: 8, label: 'Sem 8 (4th Yr)' }
+                    ]}
+                  />
                 </div>
 
                 <div>
@@ -1062,7 +1079,7 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Current Year *</label>
-                  <select
+                  <SearchableSelect
                     value={formData.year}
                     onChange={(e) => {
                       const yr = Number(e.target.value) || 1;
@@ -1070,35 +1087,41 @@ export const AdminStudentsPage: React.FC = () => {
                       const newSem = validSems.includes(formData.semester) ? formData.semester : yr * 2 - 1;
                       setFormData({ ...formData, year: yr, semester: newSem });
                     }}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
-                  >
-                    <option value={1}>1st Year</option>
-                    <option value={2}>2nd Year</option>
-                    <option value={3}>3rd Year</option>
-                    <option value={4}>4th Year</option>
-                  </select>
+                    placeholder="Select Year..."
+                    searchPlaceholder="Type year..."
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
+                    options={[
+                      { value: 1, label: '1st Year' },
+                      { value: 2, label: '2nd Year' },
+                      { value: 3, label: '3rd Year' },
+                      { value: 4, label: '4th Year' }
+                    ]}
+                  />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Semester *</label>
-                  <select
+                  <SearchableSelect
                     value={formData.semester}
                     onChange={(e) => {
                       const sem = Number(e.target.value) || 1;
                       const calculatedYear = Math.ceil(sem / 2);
                       setFormData({ ...formData, semester: sem, year: calculatedYear });
                     }}
-                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium focus:ring-1 focus:ring-indigo-500"
-                  >
-                    <option value={1}>Sem 1 (1st Yr)</option>
-                    <option value={2}>Sem 2 (1st Yr)</option>
-                    <option value={3}>Sem 3 (2nd Yr)</option>
-                    <option value={4}>Sem 4 (2nd Yr)</option>
-                    <option value={5}>Sem 5 (3rd Yr)</option>
-                    <option value={6}>Sem 6 (3rd Yr)</option>
-                    <option value={7}>Sem 7 (4th Yr)</option>
-                    <option value={8}>Sem 8 (4th Yr)</option>
-                  </select>
+                    placeholder="Select Semester..."
+                    searchPlaceholder="Type semester..."
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
+                    options={[
+                      { value: 1, label: 'Sem 1 (1st Yr)' },
+                      { value: 2, label: 'Sem 2 (1st Yr)' },
+                      { value: 3, label: 'Sem 3 (2nd Yr)' },
+                      { value: 4, label: 'Sem 4 (2nd Yr)' },
+                      { value: 5, label: 'Sem 5 (3rd Yr)' },
+                      { value: 6, label: 'Sem 6 (3rd Yr)' },
+                      { value: 7, label: 'Sem 7 (4th Yr)' },
+                      { value: 8, label: 'Sem 8 (4th Yr)' }
+                    ]}
+                  />
                 </div>
 
                 <div>

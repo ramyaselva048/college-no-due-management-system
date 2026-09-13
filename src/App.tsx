@@ -41,6 +41,7 @@ import { AdminCertificatesPage } from './pages/admin/AdminCertificatesPage';
 import { AdminAuditLogsPage } from './pages/admin/AdminAuditLogsPage';
 import { AdminReportsPage } from './pages/admin/AdminReportsPage';
 import { AdminDuesPage } from './pages/admin/AdminDuesPage';
+import { AdminProfilePage } from './pages/admin/AdminProfilePage';
 
 export default function App() {
   return (
@@ -127,6 +128,7 @@ export default function App() {
               <Route path="certificates" element={<AdminCertificatesPage />} />
               <Route path="audit-logs" element={<AdminAuditLogsPage />} />
               <Route path="reports" element={<AdminReportsPage />} />
+              <Route path="profile" element={<AdminProfilePage />} />
             </Route>
 
             {/* Fallback */}

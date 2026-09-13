@@ -3,8 +3,10 @@ export type UserRole = 'STUDENT' | 'STAFF' | 'HOD' | 'ADMIN';
 export interface User {
   id: number;
   email: string;
+  username?: string;
   role: UserRole;
   full_name?: string;
+  phone?: string;
   is_active?: boolean;
 }
 
@@ -194,13 +196,19 @@ export interface NoDueRequest {
   student_reg_no?: string;
   course_name?: string;
   department_name?: string;
-  status: 'submitted' | 'under_review' | 'approved' | 'rejected' | 'completed';
+  status: 'submitted' | 'under_review' | 'pending_principal' | 'approved' | 'rejected' | 'completed';
   submitted_at: string;
   reviewed_at?: string;
   reviewed_by?: number;
   remarks?: string;
   approvals: NoDueApproval[];
   created_at: string;
+  hod_approved_by?: number;
+  hod_name?: string;
+  hod_approved_at?: string;
+  principal_approved_by?: number;
+  principal_name?: string;
+  principal_approved_at?: string;
 
   // Official Sasurie No Due Form fields
   exam_type?: 'CIAT - I' | 'CIAT - II' | 'End Semester Examinations';

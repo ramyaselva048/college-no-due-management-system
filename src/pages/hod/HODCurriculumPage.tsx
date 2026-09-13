@@ -27,6 +27,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { SubjectCourse } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 export const HODCurriculumPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'academic' | 'common'>('academic');
@@ -995,7 +996,7 @@ export const HODCurriculumPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Course Type
                   </label>
-                  <select
+                  <SearchableSelect
                     value={formData.course_type}
                     onChange={(e) => {
                       const cType = e.target.value as 'theory' | 'lab';
@@ -1006,11 +1007,14 @@ export const HODCurriculumPage: React.FC = () => {
                         slot: cType === 'lab' ? `Lab ${count + 1}` : `Sub ${count + 1}`
                       });
                     }}
+                    placeholder="Select course type..."
+                    searchPlaceholder="Type to filter..."
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
-                  >
-                    <option value="theory">Theory Subject</option>
-                    <option value="lab">Laboratory Practical</option>
-                  </select>
+                    options={[
+                      { value: 'theory', label: 'Theory Subject' },
+                      { value: 'lab', label: 'Laboratory Practical' }
+                    ]}
+                  />
                 </div>
 
                 <div>
@@ -1082,18 +1086,22 @@ export const HODCurriculumPage: React.FC = () => {
                   Assigned Staff In-Charge (Authorized to Clear Dues)
                 </label>
                 {facultyList.length > 0 ? (
-                  <select
-                    value={formData.faculty_id}
-                    onChange={handleFacultyChange}
-                    className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 mb-2"
-                  >
-                    <option value="">-- Choose from Department Staff --</option>
-                    {facultyList.map((f) => (
-                      <option key={f.id} value={f.id}>
-                        {f.full_name} ({f.employee_id}) - {f.designation}
-                      </option>
-                    ))}
-                  </select>
+                  <div className="mb-2">
+                    <SearchableSelect
+                      value={formData.faculty_id}
+                      onChange={handleFacultyChange}
+                      placeholder="-- Choose or type from Department Staff --"
+                      searchPlaceholder="Type staff name or ID..."
+                      className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                      options={[
+                        { value: '', label: '-- Choose from Department Staff --' },
+                        ...facultyList.map((f) => ({
+                          value: f.id,
+                          label: `${f.full_name} (${f.employee_id}) - ${f.designation}`
+                        }))
+                      ]}
+                    />
+                  </div>
                 ) : null}
                 <input
                   type="text"
@@ -1166,7 +1174,7 @@ export const HODCurriculumPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Clearance Category
                   </label>
-                  <select
+                  <SearchableSelect
                     value={commonFormData.category_key}
                     onChange={(e) => {
                       const cat = e.target.value as any;
@@ -1186,16 +1194,19 @@ export const HODCurriculumPage: React.FC = () => {
                         setCommonFormData({ ...commonFormData, category_key: cat });
                       }
                     }}
+                    placeholder="Select clearance category..."
+                    searchPlaceholder="Type category name..."
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="library">Central Library & Book Bank</option>
-                    <option value="accounts">Accounts & Finance Office</option>
-                    <option value="transport">Bus & Transport Section</option>
-                    <option value="hostel">Campus Hostel & Mess Section</option>
-                    <option value="sports">Physical Education & Sports</option>
-                    <option value="exam_cell">Controller of Examinations (CoE)</option>
-                    <option value="general">Other Institutional Clearance</option>
-                  </select>
+                    options={[
+                      { value: 'library', label: 'Central Library & Book Bank' },
+                      { value: 'accounts', label: 'Accounts & Finance Office' },
+                      { value: 'transport', label: 'Bus & Transport Section' },
+                      { value: 'hostel', label: 'Campus Hostel & Mess Section' },
+                      { value: 'sports', label: 'Physical Education & Sports' },
+                      { value: 'exam_cell', label: 'Controller of Examinations (CoE)' },
+                      { value: 'general', label: 'Other Institutional Clearance' }
+                    ]}
+                  />
                 </div>
 
                 <div>
@@ -1246,15 +1257,18 @@ export const HODCurriculumPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Applies To Which Students?
                   </label>
-                  <select
+                  <SearchableSelect
                     value={commonFormData.applies_to}
                     onChange={(e) => setCommonFormData({ ...commonFormData, applies_to: e.target.value as any })}
+                    placeholder="Select student group..."
+                    searchPlaceholder="Type group name..."
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="all">All College Students (Universal)</option>
-                    <option value="hostel">Hostellers Only</option>
-                    <option value="day_scholar">Day Scholars Only</option>
-                  </select>
+                    options={[
+                      { value: 'all', label: 'All College Students (Universal)' },
+                      { value: 'hostel', label: 'Hostellers Only' },
+                      { value: 'day_scholar', label: 'Day Scholars Only' }
+                    ]}
+                  />
                 </div>
               </div>
 

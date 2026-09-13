@@ -23,9 +23,11 @@ import {
   EyeOff,
   AlertCircle,
   Filter,
-  Check
+  Check,
+  Calendar
 } from 'lucide-react';
 import api from '../../services/api';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 interface FacultyMember {
   id: number;
@@ -35,6 +37,7 @@ interface FacultyMember {
   email: string;
   phone?: string;
   designation: string;
+  subject_term?: string;
   department_id: number;
   is_active?: boolean;
   assigned_nodes?: Array<{
@@ -67,6 +70,7 @@ export const HODStaffDuesPage: React.FC = () => {
     password: 'StaffPassword@123',
     phone: '',
     designation: 'Assistant Professor',
+    subject_term: '',
     is_active: true
   });
 
@@ -82,6 +86,7 @@ export const HODStaffDuesPage: React.FC = () => {
     password: '',
     phone: '',
     designation: '',
+    subject_term: '',
     is_active: true
   });
 
@@ -136,6 +141,7 @@ export const HODStaffDuesPage: React.FC = () => {
       password: 'StaffPassword@123',
       phone: '',
       designation: 'Assistant Professor',
+      subject_term: '',
       is_active: true
     });
     setIsAddModalOpen(true);
@@ -179,6 +185,7 @@ export const HODStaffDuesPage: React.FC = () => {
       password: '',
       phone: staff.phone || '',
       designation: staff.designation || 'Assistant Professor',
+      subject_term: staff.subject_term || '',
       is_active: staff.is_active !== false
     });
   };
@@ -441,10 +448,16 @@ export const HODStaffDuesPage: React.FC = () => {
                     </span>
                   </div>
 
-                  <div className="mt-2">
+                  <div className="mt-2 flex flex-wrap items-center gap-1.5">
                     <span className="text-[11px] font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded-md">
                       {staff.designation || 'Faculty Member'}
                     </span>
+                    {staff.subject_term && (
+                      <span className="text-[10px] font-bold text-indigo-700 bg-indigo-50 border border-indigo-200 px-2 py-0.5 rounded-md inline-flex items-center gap-1">
+                        <Calendar className="w-3 h-3 text-indigo-500" />
+                        Term: {staff.subject_term}
+                      </span>
+                    )}
                   </div>
 
                   {/* Credentials & Contact */}
@@ -622,20 +635,54 @@ export const HODStaffDuesPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Designation *
                   </label>
-                  <select
+                  <SearchableSelect
                     value={addFormData.designation}
                     onChange={(e) => setAddFormData({ ...addFormData, designation: e.target.value })}
+                    placeholder="Select or type designation..."
+                    searchPlaceholder="Type to search designation..."
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50/70 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="Assistant Professor">Assistant Professor</option>
-                    <option value="Associate Professor">Associate Professor</option>
-                    <option value="Professor">Professor</option>
-                    <option value="Senior Lecturer">Senior Lecturer</option>
-                    <option value="Lab Technician">Lab Technician</option>
-                    <option value="Class Advisor">Class Advisor</option>
-                    <option value="Exam Cell Coordinator">Exam Cell Coordinator</option>
-                  </select>
+                    options={[
+                      { value: 'Assistant Professor', label: 'Assistant Professor' },
+                      { value: 'Associate Professor', label: 'Associate Professor' },
+                      { value: 'Professor', label: 'Professor' },
+                      { value: 'Senior Lecturer', label: 'Senior Lecturer' },
+                      { value: 'Lab Technician', label: 'Lab Technician' },
+                      { value: 'Class Advisor', label: 'Class Advisor' },
+                      { value: 'Exam Cell Coordinator', label: 'Exam Cell Coordinator' }
+                    ]}
+                  />
                 </div>
+              </div>
+
+              {/* Allocate Subject Term (Optional) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Allocate Subject Term</span>
+                  <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <SearchableSelect
+                  value={addFormData.subject_term}
+                  onChange={(e) => setAddFormData({ ...addFormData, subject_term: e.target.value })}
+                  allowCustom={true}
+                  clearable={true}
+                  placeholder="-- Select or type subject term (Optional) --"
+                  searchPlaceholder="Type to search or enter custom term..."
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50/70 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  options={[
+                    { value: 'Odd Term (Semesters 1, 3, 5, 7)', label: 'Odd Term (Semesters 1, 3, 5, 7)' },
+                    { value: 'Even Term (Semesters 2, 4, 6, 8)', label: 'Even Term (Semesters 2, 4, 6, 8)' },
+                    { value: 'Term 1 (Academic Year 2025-2026)', label: 'Term 1 (Academic Year 2025-2026)' },
+                    { value: 'Term 2 (Academic Year 2025-2026)', label: 'Term 2 (Academic Year 2025-2026)' },
+                    { value: 'Annual / Full Academic Year', label: 'Annual / Full Academic Year' },
+                    { value: 'Trimester 1', label: 'Trimester 1' },
+                    { value: 'Trimester 2', label: 'Trimester 2' },
+                    { value: 'Trimester 3', label: 'Trimester 3' },
+                    { value: 'Summer Term', label: 'Summer Term' }
+                  ]}
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Optional: Specify which academic semester/term this faculty member is handling.
+                </p>
               </div>
 
               <div>
@@ -828,20 +875,54 @@ export const HODStaffDuesPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700 mb-1">
                     Designation *
                   </label>
-                  <select
+                  <SearchableSelect
                     value={editFormData.designation}
                     onChange={(e) => setEditFormData({ ...editFormData, designation: e.target.value })}
+                    placeholder="Select or type designation..."
+                    searchPlaceholder="Type to search designation..."
                     className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50/70 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
-                  >
-                    <option value="Assistant Professor">Assistant Professor</option>
-                    <option value="Associate Professor">Associate Professor</option>
-                    <option value="Professor">Professor</option>
-                    <option value="Senior Lecturer">Senior Lecturer</option>
-                    <option value="Lab Technician">Lab Technician</option>
-                    <option value="Class Advisor">Class Advisor</option>
-                    <option value="Exam Cell Coordinator">Exam Cell Coordinator</option>
-                  </select>
+                    options={[
+                      { value: 'Assistant Professor', label: 'Assistant Professor' },
+                      { value: 'Associate Professor', label: 'Associate Professor' },
+                      { value: 'Professor', label: 'Professor' },
+                      { value: 'Senior Lecturer', label: 'Senior Lecturer' },
+                      { value: 'Lab Technician', label: 'Lab Technician' },
+                      { value: 'Class Advisor', label: 'Class Advisor' },
+                      { value: 'Exam Cell Coordinator', label: 'Exam Cell Coordinator' }
+                    ]}
+                  />
                 </div>
+              </div>
+
+              {/* Allocate Subject Term (Optional) */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1 flex items-center justify-between">
+                  <span>Allocate Subject Term</span>
+                  <span className="text-slate-400 font-normal text-[11px]">(Optional)</span>
+                </label>
+                <SearchableSelect
+                  value={editFormData.subject_term}
+                  onChange={(e) => setEditFormData({ ...editFormData, subject_term: e.target.value })}
+                  allowCustom={true}
+                  clearable={true}
+                  placeholder="-- Select or type subject term (Optional) --"
+                  searchPlaceholder="Type to search or enter custom term..."
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50/70 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  options={[
+                    { value: 'Odd Term (Semesters 1, 3, 5, 7)', label: 'Odd Term (Semesters 1, 3, 5, 7)' },
+                    { value: 'Even Term (Semesters 2, 4, 6, 8)', label: 'Even Term (Semesters 2, 4, 6, 8)' },
+                    { value: 'Term 1 (Academic Year 2025-2026)', label: 'Term 1 (Academic Year 2025-2026)' },
+                    { value: 'Term 2 (Academic Year 2025-2026)', label: 'Term 2 (Academic Year 2025-2026)' },
+                    { value: 'Annual / Full Academic Year', label: 'Annual / Full Academic Year' },
+                    { value: 'Trimester 1', label: 'Trimester 1' },
+                    { value: 'Trimester 2', label: 'Trimester 2' },
+                    { value: 'Trimester 3', label: 'Trimester 3' },
+                    { value: 'Summer Term', label: 'Summer Term' }
+                  ]}
+                />
+                <p className="text-[10px] text-slate-400 mt-1">
+                  Optional: Specify which academic semester/term this faculty member is handling.
+                </p>
               </div>
 
               <div>

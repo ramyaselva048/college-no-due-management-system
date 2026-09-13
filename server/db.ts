@@ -8,6 +8,7 @@ import { DEPARTMENT_CURRICULUM_CATALOG, generateGenericSemesterSubjects } from '
 export interface UserRecord {
   id: number;
   email: string;
+  username?: string;
   full_name?: string;
   password_hash: string;
   role: 'STUDENT' | 'STAFF' | 'HOD' | 'ADMIN';
@@ -94,6 +95,7 @@ export interface StaffRecord {
   phone: string;
   department_id: number;
   designation: string;
+  subject_term?: string; // Allocated subject term (optional, e.g. "Odd Term (Sem 1, 3, 5, 7)", "Even Term", etc.)
   is_active?: boolean;
   created_at: string;
 }
@@ -139,12 +141,20 @@ export interface NoDueApprovalRecord {
 export interface NoDueRequestRecord {
   id: number;
   student_id: number;
-  status: 'submitted' | 'under_review' | 'approved' | 'rejected' | 'completed';
+  status: 'submitted' | 'under_review' | 'pending_principal' | 'approved' | 'rejected' | 'completed';
   submitted_at: string;
   reviewed_at?: string;
   reviewed_by?: number;
   remarks?: string;
   created_at: string;
+
+  // HOD and Principal workflow metadata
+  hod_approved_by?: number;
+  hod_name?: string;
+  hod_approved_at?: string;
+  principal_approved_by?: number;
+  principal_name?: string;
+  principal_approved_at?: string;
 
   // Sasurie Official Due Form Fields
   exam_type?: 'CIAT - I' | 'CIAT - II' | 'End Semester Examinations';
@@ -159,14 +169,18 @@ export interface NoDueRequestRecord {
   subjects?: Array<{
     slot: string;
     name: string;
+    code?: string;
     dues_status: string;
+    faculty_id?: number;
     faculty_name?: string;
     signature_date?: string;
   }>;
   labs?: Array<{
     slot: string;
     name: string;
+    code?: string;
     dues_status: string;
+    faculty_id?: number;
     faculty_name?: string;
     signature_date?: string;
   }>;
@@ -401,10 +415,12 @@ class InMemoryDatabase {
     if (loaded) {
       this.ensureAdminsExist();
       this.ensureHODsExist();
+      this.ensureStaffExist();
       this.deduplicateAll();
       this.saveToFile();
     } else {
       this.seedClean();
+      this.ensureStaffExist();
       this.saveToFile();
     }
 
@@ -899,10 +915,18 @@ class InMemoryDatabase {
     const soleAdminPass = 'RamyaSasurie@123';
 
     for (const em of adminEmails) {
-      let admin = this.users.find(u => u.email.toLowerCase() === em.toLowerCase());
+      let admin = this.users.find(u => u.email.toLowerCase() === em.toLowerCase() || (u.username && u.username.toLowerCase() === em.split('@')[0].toLowerCase()));
       if (admin) {
         admin.role = 'ADMIN';
-        admin.password_hash = hashPassword(soleAdminPass);
+        if (!admin.password_hash) {
+          admin.password_hash = hashPassword(soleAdminPass);
+        }
+        if (!admin.full_name) {
+          admin.full_name = 'Dr. T. Senthilvel (Principal / Admin)';
+        }
+        if (!admin.username) {
+          admin.username = admin.email.split('@')[0];
+        }
         admin.is_active = true;
         admin.is_registered = true;
       } else {
@@ -910,6 +934,8 @@ class InMemoryDatabase {
         this.users.push({
           id: nextId,
           email: em,
+          username: em.split('@')[0],
+          full_name: 'Dr. T. Senthilvel (Principal / Admin)',
           password_hash: hashPassword(soleAdminPass),
           role: 'ADMIN',
           is_active: true,
@@ -1011,6 +1037,171 @@ class InMemoryDatabase {
             staffMember.is_active = user.is_active;
           }
         }
+      }
+    }
+  }
+
+  ensureStaffExist() {
+    const defaultStaffConfigs = [
+      {
+        email: 'ramesh.faculty@sasurie.edu',
+        name: 'Dr. K. Ramesh',
+        empId: 'FAC-CSE-001',
+        deptCode: 'CSE',
+        designation: 'Associate Professor & Academic In-Charge'
+      },
+      {
+        email: 'murugesan.faculty@sasurie.edu',
+        name: 'Prof. C. Murugesan',
+        empId: 'FAC-CSE-002',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'priya.faculty@sasurie.edu',
+        name: 'Prof. Priya Mohan',
+        empId: 'FAC-CSE-003',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'suresh.faculty@sasurie.edu',
+        name: 'Prof. Suresh',
+        empId: 'FAC-CSE-004',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'anand.faculty@sasurie.edu',
+        name: 'Prof. Anand',
+        empId: 'FAC-CSE-005',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'divya.faculty@sasurie.edu',
+        name: 'Prof. Divya',
+        empId: 'FAC-CSE-006',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'senthil.lab@sasurie.edu',
+        name: 'Mr. Senthil Kumar',
+        empId: 'LAB-CSE-001',
+        deptCode: 'CSE',
+        designation: 'Laboratory Instructor & Equipment Custodian'
+      },
+      {
+        email: 'vinoth.library@sasurie.edu',
+        name: 'Mr. D. Vinoth',
+        empId: 'STF-LIB-001',
+        deptCode: 'LIB',
+        designation: 'Chief Librarian & Book Bank Officer'
+      },
+      {
+        email: 'chiefmentor@sasurie.edu',
+        name: 'Prof. S. Rajesh',
+        empId: 'STF-MEN-001',
+        deptCode: 'CSE',
+        designation: 'Chief Mentor & Student Advisor'
+      },
+      {
+        email: 'mentor.cse@sasurie.edu',
+        name: 'Prof. S. Karthikeyan, M.E.',
+        empId: 'STF-CSE-004',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor & Mentor'
+      },
+      {
+        email: 'kavipriya@sasurie.edu',
+        name: 'Kavipriya D',
+        empId: 'STF-CSE-011',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'arun@sasurie.edu',
+        name: 'Arun S',
+        empId: 'STF-CSE-012',
+        deptCode: 'CSE',
+        designation: 'Assistant Professor'
+      },
+      {
+        email: 'library@sasurie.edu',
+        name: 'Mr. C. Murugesan, M.L.I.Sc.',
+        empId: 'STF-LIB-002',
+        deptCode: 'LIB',
+        designation: 'Librarian'
+      },
+      {
+        email: 'accounts@sasurie.edu',
+        name: 'Mrs. V. Revathi, M.Com.',
+        empId: 'STF-ACC-001',
+        deptCode: 'ACC',
+        designation: 'Accounts Officer'
+      },
+      {
+        email: 'hostel@sasurie.edu',
+        name: 'Mr. K. Manoharan',
+        empId: 'STF-HST-001',
+        deptCode: 'HST',
+        designation: 'Campus Hostel Warden'
+      },
+      {
+        email: 'transport@sasurie.edu',
+        name: 'Mr. A. Selvam',
+        empId: 'STF-TRN-001',
+        deptCode: 'TRN',
+        designation: 'Transport In-Charge'
+      }
+    ];
+
+    for (const conf of defaultStaffConfigs) {
+      const dept = this.departments.find(d => (d.code || '').toUpperCase() === conf.deptCode || (d.name || '').toLowerCase().includes(conf.deptCode.toLowerCase()));
+      const deptId = dept ? dept.id : (conf.deptCode === 'CSE' ? 1 : 1);
+
+      let user = this.users.find(u => u.email.toLowerCase() === conf.email.toLowerCase());
+      if (!user) {
+        const nextId = Math.max(0, ...this.users.map(u => u.id)) + 1;
+        user = {
+          id: nextId,
+          email: conf.email,
+          password_hash: hashPassword('StaffPassword@123'),
+          role: 'STAFF',
+          is_active: true,
+          is_registered: true,
+          created_at: new Date().toISOString()
+        };
+        this.users.push(user);
+      } else {
+        user.role = 'STAFF';
+        user.is_active = true;
+        user.is_registered = true;
+      }
+
+      let staffMember = this.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === conf.email.toLowerCase());
+      if (!staffMember) {
+        const nextStaffId = Math.max(0, ...this.staff.map(s => s.id)) + 1;
+        staffMember = {
+          id: nextStaffId,
+          user_id: user.id,
+          employee_id: conf.empId,
+          full_name: conf.name,
+          email: conf.email,
+          phone: '9842100000',
+          department_id: deptId,
+          designation: conf.designation,
+          is_active: true,
+          created_at: new Date().toISOString()
+        };
+        this.staff.push(staffMember);
+      } else {
+        staffMember.user_id = user.id;
+        staffMember.department_id = deptId;
+        staffMember.full_name = conf.name;
+        staffMember.designation = conf.designation;
+        staffMember.is_active = true;
       }
     }
   }

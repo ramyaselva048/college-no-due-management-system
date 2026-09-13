@@ -180,18 +180,18 @@ export function generateCertificatePdf(
     // Signatures
     '0.4 0.4 0.4 RG',
     '0.5 w',
-    '340 270 90 0.5 re',
+    '330 270 100 0.5 re',
     'S',
-    '450 270 90 0.5 re',
+    '445 270 105 0.5 re',
     'S',
 
     'BT',
     '0 0 0 rg',
     '/F2 8 Tf',
-    '1 0 0 1 350 255 Tm',
-    `(${escapePdf('Dean (Academics)')}) Tj`,
-    '1 0 0 1 470 255 Tm',
-    `(${escapePdf('Registrar')}) Tj`,
+    '1 0 0 1 335 255 Tm',
+    `(${escapePdf('Head of Department')}) Tj`,
+    '1 0 0 1 450 255 Tm',
+    `(${escapePdf('Principal (Admin)')}) Tj`,
     'ET',
 
     // Disclaimer

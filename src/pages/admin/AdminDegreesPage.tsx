@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, Course } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 // Common branches catalog for autocomplete suggestions
 const COMMON_BRANCH_PRESETS = [
@@ -608,17 +609,17 @@ export const AdminDegreesPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department</label>
-                  <select
+                  <SearchableSelect
                     value={departmentId}
                     onChange={(e) => setDepartmentId(Number(e.target.value))}
+                    placeholder="Select Department..."
+                    searchPlaceholder="Type department name..."
                     className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500"
-                  >
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.code})
-                      </option>
-                    ))}
-                  </select>
+                    options={departments.map((d) => ({
+                      value: d.id,
+                      label: `${d.name} (${d.code})`
+                    }))}
+                  />
                 </div>
               </div>
 
@@ -741,17 +742,17 @@ export const AdminDegreesPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department</label>
-                  <select
+                  <SearchableSelect
                     value={departmentId}
                     onChange={(e) => setDepartmentId(Number(e.target.value))}
+                    placeholder="Select Department..."
+                    searchPlaceholder="Type department name..."
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  >
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.id}>
-                        {d.name} ({d.code})
-                      </option>
-                    ))}
-                  </select>
+                    options={departments.map((d) => ({
+                      value: d.id,
+                      label: `${d.name} (${d.code})`
+                    }))}
+                  />
                 </div>
               </div>
 

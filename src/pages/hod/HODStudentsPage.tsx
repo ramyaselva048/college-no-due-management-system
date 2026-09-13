@@ -13,6 +13,7 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import api from '../../services/api';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 export const HODStudentsPage: React.FC = () => {
   const [students, setStudents] = useState<any[]>([]);
@@ -99,29 +100,39 @@ export const HODStudentsPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex items-center gap-3 w-full md:w-auto">
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
-          >
-            <option value="all">All Academic Years</option>
-            <option value="1">Year 1</option>
-            <option value="2">Year 2</option>
-            <option value="3">Year 3</option>
-            <option value="4">Year 4</option>
-          </select>
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
+          <div className="w-44">
+            <SearchableSelect
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              placeholder="All Academic Years"
+              searchPlaceholder="Filter year..."
+              className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
+              options={[
+                { value: 'all', label: 'All Academic Years' },
+                { value: '1', label: 'Year 1' },
+                { value: '2', label: 'Year 2' },
+                { value: '3', label: 'Year 3' },
+                { value: '4', label: 'Year 4' }
+              ]}
+            />
+          </div>
 
-          <select
-            value={selectedSection}
-            onChange={(e) => setSelectedSection(e.target.value)}
-            className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
-          >
-            <option value="all">All Sections</option>
-            <option value="A">Section A</option>
-            <option value="B">Section B</option>
-            <option value="C">Section C</option>
-          </select>
+          <div className="w-36">
+            <SearchableSelect
+              value={selectedSection}
+              onChange={(e) => setSelectedSection(e.target.value)}
+              placeholder="All Sections"
+              searchPlaceholder="Filter section..."
+              className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
+              options={[
+                { value: 'all', label: 'All Sections' },
+                { value: 'A', label: 'Section A' },
+                { value: 'B', label: 'Section B' },
+                { value: 'C', label: 'Section C' }
+              ]}
+            />
+          </div>
 
           <span className="text-xs text-slate-500 font-medium whitespace-nowrap">
             Showing <strong className="text-slate-800">{filtered.length}</strong> students

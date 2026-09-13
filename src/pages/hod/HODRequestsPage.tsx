@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { HODClearanceModal } from '../../components/hod/HODClearanceModal';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 export const HODRequestsPage: React.FC = () => {
   const [requests, setRequests] = useState<any[]>([]);
@@ -111,40 +112,55 @@ export const HODRequestsPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2 w-full md:w-auto">
-          <select
-            value={selectedYear}
-            onChange={(e) => setSelectedYear(e.target.value)}
-            className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
-          >
-            <option value="all">All Academic Years</option>
-            <option value="1">Year 1</option>
-            <option value="2">Year 2</option>
-            <option value="3">Year 3</option>
-            <option value="4">Year 4</option>
-          </select>
+          <div className="w-44">
+            <SearchableSelect
+              value={selectedYear}
+              onChange={(e) => setSelectedYear(e.target.value)}
+              placeholder="All Academic Years"
+              searchPlaceholder="Filter year..."
+              className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
+              options={[
+                { value: 'all', label: 'All Academic Years' },
+                { value: '1', label: 'Year 1' },
+                { value: '2', label: 'Year 2' },
+                { value: '3', label: 'Year 3' },
+                { value: '4', label: 'Year 4' }
+              ]}
+            />
+          </div>
 
-          <select
-            value={selectedExamType}
-            onChange={(e) => setSelectedExamType(e.target.value)}
-            className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
-          >
-            <option value="all">All Clearance Types</option>
-            <option value="Model Examination">Model Examination</option>
-            <option value="End Semester Practical">End Semester Practical</option>
-            <option value="End Semester Theory">End Semester Theory</option>
-            <option value="Transfer / Course Completion">Transfer / Course Completion</option>
-          </select>
+          <div className="w-56">
+            <SearchableSelect
+              value={selectedExamType}
+              onChange={(e) => setSelectedExamType(e.target.value)}
+              placeholder="All Clearance Types"
+              searchPlaceholder="Filter clearance type..."
+              className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
+              options={[
+                { value: 'all', label: 'All Clearance Types' },
+                { value: 'Model Examination', label: 'Model Examination' },
+                { value: 'End Semester Practical', label: 'End Semester Practical' },
+                { value: 'End Semester Theory', label: 'End Semester Theory' },
+                { value: 'Transfer / Course Completion', label: 'Transfer / Course Completion' }
+              ]}
+            />
+          </div>
 
-          <select
-            value={selectedStatus}
-            onChange={(e) => setSelectedStatus(e.target.value)}
-            className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
-          >
-            <option value="all">All Clearance Statuses</option>
-            <option value="pending">Pending</option>
-            <option value="in_progress">In Progress</option>
-            <option value="approved">Approved</option>
-          </select>
+          <div className="w-48">
+            <SearchableSelect
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              placeholder="All Statuses"
+              searchPlaceholder="Filter status..."
+              className="text-xs p-2 border border-slate-200 rounded-xl bg-slate-50 text-slate-700 font-semibold focus:outline-none"
+              options={[
+                { value: 'all', label: 'All Clearance Statuses' },
+                { value: 'pending', label: 'Pending' },
+                { value: 'in_progress', label: 'In Progress' },
+                { value: 'approved', label: 'Approved' }
+              ]}
+            />
+          </div>
         </div>
       </div>
 
