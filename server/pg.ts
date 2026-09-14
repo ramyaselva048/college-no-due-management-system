@@ -303,10 +303,41 @@ export async function syncSingleRecordToPostgres(tableName: string, record: any)
 
 export async function deleteRecordFromPostgres(tableName: string, id: number): Promise<void> {
   const pool = getPool();
-  if (!pool) return;
+  if (!pool || !id) return;
   try {
-    await pool.query(`DELETE FROM "${tableName}" WHERE "id" = $1`, [id]);
+    await executeWithRetry(async () => {
+      await pool.query(`DELETE FROM "${tableName}" WHERE "id" = $1`, [id]);
+    });
   } catch (err: any) {
     console.warn(`[PostgreSQL] Failed deleting record ${id} from ${tableName}:`, err?.message || err);
+  }
+}
+
+export async function deleteRecordsWhereFromPostgres(tableName: string, whereClause: string, params: any[] = []): Promise<void> {
+  const pool = getPool();
+  if (!pool || !whereClause) return;
+  try {
+    await executeWithRetry(async () => {
+      await pool.query(`DELETE FROM "${tableName}" WHERE ${whereClause}`, params);
+    });
+  } catch (err: any) {
+    console.warn(`[PostgreSQL] Failed deleting records from ${tableName} WHERE ${whereClause}:`, err?.message || err);
+  }
+}
+
+export async function purgeDeletedRecordsFromPostgres(tableName: string, activeIds: number[]): Promise<void> {
+  const pool = getPool();
+  if (!pool) return;
+  try {
+    const validIds = (activeIds || []).filter(id => typeof id === 'number' && !isNaN(id));
+    await executeWithRetry(async () => {
+      if (validIds.length === 0) {
+        await pool.query(`DELETE FROM "${tableName}"`);
+      } else {
+        await pool.query(`DELETE FROM "${tableName}" WHERE "id" != ALL($1::int[])`, [validIds]);
+      }
+    });
+  } catch (err: any) {
+    console.warn(`[PostgreSQL] Failed purging deleted records from ${tableName}:`, err?.message || err);
   }
 }

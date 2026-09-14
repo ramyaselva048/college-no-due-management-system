@@ -43,6 +43,7 @@ export const HODCurriculumPage: React.FC = () => {
 
   // Common Nodes State (Universal across all students)
   const [commonNodes, setCommonNodes] = useState<SubjectCourse[]>([]);
+  const [officersList, setOfficersList] = useState<any[]>([]);
   const [loadingCommon, setLoadingCommon] = useState(false);
   const [populatingCommon, setPopulatingCommon] = useState(false);
 
@@ -66,6 +67,7 @@ export const HODCurriculumPage: React.FC = () => {
     title: '',
     code: '',
     slot: '',
+    faculty_id: '' as string | number,
     faculty_name: '',
     faculty_email: '',
     requirement_description: '',
@@ -95,8 +97,12 @@ export const HODCurriculumPage: React.FC = () => {
   const fetchCommonNodes = async () => {
     try {
       setLoadingCommon(true);
-      const res = await api.get('/hod/common-clearance-nodes');
-      setCommonNodes(res.data);
+      const [nodesRes, officersRes] = await Promise.all([
+        api.get('/hod/common-clearance-nodes'),
+        api.get('/hod/all-officers')
+      ]);
+      setCommonNodes(nodesRes.data);
+      setOfficersList(officersRes.data || []);
     } catch (err: any) {
       setFeedback({
         type: 'error',
@@ -250,18 +256,24 @@ export const HODCurriculumPage: React.FC = () => {
     code: string;
     slot: string;
     faculty_name: string;
+    faculty_email?: string;
     requirement_description: string;
     category_key: any;
     applies_to?: any;
   }) => {
     setEditingCommonNode(null);
     if (preset) {
+      const matchedOff = officersList.find((o) =>
+        (preset.faculty_email && o.email?.toLowerCase() === preset.faculty_email.toLowerCase()) ||
+        (preset.faculty_name && o.full_name?.toLowerCase().includes(preset.faculty_name.toLowerCase()))
+      );
       setCommonFormData({
         title: preset.title,
         code: preset.code,
         slot: preset.slot,
-        faculty_name: preset.faculty_name,
-        faculty_email: '',
+        faculty_id: matchedOff?.id || '',
+        faculty_name: matchedOff?.full_name || preset.faculty_name,
+        faculty_email: matchedOff?.email || preset.faculty_email || '',
         requirement_description: preset.requirement_description,
         applies_to: preset.applies_to || 'all',
         category_key: preset.category_key
@@ -271,6 +283,7 @@ export const HODCurriculumPage: React.FC = () => {
         title: '',
         code: '',
         slot: `COM-${commonNodes.length + 1}`,
+        faculty_id: '',
         faculty_name: 'Officer In-Charge',
         faculty_email: '',
         requirement_description: 'Return issued items and clear all outstanding section dues',
@@ -287,6 +300,7 @@ export const HODCurriculumPage: React.FC = () => {
       title: node.title,
       code: node.code,
       slot: node.slot || 'COM',
+      faculty_id: (node as any).faculty_id || '',
       faculty_name: node.faculty_name || 'Officer In-Charge',
       faculty_email: node.faculty_email || '',
       requirement_description: node.requirement_description || 'All institutional dues cleared',
@@ -364,6 +378,7 @@ export const HODCurriculumPage: React.FC = () => {
       code: 'LIB-101',
       slot: 'COM-LIB',
       faculty_name: 'D. Vinoth (Chief Librarian)',
+      faculty_email: 'vinoth.library@sasurie.edu',
       requirement_description: 'Return all issued library books & project journals; clear overdue fines',
       category_key: 'library' as const,
       icon: Library,
@@ -374,6 +389,7 @@ export const HODCurriculumPage: React.FC = () => {
       code: 'ACC-101',
       slot: 'COM-ACC',
       faculty_name: 'S. Accounts (Finance Officer)',
+      faculty_email: 'accounts@sasurie.edu',
       requirement_description: 'Full semester tuition fee, special fees & examination fee clearance',
       category_key: 'accounts' as const,
       icon: Wallet,
@@ -384,6 +400,7 @@ export const HODCurriculumPage: React.FC = () => {
       code: 'TRN-101',
       slot: 'COM-TRN',
       faculty_name: 'K. Murugesan (Transport In-Charge)',
+      faculty_email: 'transport@sasurie.edu',
       requirement_description: 'Bus pass surrender or route fee payment verification',
       category_key: 'transport' as const,
       icon: Bus,
@@ -394,6 +411,7 @@ export const HODCurriculumPage: React.FC = () => {
       code: 'HST-101',
       slot: 'COM-HST',
       faculty_name: 'Dr. R. Warden (Chief Warden)',
+      faculty_email: 'hostel@sasurie.edu',
       requirement_description: 'Hostel room inventory handover & mess fee clearance',
       category_key: 'hostel' as const,
       applies_to: 'hostel' as const,
@@ -405,6 +423,7 @@ export const HODCurriculumPage: React.FC = () => {
       code: 'PED-101',
       slot: 'COM-PED',
       faculty_name: 'P. Ravichandran (Physical Director)',
+      faculty_email: 'sports@sasurie.edu',
       requirement_description: 'Return tournament kits, jerseys & sports equipment',
       category_key: 'sports' as const,
       icon: Trophy,
@@ -415,6 +434,7 @@ export const HODCurriculumPage: React.FC = () => {
       code: 'COE-101',
       slot: 'COM-COE',
       faculty_name: 'Dr. H. Sasipal CoE',
+      faculty_email: 'coe@sasurie.edu',
       requirement_description: 'Exam registration confirmation & hall ticket verification',
       category_key: 'exam_cell' as const,
       icon: ShieldCheck,
@@ -1283,6 +1303,37 @@ export const HODCurriculumPage: React.FC = () => {
                   value={commonFormData.requirement_description}
                   onChange={(e) => setCommonFormData({ ...commonFormData, requirement_description: e.target.value })}
                   className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 resize-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Assign Registered College Officer (Auto-fill)
+                </label>
+                <SearchableSelect
+                  value={commonFormData.faculty_id ? String(commonFormData.faculty_id) : ''}
+                  onChange={(e) => {
+                    const offId = e.target.value;
+                    const off = officersList.find((o) => String(o.id) === String(offId));
+                    if (off) {
+                      setCommonFormData({
+                        ...commonFormData,
+                        faculty_id: off.id,
+                        faculty_name: off.full_name,
+                        faculty_email: off.email || commonFormData.faculty_email
+                      });
+                    }
+                  }}
+                  placeholder="Select institutional officer..."
+                  searchPlaceholder="Search officer by name, designation, department..."
+                  className="w-full text-xs p-2.5 border border-slate-200 rounded-xl bg-slate-50 text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  options={[
+                    { value: '', label: '— Custom / Unassigned Officer —' },
+                    ...officersList.map((o) => ({
+                      value: String(o.id),
+                      label: `${o.full_name} (${o.designation} • ${o.department_code || o.department_name || 'Staff'})`
+                    }))
+                  ]}
                 />
               </div>
 

@@ -75,23 +75,23 @@
     {
       "id": 7,
       "email": "coe@sasurie.edu",
-      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
-      "role": "COE",
+      "password_hash": "f5805f10d6c89f440b2a926fd76c71a59f97215eb1c99fadcde6814bfe16b570",
+      "role": "STAFF",
       "is_active": true,
       "is_registered": true,
       "created_at": "2026-09-10T08:39:05.166Z",
-      "updated_at": null,
+      "updated_at": "2026-09-14T10:36:59.991Z",
       "department_id": null
     },
     {
       "id": 8,
       "email": "principal@sasurie.edu",
-      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
-      "role": "PRINCIPAL",
+      "password_hash": "f5805f10d6c89f440b2a926fd76c71a59f97215eb1c99fadcde6814bfe16b570",
+      "role": "STAFF",
       "is_active": true,
       "is_registered": true,
       "created_at": "2026-09-10T08:39:05.166Z",
-      "updated_at": null,
+      "updated_at": "2026-09-14T10:37:00.070Z",
       "department_id": null
     },
     {
@@ -130,7 +130,7 @@
     {
       "id": 12,
       "email": "transport@sasurie.edu",
-      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "password_hash": "f5805f10d6c89f440b2a926fd76c71a59f97215eb1c99fadcde6814bfe16b570",
       "role": "STAFF",
       "is_active": true,
       "is_registered": true,
@@ -1371,6 +1371,24 @@
       "created_at": "2026-09-13T13:07:32.275Z",
       "updated_at": null,
       "department_id": null
+    },
+    {
+      "id": 129,
+      "email": "muthu26@sasurie.com",
+      "password_hash": "3c922db43f2c5383106c1c34ffe0e3934b265aabecacab9e36a0d28ef90359d2",
+      "role": "STUDENT",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-14T09:43:35.272Z"
+    },
+    {
+      "id": 130,
+      "email": "sports@sasurie.edu",
+      "password_hash": "5acbbc677072bb857f3ba124f2826d7d461587a64d31fd974363b7288bb09c79",
+      "role": "STAFF",
+      "is_active": true,
+      "is_registered": true,
+      "created_at": "2026-09-14T10:24:54.714Z"
     }
   ],
   "departments": [
@@ -1509,6 +1527,14 @@
       "description": "Clearance department for Cyber Security",
       "is_active": true,
       "created_at": "2026-09-12T11:55:37.559Z"
+    },
+    {
+      "id": 18,
+      "name": "Physical Education & Sports Department",
+      "code": "PED",
+      "description": "Institutional Sports, Games, Physical Education & Tournament Clearance",
+      "is_active": true,
+      "created_at": "2026-09-10T08:39:05.166Z"
     }
   ],
   "courses": [
@@ -2861,6 +2887,21 @@
       "student_type": null,
       "attendance_percentage": null,
       "undertaking_status": null
+    },
+    {
+      "id": 65,
+      "user_id": 129,
+      "register_number": "732426106008",
+      "full_name": "Muthu E",
+      "email": "muthu26@sasurie.com",
+      "phone": "",
+      "department_id": 1,
+      "course_id": 1,
+      "year": 1,
+      "semester": 1,
+      "section": "A",
+      "admission_year": 2026,
+      "created_at": "2026-09-14T09:43:35.272Z"
     }
   ],
   "staff": [
@@ -2909,18 +2950,21 @@
       "phone": "9842100104",
       "department_id": 1,
       "designation": "Assistant Professor & Mentor",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": true
     },
     {
       "id": 5,
       "user_id": 7,
       "employee_id": "EMP-COE-001",
-      "full_name": "Dr. P. Ravichandran, Controller of Examinations",
+      "full_name": "Dr. H. Sasipal",
       "email": "coe@sasurie.edu",
       "phone": "9842100105",
       "department_id": 1,
       "designation": "Controller of Examinations (CoE)",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "subject_term": "Common Clearance",
+      "is_active": true
     },
     {
       "id": 6,
@@ -2942,7 +2986,8 @@
       "phone": "9842100107",
       "department_id": 8,
       "designation": "Librarian",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": true
     },
     {
       "id": 8,
@@ -2953,7 +2998,8 @@
       "phone": "9842100108",
       "department_id": 10,
       "designation": "Accounts Officer",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": true
     },
     {
       "id": 9,
@@ -2964,18 +3010,21 @@
       "phone": "9842100109",
       "department_id": 1,
       "designation": "Campus Hostel Warden",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": true
     },
     {
       "id": 10,
       "user_id": 12,
-      "employee_id": "EMP-TRN-001",
-      "full_name": "Mr. A. Selvam",
+      "employee_id": "TRN-101",
+      "full_name": "K.Murugesan",
       "email": "transport@sasurie.edu",
       "phone": "9842100110",
       "department_id": 1,
       "designation": "Transport In-Charge",
-      "created_at": "2026-09-10T08:39:05.166Z"
+      "created_at": "2026-09-10T08:39:05.166Z",
+      "is_active": true,
+      "subject_term": "Common Clearance"
     },
     {
       "id": 11,
@@ -2986,7 +3035,8 @@
       "phone": "",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-10T12:59:01.279Z"
+      "created_at": "2026-09-10T12:59:01.279Z",
+      "is_active": true
     },
     {
       "id": 12,
@@ -2997,7 +3047,8 @@
       "phone": "+91 8825641424",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-10T15:07:56.020Z"
+      "created_at": "2026-09-10T15:07:56.020Z",
+      "is_active": true
     },
     {
       "id": 13,
@@ -3166,7 +3217,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Associate Professor & Academic In-Charge",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 33,
@@ -3177,7 +3229,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 34,
@@ -3188,7 +3241,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 35,
@@ -3199,7 +3253,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 36,
@@ -3210,7 +3265,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 37,
@@ -3221,7 +3277,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Assistant Professor",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 38,
@@ -3232,7 +3289,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Laboratory Instructor & Equipment Custodian",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 39,
@@ -3243,7 +3301,8 @@
       "phone": "9842100000",
       "department_id": 8,
       "designation": "Chief Librarian & Book Bank Officer",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 40,
@@ -3254,7 +3313,8 @@
       "phone": "9842100000",
       "department_id": 1,
       "designation": "Chief Mentor & Student Advisor",
-      "created_at": "2026-09-13T10:42:33.008Z"
+      "created_at": "2026-09-13T10:42:33.008Z",
+      "is_active": true
     },
     {
       "id": 41,
@@ -3442,6 +3502,19 @@
       "department_id": 1,
       "designation": "Associate Professor",
       "created_at": "2026-09-13T10:42:33.012Z"
+    },
+    {
+      "id": 58,
+      "user_id": 130,
+      "employee_id": "EMP-PED-001",
+      "full_name": "Prof. P. Ravichandran",
+      "email": "sports@sasurie.edu",
+      "phone": "9842100118",
+      "department_id": 18,
+      "designation": "Director of Physical Education & Sports",
+      "created_at": "2026-09-14T10:24:54.716Z",
+      "subject_term": "Sports & Games",
+      "is_active": true
     }
   ],
   "dueRecords": [],
@@ -3624,132 +3697,69 @@
           "signed": true,
           "status": "No Dues"
         }
-      }
-    },
-    {
-      "id": 2,
-      "student_id": 4,
-      "status": "rejected",
-      "submitted_at": "2026-09-10T13:03:11.998Z",
-      "reviewed_at": "2026-09-10T14:41:41.733Z",
-      "reviewed_by": 1,
-      "remarks": "Requirement unfulfilled or pending administrative verification",
-      "created_at": "2026-09-10T13:03:11.998Z",
-      "department_id": null,
-      "course_name": null,
-      "academic_year": "2025-2026",
-      "year": 3,
-      "semester": 6,
-      "student_type": "day_scholar",
-      "attendance_percentage": "85.0",
-      "undertaking_status": "submitted",
-      "current_stage": "chief_mentor",
-      "chief_mentor_verified_by": null,
-      "chief_mentor_name": null,
-      "chief_mentor_verified_at": null,
-      "chief_mentor_remarks": null,
-      "chief_mentor_status": "pending",
-      "hod_approved_by": null,
-      "hod_name": null,
-      "hod_approved_at": null,
-      "hod_remarks": null,
-      "hod_status": "pending",
-      "coe_verified_by": null,
-      "coe_name": null,
-      "coe_verified_at": null,
-      "coe_remarks": null,
-      "coe_status": "pending",
-      "principal_approved_by": null,
-      "principal_name": null,
-      "principal_approved_at": null,
-      "principal_remarks": null,
-      "principal_status": "pending",
-      "exam_type": null,
-      "form_date": null,
-      "attendance_month": null,
-      "subjects": [
+      },
+      "common_nodes": [
         {
-          "code": "CS3601",
-          "name": "Compiler Design",
-          "slot": "Sub 1",
-          "dues_status": "Pending Verification",
-          "faculty_name": "Staff In-charge",
-          "signature_date": "-"
+          "slot": "COM-LIB",
+          "name": "Central Library & Book Bank",
+          "code": "LIB-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Mr. D. Vinoth",
+          "signature_date": "-",
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
         },
         {
-          "code": "CS3691",
-          "name": "Artificial Intelligence and Machine Learning",
-          "slot": "Sub 2",
-          "faculty_id": 41,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Prof. P. Vijay",
-          "faculty_email": "vijay.faculty@sasurie.edu",
-          "signature_date": "-"
+          "slot": "COM-ACC",
+          "name": "Accounts & College Finance Office",
+          "code": "ACC-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "S. Accounts (Finance Officer)",
+          "signature_date": "-",
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
         },
         {
-          "code": "CCS341",
-          "name": "Mobile Application Development",
-          "slot": "Sub 1",
-          "faculty_id": 23,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Dr. K. Ramesh",
-          "faculty_email": "ramesh@sasurie.edu",
-          "signature_date": "-"
+          "slot": "COM-TRN",
+          "name": "College Bus & Transport Section",
+          "code": "TRN-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "K. Murugesan (Transport In-Charge)",
+          "signature_date": "-",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
         },
         {
-          "code": "OE3601",
-          "name": "Open Elective - I (Sensors & Actuators)",
-          "slot": "Sub 3",
-          "faculty_id": 44,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Prof. M. Selvam",
-          "faculty_email": "selvam.faculty@sasurie.edu",
-          "signature_date": "-"
+          "slot": "COM-HST",
+          "name": "Campus Hostel & Mess Section",
+          "code": "HST-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. R. Warden (Chief Warden)",
+          "signature_date": "-",
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
         },
         {
-          "code": "PE3601",
-          "name": "Professional Elective - II (Big Data)",
-          "slot": "Sub 4",
-          "faculty_id": 40,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Prof. S. Rajesh",
-          "faculty_email": "chiefmentor@sasurie.edu",
-          "signature_date": "-"
+          "slot": "COM-PED",
+          "name": "Physical Education & Sports Department",
+          "code": "PED-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "P. Ravichandran (Physical Director)",
+          "signature_date": "-",
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
         },
         {
-          "code": "PE3602",
-          "name": "Professional Elective - III (Blockchain)",
-          "slot": "Sub 5",
-          "faculty_id": 45,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Prof. S. Vignesh",
-          "faculty_email": "vignesh.faculty@sasurie.edu",
-          "signature_date": "-"
+          "slot": "COM-COE",
+          "name": "Office of Controller of Examinations (CoE)",
+          "code": "COE-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. H. Sasipal CoE",
+          "signature_date": "-",
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
         }
-      ],
-      "labs": [
-        {
-          "code": "CS3661",
-          "name": "Mobile Application Development Lab",
-          "slot": "Lab 1",
-          "faculty_id": 23,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Dr. K. Ramesh",
-          "faculty_email": "ramesh@sasurie.edu",
-          "signature_date": "-"
-        },
-        {
-          "code": "CS3681",
-          "name": "Internet of Things Laboratory",
-          "slot": "Lab 2",
-          "faculty_id": 41,
-          "dues_status": "Pending Verification",
-          "faculty_name": "Prof. P. Vijay",
-          "faculty_email": "vijay.faculty@sasurie.edu",
-          "signature_date": "-"
-        }
-      ],
-      "signatories": null
+      ]
     },
     {
       "id": 3,
@@ -3837,9 +3847,151 @@
       "exam_type": null,
       "form_date": null,
       "attendance_month": null,
-      "subjects": null,
-      "labs": null,
-      "signatories": null
+      "subjects": [
+        {
+          "slot": "Sub 1",
+          "name": "Compiler Design",
+          "code": "CS3601",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Staff In-charge",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Sub 2",
+          "name": "Artificial Intelligence and Machine Learning",
+          "code": "CS3691",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. P. Vijay",
+          "faculty_id": 41,
+          "faculty_email": "vijay.faculty@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Sub 1",
+          "name": "Mobile Application Development",
+          "code": "CCS341",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Dr. K. Ramesh",
+          "faculty_id": 23,
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Sub 3",
+          "name": "Open Elective - I (Sensors & Actuators)",
+          "code": "OE3601",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. M. Selvam",
+          "faculty_id": 44,
+          "faculty_email": "selvam.faculty@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Sub 4",
+          "name": "Professional Elective - II (Big Data)",
+          "code": "PE3601",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Rajesh",
+          "faculty_id": 40,
+          "faculty_email": "chiefmentor@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Sub 5",
+          "name": "Professional Elective - III (Blockchain)",
+          "code": "PE3602",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. S. Vignesh",
+          "faculty_id": 45,
+          "faculty_email": "vignesh.faculty@sasurie.edu",
+          "signature_date": "-"
+        }
+      ],
+      "labs": [
+        {
+          "slot": "Lab 1",
+          "name": "Mobile Application Development Lab",
+          "code": "CS3661",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Dr. K. Ramesh",
+          "faculty_id": 23,
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Lab 2",
+          "name": "Internet of Things Laboratory",
+          "code": "CS3681",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. P. Vijay",
+          "faculty_id": 41,
+          "faculty_email": "vijay.faculty@sasurie.edu",
+          "signature_date": "-"
+        }
+      ],
+      "signatories": null,
+      "common_nodes": [
+        {
+          "slot": "COM-LIB",
+          "name": "Central Library & Book Bank",
+          "code": "LIB-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Mr. D. Vinoth",
+          "signature_date": "-",
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
+        },
+        {
+          "slot": "COM-ACC",
+          "name": "Accounts & College Finance Office",
+          "code": "ACC-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "S. Accounts (Finance Officer)",
+          "signature_date": "-",
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
+        },
+        {
+          "slot": "COM-TRN",
+          "name": "College Bus & Transport Section",
+          "code": "TRN-101",
+          "dues_status": "No Dues",
+          "faculty_name": "K.Murugesan",
+          "signature_date": "14/09/2026",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
+        },
+        {
+          "slot": "COM-HST",
+          "name": "Campus Hostel & Mess Section",
+          "code": "HST-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. R. Warden (Chief Warden)",
+          "signature_date": "-",
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
+        },
+        {
+          "slot": "COM-PED",
+          "name": "Physical Education & Sports Department",
+          "code": "PED-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "P. Ravichandran (Physical Director)",
+          "signature_date": "-",
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
+        },
+        {
+          "slot": "COM-COE",
+          "name": "Office of Controller of Examinations (CoE)",
+          "code": "COE-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. H. Sasipal CoE",
+          "signature_date": "-",
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
+        }
+      ]
     },
     {
       "id": 5,
@@ -3996,10 +4148,10 @@
           "status": "approved"
         },
         "transport": {
-          "date": "-",
-          "name": "-",
-          "signed": false,
-          "status": "-"
+          "signed": true,
+          "name": "K.Murugesan",
+          "date": "14/09/2026",
+          "status": "No Dues"
         },
         "chief_mentor": {
           "date": "10/8/26",
@@ -4013,7 +4165,69 @@
           "signed": true,
           "status": "No Dues"
         }
-      }
+      },
+      "common_nodes": [
+        {
+          "slot": "COM-LIB",
+          "name": "Central Library & Book Bank",
+          "code": "LIB-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Mr. D. Vinoth",
+          "signature_date": "-",
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
+        },
+        {
+          "slot": "COM-ACC",
+          "name": "Accounts & College Finance Office",
+          "code": "ACC-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "S. Accounts (Finance Officer)",
+          "signature_date": "-",
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
+        },
+        {
+          "slot": "COM-TRN",
+          "name": "College Bus & Transport Section",
+          "code": "TRN-101",
+          "dues_status": "No Dues",
+          "faculty_name": "K.Murugesan",
+          "signature_date": "14/09/2026",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
+        },
+        {
+          "slot": "COM-HST",
+          "name": "Campus Hostel & Mess Section",
+          "code": "HST-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. R. Warden (Chief Warden)",
+          "signature_date": "-",
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
+        },
+        {
+          "slot": "COM-PED",
+          "name": "Physical Education & Sports Department",
+          "code": "PED-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "P. Ravichandran (Physical Director)",
+          "signature_date": "-",
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
+        },
+        {
+          "slot": "COM-COE",
+          "name": "Office of Controller of Examinations (CoE)",
+          "code": "COE-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. H. Sasipal CoE",
+          "signature_date": "-",
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
+        }
+      ]
     },
     {
       "id": 6,
@@ -4174,9 +4388,9 @@
           "remarks": "All departmental clearances and HOD endorsement verified. Approved by Principal."
         },
         "transport": {
-          "date": "13/09/2026",
-          "name": "Faculty In-Charge",
           "signed": true,
+          "name": "K.Murugesan",
+          "date": "14/09/2026",
           "status": "No Dues"
         },
         "chief_mentor": {
@@ -4191,7 +4405,69 @@
           "signed": true,
           "status": "No Dues"
         }
-      }
+      },
+      "common_nodes": [
+        {
+          "slot": "COM-LIB",
+          "name": "Central Library & Book Bank",
+          "code": "LIB-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Mr. D. Vinoth",
+          "signature_date": "-",
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
+        },
+        {
+          "slot": "COM-ACC",
+          "name": "Accounts & College Finance Office",
+          "code": "ACC-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "S. Accounts (Finance Officer)",
+          "signature_date": "-",
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
+        },
+        {
+          "slot": "COM-TRN",
+          "name": "College Bus & Transport Section",
+          "code": "TRN-101",
+          "dues_status": "No Dues",
+          "faculty_name": "K.Murugesan",
+          "signature_date": "14/09/2026",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
+        },
+        {
+          "slot": "COM-HST",
+          "name": "Campus Hostel & Mess Section",
+          "code": "HST-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. R. Warden (Chief Warden)",
+          "signature_date": "-",
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
+        },
+        {
+          "slot": "COM-PED",
+          "name": "Physical Education & Sports Department",
+          "code": "PED-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "P. Ravichandran (Physical Director)",
+          "signature_date": "-",
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
+        },
+        {
+          "slot": "COM-COE",
+          "name": "Office of Controller of Examinations (CoE)",
+          "code": "COE-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. H. Sasipal CoE",
+          "signature_date": "-",
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
+        }
+      ]
     },
     {
       "id": 7,
@@ -4352,10 +4628,10 @@
           "remarks": "Approved by Principal / Institutional Administration"
         },
         "transport": {
-          "date": "-",
-          "name": "-",
-          "signed": false,
-          "status": "-"
+          "signed": true,
+          "name": "K.Murugesan",
+          "date": "14/09/2026",
+          "status": "No Dues"
         },
         "chief_mentor": {
           "date": "-",
@@ -4369,7 +4645,69 @@
           "signed": false,
           "status": "pending"
         }
-      }
+      },
+      "common_nodes": [
+        {
+          "slot": "COM-LIB",
+          "name": "Central Library & Book Bank",
+          "code": "LIB-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Mr. D. Vinoth",
+          "signature_date": "-",
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
+        },
+        {
+          "slot": "COM-ACC",
+          "name": "Accounts & College Finance Office",
+          "code": "ACC-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "S. Accounts (Finance Officer)",
+          "signature_date": "-",
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
+        },
+        {
+          "slot": "COM-TRN",
+          "name": "College Bus & Transport Section",
+          "code": "TRN-101",
+          "dues_status": "No Dues",
+          "faculty_name": "K.Murugesan",
+          "signature_date": "14/09/2026",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
+        },
+        {
+          "slot": "COM-HST",
+          "name": "Campus Hostel & Mess Section",
+          "code": "HST-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. R. Warden (Chief Warden)",
+          "signature_date": "-",
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
+        },
+        {
+          "slot": "COM-PED",
+          "name": "Physical Education & Sports Department",
+          "code": "PED-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "P. Ravichandran (Physical Director)",
+          "signature_date": "-",
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
+        },
+        {
+          "slot": "COM-COE",
+          "name": "Office of Controller of Examinations (CoE)",
+          "code": "COE-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. H. Sasipal CoE",
+          "signature_date": "-",
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
+        }
+      ]
     },
     {
       "id": 8,
@@ -4524,10 +4862,10 @@
           "status": "pending"
         },
         "transport": {
-          "date": "-",
-          "name": "-",
-          "signed": false,
-          "status": "-"
+          "signed": true,
+          "name": "K.Murugesan",
+          "date": "14/09/2026",
+          "status": "No Dues"
         },
         "chief_mentor": {
           "date": "-",
@@ -4550,8 +4888,8 @@
           "dues_status": "Pending Review",
           "faculty_name": "Mr. D. Vinoth",
           "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "lib-101"
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
         },
         {
           "slot": "COM-ACC",
@@ -4560,18 +4898,18 @@
           "dues_status": "Pending Review",
           "faculty_name": "S. Accounts (Finance Officer)",
           "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "acc-101"
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
         },
         {
           "slot": "COM-TRN",
           "name": "College Bus & Transport Section",
           "code": "TRN-101",
-          "dues_status": "Pending Review",
-          "faculty_name": "K. Murugesan (Transport In-Charge)",
-          "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "trn-101"
+          "dues_status": "No Dues",
+          "faculty_name": "K.Murugesan",
+          "signature_date": "14/09/2026",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
         },
         {
           "slot": "COM-HST",
@@ -4580,8 +4918,8 @@
           "dues_status": "Pending Review",
           "faculty_name": "Dr. R. Warden (Chief Warden)",
           "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "hst-101"
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
         },
         {
           "slot": "COM-PED",
@@ -4590,8 +4928,8 @@
           "dues_status": "Pending Review",
           "faculty_name": "P. Ravichandran (Physical Director)",
           "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "ped-101"
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
         },
         {
           "slot": "COM-COE",
@@ -4600,133 +4938,226 @@
           "dues_status": "Pending Review",
           "faculty_name": "Dr. H. Sasipal CoE",
           "signature_date": "-",
-          "requirement_description": "All institutional dues cleared",
-          "category_key": "coe-101"
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
         }
       ]
-    }
-  ],
-  "noDueApprovals": [
-    {
-      "id": 1,
-      "request_id": 2,
-      "department_id": 1,
-      "approved_by": 38,
-      "status": "approved",
-      "remarks": null,
-      "approved_at": "2026-09-10T16:26:45.244Z",
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 2,
-      "request_id": 2,
-      "department_id": 2,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 3,
-      "request_id": 2,
-      "department_id": 3,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 4,
-      "request_id": 2,
-      "department_id": 4,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 5,
-      "request_id": 2,
-      "department_id": 5,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 6,
-      "request_id": 2,
-      "department_id": 6,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 7,
-      "request_id": 2,
-      "department_id": 7,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 8,
-      "request_id": 2,
-      "department_id": 8,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
     },
     {
       "id": 9,
-      "request_id": 2,
-      "department_id": 9,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 10,
-      "request_id": 2,
-      "department_id": 10,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 11,
-      "request_id": 2,
-      "department_id": 11,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
-    {
-      "id": 12,
-      "request_id": 2,
-      "department_id": 12,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T09:01:28.284Z"
-    },
+      "student_id": 65,
+      "status": "under_review",
+      "submitted_at": "2026-09-14T09:44:26.704Z",
+      "remarks": "End  Examination No Due Clearance -",
+      "created_at": "2026-09-14T09:44:26.704Z",
+      "exam_type": "End Semester Examinations",
+      "form_date": "14/09/2026",
+      "academic_year": "2025-26",
+      "year": 1,
+      "semester": 1,
+      "student_type": "day_scholar",
+      "attendance_percentage": 98,
+      "attendance_month": "August",
+      "undertaking_status": "Exempted",
+      "subjects": [
+        {
+          "slot": "Sub 1",
+          "name": "Problem Solving and Python Programming",
+          "code": "GE3151",
+          "dues_status": "No Dues",
+          "faculty_name": "Prof. S. Rajesh",
+          "faculty_id": 23,
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "14/09/2026"
+        },
+        {
+          "slot": "Sub 2",
+          "name": "Matrices and Calculus",
+          "code": "MA3151",
+          "dues_status": "No Dues",
+          "faculty_name": "Dr. M. Geetha",
+          "faculty_id": 24,
+          "faculty_email": "geetha@sasurie.edu",
+          "signature_date": "14/09/2026"
+        },
+        {
+          "slot": "Sub 3",
+          "name": "Engineering Physics",
+          "code": "PH3151",
+          "dues_status": "No Dues",
+          "faculty_name": "Prof. S. Natarajan",
+          "faculty_id": 25,
+          "faculty_email": "natarajan@sasurie.edu",
+          "signature_date": "14/09/2026"
+        },
+        {
+          "slot": "Sub 4",
+          "name": "Engineering Chemistry",
+          "code": "CY3151",
+          "dues_status": "No Dues",
+          "faculty_name": "Dr. P. Muthukumar",
+          "faculty_id": 26,
+          "faculty_email": "muthukumar@sasurie.edu",
+          "signature_date": "14/09/2026"
+        },
+        {
+          "slot": "Sub 5",
+          "name": "Professional English - I",
+          "code": "HS3151",
+          "dues_status": "Pending Verification",
+          "faculty_name": "Prof. B. Anitha",
+          "faculty_id": 27,
+          "faculty_email": "anitha@sasurie.edu",
+          "signature_date": "-"
+        },
+        {
+          "slot": "Sub 6",
+          "name": "Heritage of Tamils",
+          "code": "GE3152",
+          "dues_status": "No Dues",
+          "faculty_name": "Prof. T. Hariprasad",
+          "faculty_id": 28,
+          "faculty_email": "hariprasad@sasurie.edu",
+          "signature_date": "14/09/2026"
+        }
+      ],
+      "labs": [
+        {
+          "slot": "Lab 1",
+          "name": "Problem Solving & Python Lab",
+          "code": "GE3171",
+          "dues_status": "No Dues",
+          "faculty_name": "Prof. S. Rajesh",
+          "faculty_id": 23,
+          "faculty_email": "ramesh@sasurie.edu",
+          "signature_date": "14/09/2026"
+        },
+        {
+          "slot": "Lab 2",
+          "name": "Physics and Chemistry Laboratory",
+          "code": "BS3171",
+          "dues_status": "No Dues",
+          "faculty_name": "Prof. S. Natarajan",
+          "faculty_id": 25,
+          "faculty_email": "natarajan@sasurie.edu",
+          "signature_date": "14/09/2026"
+        }
+      ],
+      "common_nodes": [
+        {
+          "slot": "COM-LIB",
+          "name": "Central Library & Book Bank",
+          "code": "LIB-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Mr. D. Vinoth",
+          "signature_date": "-",
+          "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+          "category_key": "library"
+        },
+        {
+          "slot": "COM-ACC",
+          "name": "Accounts & College Finance Office",
+          "code": "ACC-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "S. Accounts (Finance Officer)",
+          "signature_date": "-",
+          "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+          "category_key": "accounts"
+        },
+        {
+          "slot": "COM-TRN",
+          "name": "College Bus & Transport Section",
+          "code": "TRN-101",
+          "dues_status": "No Dues",
+          "faculty_name": "Prof. M. Selvam",
+          "signature_date": "14/09/2026",
+          "requirement_description": "Bus pass surrender or transport route fee clearance.",
+          "category_key": "transport"
+        },
+        {
+          "slot": "COM-HST",
+          "name": "Campus Hostel & Mess Section",
+          "code": "HST-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. R. Warden (Chief Warden)",
+          "signature_date": "-",
+          "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+          "category_key": "hostel"
+        },
+        {
+          "slot": "COM-PED",
+          "name": "Physical Education & Sports Department",
+          "code": "PED-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "P. Ravichandran (Physical Director)",
+          "signature_date": "-",
+          "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+          "category_key": "sports"
+        },
+        {
+          "slot": "COM-COE",
+          "name": "Office of Controller of Examinations (CoE)",
+          "code": "COE-101",
+          "dues_status": "Pending Review",
+          "faculty_name": "Dr. H. Sasipal CoE",
+          "signature_date": "-",
+          "requirement_description": "Exam registration confirmation & hall ticket verification.",
+          "category_key": "exam_cell"
+        }
+      ],
+      "signatories": {
+        "chief_mentor": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "pending"
+        },
+        "hod": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "pending"
+        },
+        "coe": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "pending"
+        },
+        "principal": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "pending"
+        },
+        "library": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "pending"
+        },
+        "transport": {
+          "signed": true,
+          "name": "Prof. M. Selvam",
+          "date": "14/09/2026",
+          "status": "No Dues"
+        },
+        "hostel": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "-"
+        },
+        "office_accounts": {
+          "signed": false,
+          "name": "-",
+          "date": "-",
+          "status": "pending"
+        }
+      }
+    }
+  ],
+  "noDueApprovals": [
     {
       "id": 13,
       "request_id": 1,
@@ -4796,96 +5227,6 @@
       "remarks": null,
       "approved_at": null,
       "created_at": "2026-09-10T12:50:49.137Z"
-    },
-    {
-      "id": 20,
-      "request_id": 2,
-      "department_id": 1,
-      "approved_by": 38,
-      "status": "approved",
-      "remarks": null,
-      "approved_at": "2026-09-10T15:14:05.097Z",
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 21,
-      "request_id": 2,
-      "department_id": 8,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 22,
-      "request_id": 2,
-      "department_id": 9,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 23,
-      "request_id": 2,
-      "department_id": 10,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 24,
-      "request_id": 2,
-      "department_id": 11,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 25,
-      "request_id": 2,
-      "department_id": 12,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 26,
-      "request_id": 2,
-      "department_id": 13,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 27,
-      "request_id": 2,
-      "department_id": 14,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
-    },
-    {
-      "id": 28,
-      "request_id": 2,
-      "department_id": 15,
-      "approved_by": null,
-      "status": "pending",
-      "remarks": null,
-      "approved_at": null,
-      "created_at": "2026-09-10T13:03:11.998Z"
     },
     {
       "id": 29,
@@ -5248,23 +5589,6 @@
       "revocation_reason": null
     },
     {
-      "id": 5,
-      "request_id": 2,
-      "student_id": 1,
-      "certificate_number": "CERT-2026-00005",
-      "verification_code": "VFY-SASURIE-C5532C28",
-      "issued_at": "2026-09-10T09:01:57.235Z",
-      "is_valid": true,
-      "created_at": "2026-09-10T09:01:57.235Z",
-      "updated_at": null,
-      "issued_by": 1,
-      "issued_by_name": "Dr. T. Senthilvel (Principal)",
-      "revoked_by": null,
-      "revoked_by_name": null,
-      "revoked_at": null,
-      "revocation_reason": null
-    },
-    {
       "id": 6,
       "request_id": 1,
       "student_id": 1,
@@ -5368,6 +5692,204 @@
     }
   ],
   "notifications": [
+    {
+      "id": 151,
+      "user_id": 37,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by K.Murugesan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T10:00:55.810Z"
+    },
+    {
+      "id": 150,
+      "user_id": 103,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by K.Murugesan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T10:00:53.094Z"
+    },
+    {
+      "id": 149,
+      "user_id": 128,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by K.Murugesan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T10:00:50.013Z"
+    },
+    {
+      "id": 148,
+      "user_id": 104,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by K.Murugesan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T10:00:45.370Z"
+    },
+    {
+      "id": 147,
+      "user_id": 35,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by K.Murugesan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T10:00:43.172Z"
+    },
+    {
+      "id": 146,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Sub 3 has been accepted with 'No Dues' by Prof. S. Natarajan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:54:55.802Z"
+    },
+    {
+      "id": 145,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Lab 2 has been accepted with 'No Dues' by Prof. S. Natarajan.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:54:54.249Z"
+    },
+    {
+      "id": 144,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Sub 2 has been accepted with 'No Dues' by Dr. M. Geetha.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:54:21.257Z"
+    },
+    {
+      "id": 143,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for COM-TRN has been accepted with 'No Dues' by Prof. M. Selvam.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:52:18.750Z"
+    },
+    {
+      "id": 142,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Sub 6 has been accepted with 'No Dues' by Prof. T. Hariprasad.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:51:25.811Z"
+    },
+    {
+      "id": 141,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Sub 4 has been accepted with 'No Dues' by Dr. P. Muthukumar.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:51:01.258Z"
+    },
+    {
+      "id": 140,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Sub 1 has been accepted with 'No Dues' by Prof. S. Rajesh.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:49:24.289Z"
+    },
+    {
+      "id": 139,
+      "user_id": 129,
+      "title": "Subject Clearance Approved",
+      "message": "Your clearance for Lab 1 has been accepted with 'No Dues' by Prof. S. Rajesh.",
+      "notification_type": "success",
+      "is_read": false,
+      "created_at": "2026-09-14T09:49:19.891Z"
+    },
+    {
+      "id": 138,
+      "user_id": 129,
+      "title": "Official No Due Request Submitted",
+      "message": "Your End Semester Examinations No Due Form has been initiated with 14 clearance sections and routed for verification.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.771Z"
+    },
+    {
+      "id": 137,
+      "user_id": 107,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Physics and Chemistry Laboratory (Lab 2). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.753Z"
+    },
+    {
+      "id": 136,
+      "user_id": 105,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Problem Solving & Python Lab (Lab 1). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.747Z"
+    },
+    {
+      "id": 135,
+      "user_id": 110,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Heritage of Tamils (Sub 6). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.739Z"
+    },
+    {
+      "id": 134,
+      "user_id": 109,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Professional English - I (Sub 5). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.732Z"
+    },
+    {
+      "id": 133,
+      "user_id": 108,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Engineering Chemistry (Sub 4). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.724Z"
+    },
+    {
+      "id": 132,
+      "user_id": 107,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Engineering Physics (Sub 3). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.716Z"
+    },
+    {
+      "id": 131,
+      "user_id": 106,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Matrices and Calculus (Sub 2). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.710Z"
+    },
+    {
+      "id": 130,
+      "user_id": 105,
+      "title": "Subject Clearance Application Submitted",
+      "message": "Student Muthu E (732426106008) applied for clearance in Problem Solving and Python Programming (Sub 1). Please verify and accept.",
+      "notification_type": "info",
+      "is_read": false,
+      "created_at": "2026-09-14T09:44:26.704Z"
+    },
     {
       "id": 1,
       "user_id": 28,
@@ -6531,6 +7053,731 @@
     }
   ],
   "auditLogs": [
+    {
+      "id": 526,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:33:28.370Z"
+    },
+    {
+      "id": 525,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 5,
+      "new_values": "{\"full_name\":\"Dr. H. Sasipal\",\"employee_id\":\"EMP-COE-001\",\"email\":\"coe@sasurie.edu\",\"password\":\"StaffPassword@123\",\"phone\":\"9842100105\",\"designation\":\"Controller of Examinations (CoE)\",\"subject_term\":\"Common Clearance\",\"is_active\":true}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:33:22.230Z"
+    },
+    {
+      "id": 524,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:32:29.849Z"
+    },
+    {
+      "id": 523,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:31:54.182Z"
+    },
+    {
+      "id": 522,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:18:44.710Z"
+    },
+    {
+      "id": 521,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:16:10.062Z"
+    },
+    {
+      "id": 520,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_COMMON_NODE_UPDATED",
+      "entity_type": "SUBJECT_COURSE",
+      "entity_id": 1033,
+      "new_values": "{\"id\":1033,\"title\":\"Office of Controller of Examinations (CoE)\",\"code\":\"EMP-COE-001\",\"department_id\":0,\"year\":0,\"semester\":0,\"is_active\":true,\"created_at\":\"2026-09-12T15:06:49.595Z\",\"course_type\":\"common\",\"slot\":\"COM-COE\",\"faculty_name\":\"Dr. H. Sasipal\",\"is_elective\":false,\"faculty_email\":\"coe@sasurie.edu\",\"requirement_description\":\"All institutional dues cleared\",\"applies_to\":\"all\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:16:00.941Z"
+    },
+    {
+      "id": 519,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 5,
+      "new_values": "{\"full_name\":\"Dr. H. Sasipal\",\"employee_id\":\"EMP-COE-001\",\"email\":\"coe@sasurie.edu\",\"password\":\"StaffPassword@123\",\"phone\":\"9842100105\",\"designation\":\"Controller of Examinations (CoE)\",\"subject_term\":\"Common Clearance\",\"is_active\":true}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:13:28.391Z"
+    },
+    {
+      "id": 518,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_STATUS_TOGGLED",
+      "entity_type": "STAFF",
+      "entity_id": 5,
+      "new_values": "{\"is_active\":true}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:10:44.835Z"
+    },
+    {
+      "id": 517,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_STATUS_TOGGLED",
+      "entity_type": "STAFF",
+      "entity_id": 5,
+      "new_values": "{\"is_active\":false}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:10:42.733Z"
+    },
+    {
+      "id": 516,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:10:14.476Z"
+    },
+    {
+      "id": 515,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:09:08.023Z"
+    },
+    {
+      "id": 514,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 5,
+      "new_values": "{\"full_name\":\"Dr. H. Sasipal, Controller of Examinations\",\"employee_id\":\"EMP-COE-001\",\"email\":\"coe@sasurie.edu\",\"password\":\"StaffPassword@123\",\"phone\":\"9842100105\",\"designation\":\"Controller of Examinations (CoE)\",\"subject_term\":\"Common Clearance\",\"is_active\":true}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:08:55.594Z"
+    },
+    {
+      "id": 513,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:07:14.021Z"
+    },
+    {
+      "id": 512,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:06:49.022Z"
+    },
+    {
+      "id": 511,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 5,
+      "new_values": "{\"full_name\":\"Dr. P. Ravichandran, Controller of Examinations\",\"employee_id\":\"EMP-COE-001\",\"email\":\"coe@sasurie.edu\",\"password\":\"\",\"phone\":\"9842100105\",\"designation\":\"Controller of Examinations (CoE)\",\"subject_term\":\"Common Clearance\",\"is_active\":true}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:06:02.566Z"
+    },
+    {
+      "id": 510,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:04:09.137Z"
+    },
+    {
+      "id": 509,
+      "user_id": 129,
+      "user_email": "muthu26@sasurie.com",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 129,
+      "new_values": "{\"email\":\"muthu26@sasurie.com\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:02:01.374Z"
+    },
+    {
+      "id": 508,
+      "user_id": 129,
+      "user_email": "muthu26@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 129,
+      "new_values": "{\"identifier\":\"muthu26@sasurie.com\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:01:09.458Z"
+    },
+    {
+      "id": 507,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 12,
+      "new_values": "{\"email\":\"transport@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:59.132Z"
+    },
+    {
+      "id": 506,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 4,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"K.Murugesan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:55.823Z"
+    },
+    {
+      "id": 505,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 6,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"K.Murugesan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:53.106Z"
+    },
+    {
+      "id": 504,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 8,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"K.Murugesan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:50.024Z"
+    },
+    {
+      "id": 503,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 7,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"K.Murugesan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:45.381Z"
+    },
+    {
+      "id": 502,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 5,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"K.Murugesan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:43.184Z"
+    },
+    {
+      "id": 501,
+      "user_id": 12,
+      "user_email": "transport@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 12,
+      "new_values": "{\"identifier\":\"TRN-101\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:27.907Z"
+    },
+    {
+      "id": 500,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:14.694Z"
+    },
+    {
+      "id": 499,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "HOD_STAFF_UPDATED",
+      "entity_type": "STAFF",
+      "entity_id": 10,
+      "new_values": "{\"full_name\":\"K.Murugesan\",\"employee_id\":\"TRN-101\",\"email\":\"transport@sasurie.edu\",\"password\":\"StaffPassword@123\",\"phone\":\"9842100110\",\"designation\":\"Transport In-Charge\",\"subject_term\":\"Common Clearance\",\"is_active\":true}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T10:00:08.481Z"
+    },
+    {
+      "id": 498,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:57:05.739Z"
+    },
+    {
+      "id": 497,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:56:54.329Z"
+    },
+    {
+      "id": 496,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:55:20.938Z"
+    },
+    {
+      "id": 495,
+      "user_id": 119,
+      "user_email": "natarajan.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 119,
+      "new_values": "{\"email\":\"natarajan.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:58.903Z"
+    },
+    {
+      "id": 494,
+      "user_id": 119,
+      "user_email": "natarajan.faculty@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Sub 3\",\"staff\":\"Prof. S. Natarajan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:55.814Z"
+    },
+    {
+      "id": 493,
+      "user_id": 119,
+      "user_email": "natarajan.faculty@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Lab 2\",\"staff\":\"Prof. S. Natarajan\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:54.260Z"
+    },
+    {
+      "id": 492,
+      "user_id": 119,
+      "user_email": "natarajan.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 119,
+      "new_values": "{\"identifier\":\"FAC-CSE-017\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:43.042Z"
+    },
+    {
+      "id": 491,
+      "user_id": 118,
+      "user_email": "geetha.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 118,
+      "new_values": "{\"email\":\"geetha.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:23.822Z"
+    },
+    {
+      "id": 490,
+      "user_id": 118,
+      "user_email": "geetha.faculty@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Sub 2\",\"staff\":\"Dr. M. Geetha\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:21.268Z"
+    },
+    {
+      "id": 489,
+      "user_id": 118,
+      "user_email": "geetha.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 118,
+      "new_values": "{\"identifier\":\"FAC-CSE-016\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:54:12.188Z"
+    },
+    {
+      "id": 488,
+      "user_id": 115,
+      "user_email": "vignesh.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 115,
+      "new_values": "{\"email\":\"vignesh.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:53:03.692Z"
+    },
+    {
+      "id": 487,
+      "user_id": 115,
+      "user_email": "vignesh.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 115,
+      "new_values": "{\"identifier\":\"FAC-CSE-013\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:52:52.723Z"
+    },
+    {
+      "id": 486,
+      "user_id": 114,
+      "user_email": "selvam.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 114,
+      "new_values": "{\"email\":\"selvam.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:52:33.029Z"
+    },
+    {
+      "id": 485,
+      "user_id": 114,
+      "user_email": "selvam.faculty@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"COM-TRN\",\"staff\":\"Prof. M. Selvam\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:52:18.761Z"
+    },
+    {
+      "id": 484,
+      "user_id": 114,
+      "user_email": "selvam.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 114,
+      "new_values": "{\"identifier\":\"FAC-CSE-010\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:51:55.254Z"
+    },
+    {
+      "id": 483,
+      "user_id": 113,
+      "user_email": "hariprasad.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 113,
+      "new_values": "{\"email\":\"hariprasad.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:51:28.248Z"
+    },
+    {
+      "id": 482,
+      "user_id": 113,
+      "user_email": "hariprasad.faculty@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Sub 6\",\"staff\":\"Prof. T. Hariprasad\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:51:25.822Z"
+    },
+    {
+      "id": 481,
+      "user_id": 113,
+      "user_email": "hariprasad.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 113,
+      "new_values": "{\"identifier\":\"FAC-CSE-009\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:51:19.331Z"
+    },
+    {
+      "id": 480,
+      "user_id": 112,
+      "user_email": "muthukumar.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 112,
+      "new_values": "{\"email\":\"muthukumar.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:51:03.968Z"
+    },
+    {
+      "id": 479,
+      "user_id": 112,
+      "user_email": "muthukumar.faculty@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Sub 4\",\"staff\":\"Dr. P. Muthukumar\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:51:01.269Z"
+    },
+    {
+      "id": 478,
+      "user_id": 112,
+      "user_email": "muthukumar.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 112,
+      "new_values": "{\"identifier\":\"FAC-CSE-008\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:50:52.492Z"
+    },
+    {
+      "id": 477,
+      "user_id": 111,
+      "user_email": "vijay.faculty@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 111,
+      "new_values": "{\"email\":\"vijay.faculty@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:50:31.449Z"
+    },
+    {
+      "id": 476,
+      "user_id": 111,
+      "user_email": "vijay.faculty@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 111,
+      "new_values": "{\"identifier\":\"FAC-CSE-007\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:50:06.854Z"
+    },
+    {
+      "id": 475,
+      "user_id": 23,
+      "user_email": "chiefmentor@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 23,
+      "new_values": "{\"email\":\"chiefmentor@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:49:44.934Z"
+    },
+    {
+      "id": 474,
+      "user_id": 23,
+      "user_email": "chiefmentor@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Sub 1\",\"staff\":\"Prof. S. Rajesh\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:49:24.303Z"
+    },
+    {
+      "id": 473,
+      "user_id": 23,
+      "user_email": "chiefmentor@sasurie.edu",
+      "action": "SUBJECT_DUE_CLEARED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"slot\":\"Lab 1\",\"staff\":\"Prof. S. Rajesh\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:49:19.904Z"
+    },
+    {
+      "id": 472,
+      "user_id": 23,
+      "user_email": "chiefmentor@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 23,
+      "new_values": "{\"identifier\":\"STF-MEN-001\",\"role\":\"STAFF\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:48:52.783Z"
+    },
+    {
+      "id": 471,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"email\":\"hod.cse@college.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:47:53.815Z"
+    },
+    {
+      "id": 470,
+      "user_id": 91,
+      "user_email": "hod.cse@college.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 91,
+      "new_values": "{\"identifier\":\"HOD-CSE-001\",\"role\":\"HOD\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:45:03.740Z"
+    },
+    {
+      "id": 469,
+      "user_id": 129,
+      "user_email": "muthu26@sasurie.com",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 129,
+      "new_values": "{\"email\":\"muthu26@sasurie.com\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:44:33.729Z"
+    },
+    {
+      "id": 468,
+      "user_id": 129,
+      "user_email": "muthu26@sasurie.com",
+      "action": "NO_DUE_REQUEST_CREATED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 9,
+      "new_values": "{\"exam_type\":\"End Semester Examinations\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:44:26.765Z"
+    },
+    {
+      "id": 467,
+      "user_id": 129,
+      "user_email": "muthu26@sasurie.com",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 129,
+      "new_values": "{\"identifier\":\"muthu26@sasurie.com\",\"role\":\"STUDENT\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:43:48.698Z"
+    },
+    {
+      "id": 466,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:43:43.448Z"
+    },
+    {
+      "id": 465,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "STUDENT_CREATED",
+      "entity_type": "STUDENT",
+      "entity_id": 65,
+      "new_values": "{\"full_name\":\"Muthu E\",\"register_number\":\"732426106008\",\"email\":\"muthu26@sasurie.com\",\"password\":\"Sasurie@123\",\"phone\":\"\",\"department_id\":1,\"course_id\":1,\"year\":1,\"semester\":1,\"section\":\"A\",\"admission_year\":2026}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:43:35.328Z"
+    },
+    {
+      "id": 464,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:42:05.136Z"
+    },
+    {
+      "id": 463,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGOUT",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"email\":\"ramya@sasurie.edu\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:42:01.172Z"
+    },
+    {
+      "id": 462,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "REQUEST_DELETED",
+      "entity_type": "NO_DUE_REQUEST",
+      "entity_id": 2,
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:41:51.433Z"
+    },
+    {
+      "id": 461,
+      "user_id": 1,
+      "user_email": "ramya@sasurie.edu",
+      "action": "USER_LOGIN",
+      "entity_type": "USER",
+      "entity_id": 1,
+      "new_values": "{\"identifier\":\"ramya@sasurie.edu\",\"role\":\"ADMIN\"}",
+      "ip_address": "2409:40f4:2146:e628:80d:f8a6:44f2:c7c2",
+      "created_at": "2026-09-14T09:41:20.743Z"
+    },
     {
       "id": 460,
       "user_id": 128,
@@ -26430,103 +27677,133 @@
     },
     {
       "id": 1028,
-      "title": "Central Library & Book Bank",
-      "code": "LIB-101",
       "department_id": 0,
       "year": 0,
       "semester": 0,
-      "is_active": true,
-      "created_at": "2026-09-12T15:06:49.595Z",
-      "course_type": "common",
+      "created_at": "2026-09-14T10:24:54.717Z",
+      "title": "Central Library & Book Bank",
+      "code": "LIB-101",
       "slot": "COM-LIB",
+      "course_type": "common",
+      "faculty_id": 39,
       "faculty_name": "Mr. D. Vinoth",
+      "faculty_email": "vinoth.library@sasurie.edu",
+      "requirement_description": "Return all issued library books, project journals & clear fine liabilities.",
+      "applies_to": "all",
+      "category_key": "library",
+      "is_active": true,
       "is_elective": false
     },
     {
       "id": 1029,
-      "title": "Accounts & College Finance Office",
-      "code": "ACC-101",
       "department_id": 0,
       "year": 0,
       "semester": 0,
-      "is_active": true,
-      "created_at": "2026-09-12T15:06:49.595Z",
-      "course_type": "common",
+      "created_at": "2026-09-14T10:24:54.717Z",
+      "title": "Accounts & College Finance Office",
+      "code": "ACC-101",
       "slot": "COM-ACC",
-      "faculty_name": "S. Accounts (Finance Officer)",
+      "course_type": "common",
+      "faculty_id": 8,
+      "faculty_name": "Mrs. V. Revathi, M.Com.",
+      "faculty_email": "accounts@sasurie.edu",
+      "requirement_description": "Full semester tuition fee, special fees & examination fee clearance.",
+      "applies_to": "all",
+      "category_key": "accounts",
+      "is_active": true,
       "is_elective": false
     },
     {
       "id": 1030,
-      "title": "College Bus & Transport Section",
-      "code": "TRN-101",
       "department_id": 0,
       "year": 0,
       "semester": 0,
-      "is_active": true,
-      "created_at": "2026-09-12T15:06:49.595Z",
-      "course_type": "common",
+      "created_at": "2026-09-14T10:24:54.717Z",
+      "title": "College Bus & Transport Section",
+      "code": "TRN-101",
       "slot": "COM-TRN",
-      "faculty_name": "K. Murugesan (Transport In-Charge)",
+      "course_type": "common",
+      "faculty_id": 10,
+      "faculty_name": "K.Murugesan",
+      "faculty_email": "transport@sasurie.edu",
+      "requirement_description": "Bus pass surrender or transport route fee clearance.",
+      "applies_to": "all",
+      "category_key": "transport",
+      "is_active": true,
       "is_elective": false
     },
     {
       "id": 1031,
-      "title": "Campus Hostel & Mess Section",
-      "code": "HST-101",
       "department_id": 0,
       "year": 0,
       "semester": 0,
-      "is_active": true,
-      "created_at": "2026-09-12T15:06:49.595Z",
-      "course_type": "common",
+      "created_at": "2026-09-14T10:24:54.717Z",
+      "title": "Campus Hostel & Mess Section",
+      "code": "HST-101",
       "slot": "COM-HST",
-      "faculty_name": "Dr. R. Warden (Chief Warden)",
+      "course_type": "common",
+      "faculty_id": 9,
+      "faculty_name": "Mr. K. Manoharan",
+      "faculty_email": "hostel@sasurie.edu",
+      "requirement_description": "Hostel room inventory handover & mess fee bill clearance.",
+      "applies_to": "hostel",
+      "category_key": "hostel",
+      "is_active": true,
       "is_elective": false
     },
     {
       "id": 1032,
-      "title": "Physical Education & Sports Department",
-      "code": "PED-101",
       "department_id": 0,
       "year": 0,
       "semester": 0,
-      "is_active": true,
-      "created_at": "2026-09-12T15:06:49.595Z",
-      "course_type": "common",
+      "created_at": "2026-09-14T10:24:54.717Z",
+      "title": "Physical Education & Sports Department",
+      "code": "PED-101",
       "slot": "COM-PED",
-      "faculty_name": "P. Ravichandran (Physical Director)",
+      "course_type": "common",
+      "faculty_id": 58,
+      "faculty_name": "Prof. P. Ravichandran (Physical Director)",
+      "faculty_email": "sports@sasurie.edu",
+      "requirement_description": "Return of tournament kits, jerseys & sports equipment.",
+      "applies_to": "all",
+      "category_key": "sports",
+      "is_active": true,
       "is_elective": false
     },
     {
       "id": 1033,
-      "title": "Office of Controller of Examinations (CoE)",
-      "code": "COE-101",
       "department_id": 0,
       "year": 0,
       "semester": 0,
-      "is_active": true,
-      "created_at": "2026-09-12T15:06:49.595Z",
-      "course_type": "common",
+      "created_at": "2026-09-14T10:24:54.717Z",
+      "title": "Office of Controller of Examinations (CoE)",
+      "code": "COE-101",
       "slot": "COM-COE",
-      "faculty_name": "Dr. H. Sasipal CoE",
+      "course_type": "common",
+      "faculty_id": 5,
+      "faculty_name": "Dr. H. Sasipal (CoE)",
+      "faculty_email": "coe@sasurie.edu",
+      "requirement_description": "Exam registration confirmation & hall ticket verification.",
+      "applies_to": "all",
+      "category_key": "exam_cell",
+      "is_active": true,
       "is_elective": false
     }
   ],
   "nextId": {
-    "users": 129,
-    "departments": 18,
+    "users": 131,
+    "departments": 19,
     "courses": 12,
     "dueCategories": 6,
-    "students": 65,
-    "staff": 58,
+    "students": 66,
+    "staff": 59,
     "dueRecords": 1,
     "duePayments": 1,
-    "noDueRequests": 9,
+    "noDueRequests": 10,
     "noDueApprovals": 58,
     "certificates": 12,
-    "notifications": 130,
-    "auditLogs": 461,
+    "notifications": 152,
+    "auditLogs": 527,
     "subjectCourses": 1034
   }
 }

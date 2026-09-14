@@ -177,7 +177,7 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     if (staff) {
       user = db.users.find(u => u.id === staff!.user_id || u.email.toLowerCase() === staff!.email.toLowerCase());
     } else {
-      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && (u.role === 'STAFF' || u.role === 'HOD'));
+      user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier && (u.role === 'STAFF' || u.role === 'HOD' || (u.role as string) === 'COE' || (u.role as string) === 'PRINCIPAL'));
     }
   } else if (requestedRole === 'STUDENT') {
     if (student) {
@@ -230,10 +230,13 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     user.role = 'HOD';
     staff = hodStaffRecord;
   } else if (requestedRole === 'STAFF') {
-    if (user.role !== 'STAFF' && user.role !== 'HOD') {
+    if (user.role !== 'STAFF' && user.role !== 'HOD' && (user.role as string) !== 'COE' && (user.role as string) !== 'PRINCIPAL') {
       return res.status(403).json({
-        detail: 'Access denied: Only department staff are authorized to log in through the Staff Portal.'
+        detail: 'Access denied: Only department staff and clearance officers are authorized to log in through the Staff Portal.'
       });
+    }
+    if ((user.role as string) === 'COE' || (user.role as string) === 'PRINCIPAL') {
+      user.role = 'STAFF';
     }
     const enrolledStaff = staff || db.staff.find(s => s.user_id === user!.id || s.email.toLowerCase() === user!.email.toLowerCase());
     if (!enrolledStaff) {
@@ -345,6 +348,53 @@ apiRouter.post('/auth/login', (req: Request, res: Response) => {
     refresh_token,
     token_type: 'bearer',
     user: userInfo
+  });
+});
+
+apiRouter.post('/auth/reset-password', (req: Request, res: Response) => {
+  const identifierField = (req.body.identifier || req.body.email || req.body.employee_id || req.body.register_number || '').toString().trim();
+  const newPassword = (req.body.new_password || req.body.password || 'StaffPassword@123').toString().trim();
+
+  if (!identifierField) {
+    return res.status(400).json({ detail: 'Please provide your Employee ID, Register Number, or College Email.' });
+  }
+
+  const upperIdentifier = identifierField.toUpperCase();
+  const lowerIdentifier = identifierField.toLowerCase();
+
+  // Check staff
+  const staff = db.staff.find(s => s.employee_id.toUpperCase() === upperIdentifier || s.email.toLowerCase() === lowerIdentifier);
+  // Check student
+  const student = db.students.find(s => s.register_number.toUpperCase() === upperIdentifier || s.email.toLowerCase() === lowerIdentifier);
+  // Check user
+  let user = db.users.find(u => u.email.toLowerCase() === lowerIdentifier);
+  if (!user && staff) {
+    user = db.users.find(u => u.id === staff.user_id || u.email.toLowerCase() === staff.email.toLowerCase());
+  }
+  if (!user && student) {
+    user = db.users.find(u => u.id === student.user_id || u.email.toLowerCase() === student.email.toLowerCase());
+  }
+
+  if (!user) {
+    return res.status(404).json({ detail: 'No registered account found matching this identifier. Please verify your Employee ID or Email.' });
+  }
+
+  user.password_hash = hashPassword(newPassword);
+  if ((user.role as string) === 'COE' || (user.role as string) === 'PRINCIPAL') {
+    user.role = 'STAFF';
+  }
+  user.updated_at = new Date().toISOString();
+
+  db.saveToFile();
+  db.queueSyncToPostgres();
+  db.logAudit(user.id, user.email, 'PASSWORD_RESET', 'USER', user.id, null, { identifier: identifierField }, getClientIp(req));
+
+  return res.json({
+    success: true,
+    message: `Password successfully updated for ${staff?.full_name || student?.full_name || user.email}.`,
+    role: user.role,
+    email: user.email,
+    identifier: staff?.employee_id || student?.register_number || user.email
   });
 });
 
@@ -1135,19 +1185,16 @@ apiRouter.patch('/due-records/:id', authMiddleware, requireRole(['STAFF', 'ADMIN
   });
 });
 
-apiRouter.delete('/due-records/:id', authMiddleware, requireRole(['STAFF', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/due-records/:id', authMiddleware, requireRole(['STAFF', 'ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const idx = db.dueRecords.findIndex(d => d.id === id);
-  if (idx === -1) return res.status(404).json({ detail: 'Due record not found' });
+  const due = db.dueRecords.find(d => d.id === id);
+  if (!due) return res.status(404).json({ detail: 'Due record not found' });
 
-  const due = db.dueRecords[idx];
   if (req.user!.role === 'STAFF' && due.department_id !== req.staffProfile!.department_id) {
     return res.status(403).json({ detail: 'Permission denied for other department due records' });
   }
 
-  db.dueRecords.splice(idx, 1);
-  deleteRecordFromPostgres('due_records', id).catch(() => {});
-  db.saveToFile();
+  await db.deleteDueRecord(id);
   db.logAudit(req.user!.id, req.user!.email, 'DUE_DELETED', 'DUE_RECORD', id, null, null, getClientIp(req));
   res.json({ message: 'Due record deleted successfully' });
 });
@@ -1348,40 +1395,41 @@ function defaultSignatoriesForStudent(reqObj?: any, isInitial: boolean = false) 
   };
 }
 
-export function defaultCommonNodesForStudent(student?: any, initialPending: boolean = true): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; signature_date?: string; code?: string; requirement_description?: string; category_key?: string }> {
+export function defaultCommonNodesForStudent(student?: any, initialPending: boolean = true): Array<{ slot: string; name: string; dues_status: string; faculty_name?: string; faculty_email?: string; faculty_id?: number; signature_date?: string; code?: string; requirement_description?: string; category_key?: string }> {
   const dateStr = initialPending ? '-' : new Date().toLocaleDateString('en-GB');
-  const studentType = (student?.student_type || 'dayscholar').toLowerCase();
-  const isHostel = studentType.includes('hostel');
+  const studentType = String(student?.student_type || (student?.is_hosteller ? 'hosteller' : 'dayscholar')).toLowerCase();
+  const isHostel = studentType.includes('hostel') || Boolean(student?.is_hosteller);
   const defaultStatus = initialPending ? 'Pending Review' : 'No Dues';
 
-  const commonFromDb = db.subjectCourses.filter(c => c.course_type === 'common' && c.is_active !== false);
+  const commonFromDb = ensureDefaultCommonNodes().filter(c => c.is_active !== false);
 
   if (commonFromDb.length > 0) {
-    return commonFromDb
-      .filter(c => {
-        if (c.applies_to === 'hostel' && !isHostel) return false;
-        if (c.applies_to === 'day_scholar' && isHostel) return false;
-        return true;
-      })
-      .map((c, idx) => ({
+    return commonFromDb.map((c, idx) => {
+      const isHostelNode = c.applies_to === 'hostel' || c.slot?.toLowerCase() === 'com-hst' || c.category_key === 'hostel' || c.code?.toLowerCase().includes('hst');
+      const isExempted = isHostelNode && !isHostel;
+
+      return {
         slot: c.slot || `COM-${idx + 1}`,
         name: c.title,
         code: c.code,
-        dues_status: defaultStatus,
+        dues_status: isExempted ? 'Exempted (Day Scholar)' : defaultStatus,
         faculty_name: c.faculty_name || 'Officer In-Charge',
-        signature_date: dateStr,
+        faculty_email: c.faculty_email,
+        faculty_id: c.faculty_id,
+        signature_date: isExempted ? new Date().toLocaleDateString('en-GB') : dateStr,
         requirement_description: c.requirement_description || 'All institutional dues cleared',
         category_key: c.category_key || c.code.toLowerCase()
-      }));
+      };
+    });
   }
 
   return [
-    { slot: 'COM-LIB', name: 'Central Library & Book Bank', code: 'LIB-101', dues_status: defaultStatus, faculty_name: 'Mr. D. Vinoth (Chief Librarian)', signature_date: dateStr, requirement_description: 'Return all library books & clear overdue fines', category_key: 'library' },
-    { slot: 'COM-ACC', name: 'Accounts & College Finance Office', code: 'ACC-101', dues_status: defaultStatus, faculty_name: 'Mrs. V. Revathi (Accounts Officer)', signature_date: dateStr, requirement_description: 'Tuition & examination fees clearance', category_key: 'accounts' },
-    { slot: 'COM-TRN', name: 'College Bus & Transport Section', code: 'TRN-101', dues_status: defaultStatus, faculty_name: 'Mr. A. Selvam (Transport In-Charge)', signature_date: dateStr, requirement_description: 'Bus pass surrender or transport route fee clearance', category_key: 'transport' },
-    { slot: 'COM-HST', name: 'Campus Hostel & Mess Section', code: 'HST-101', dues_status: isHostel ? defaultStatus : 'Exempted (Day Scholar)', faculty_name: 'Mr. K. Manoharan (Hostel Warden)', signature_date: isHostel ? dateStr : '-', requirement_description: 'Hostel room inventory & mess fee clearance', category_key: 'hostel' },
-    { slot: 'COM-PED', name: 'Physical Education & Sports Department', code: 'PED-101', dues_status: defaultStatus, faculty_name: 'Prof. P. Ravichandran (Director of PE)', signature_date: dateStr, requirement_description: 'Sports equipment & kit clearance', category_key: 'sports' },
-    { slot: 'COM-COE', name: 'Office of Controller of Examinations (CoE)', code: 'COE-101', dues_status: defaultStatus, faculty_name: 'Dr. H. Sasipal CoE', signature_date: dateStr, requirement_description: 'Exam registration confirmation', category_key: 'exam_cell' }
+    { slot: 'COM-LIB', name: 'Central Library & Book Bank', code: 'LIB-101', dues_status: defaultStatus, faculty_name: 'Mr. D. Vinoth (Chief Librarian)', faculty_email: 'vinoth.library@sasurie.edu', faculty_id: 39, signature_date: dateStr, requirement_description: 'Return all library books & clear overdue fines', category_key: 'library' },
+    { slot: 'COM-ACC', name: 'Accounts & College Finance Office', code: 'ACC-101', dues_status: defaultStatus, faculty_name: 'Mrs. V. Revathi, M.Com. (Accounts Officer)', faculty_email: 'accounts@sasurie.edu', faculty_id: 8, signature_date: dateStr, requirement_description: 'Tuition & examination fees clearance', category_key: 'accounts' },
+    { slot: 'COM-TRN', name: 'College Bus & Transport Section', code: 'TRN-101', dues_status: defaultStatus, faculty_name: 'Mr. K. Murugesan (Transport In-Charge)', faculty_email: 'transport@sasurie.edu', faculty_id: 10, signature_date: dateStr, requirement_description: 'Bus pass surrender or transport route fee clearance', category_key: 'transport' },
+    { slot: 'COM-HST', name: 'Campus Hostel & Mess Section', code: 'HST-101', dues_status: isHostel ? defaultStatus : 'Exempted (Day Scholar)', faculty_name: 'Mr. K. Manoharan (Campus Hostel Warden)', faculty_email: 'hostel@sasurie.edu', faculty_id: 9, signature_date: isHostel ? dateStr : new Date().toLocaleDateString('en-GB'), requirement_description: 'Hostel room inventory & mess fee clearance', category_key: 'hostel' },
+    { slot: 'COM-PED', name: 'Physical Education & Sports Department', code: 'PED-101', dues_status: defaultStatus, faculty_name: 'Prof. P. Ravichandran (Physical Director)', faculty_email: 'sports@sasurie.edu', faculty_id: 58, signature_date: dateStr, requirement_description: 'Sports equipment & kit clearance', category_key: 'sports' },
+    { slot: 'COM-COE', name: 'Office of Controller of Examinations (CoE)', code: 'COE-101', dues_status: defaultStatus, faculty_name: 'Dr. H. Sasipal (Controller of Examinations)', faculty_email: 'coe@sasurie.edu', faculty_id: 5, signature_date: dateStr, requirement_description: 'Exam registration confirmation', category_key: 'exam_cell' }
   ];
 }
 
@@ -1955,14 +2003,12 @@ apiRouter.patch('/no-due-requests/:id', authMiddleware, requireRole(['ADMIN']), 
   res.json({ message: 'Request updated successfully', status: r.status, signatories: r.signatories });
 });
 
-apiRouter.delete('/no-due-requests/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/no-due-requests/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const idx = db.noDueRequests.findIndex(reqItem => reqItem.id === id);
-  if (idx === -1) return res.status(404).json({ detail: 'Clearance request not found' });
+  const reqItem = db.noDueRequests.find(r => r.id === id);
+  if (!reqItem) return res.status(404).json({ detail: 'Clearance request not found' });
 
-  db.noDueApprovals = db.noDueApprovals.filter(a => a.request_id !== id);
-  db.noDueRequests.splice(idx, 1);
-
+  await db.deleteNoDueRequest(id);
   db.logAudit(req.user!.id, req.user!.email, 'REQUEST_DELETED', 'NO_DUE_REQUEST', id, null, null, getClientIp(req));
   res.json({ message: 'Clearance application deleted successfully', id });
 });
@@ -3111,27 +3157,12 @@ apiRouter.patch('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (
   });
 });
 
-apiRouter.delete('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/students/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const stIndex = db.students.findIndex(s => s.id === id);
-  if (stIndex === -1) return res.status(404).json({ detail: 'Student not found' });
+  const st = db.students.find(s => s.id === id);
+  if (!st) return res.status(404).json({ detail: 'Student not found' });
 
-  const st = db.students[stIndex];
-  const userId = st.user_id;
-
-  // Cascade cleanup
-  const studentReqIds = db.noDueRequests.filter(r => r.student_id === id).map(r => r.id);
-  db.noDueApprovals = db.noDueApprovals.filter(a => !studentReqIds.includes(a.request_id));
-  db.dueRecords = db.dueRecords.filter(d => d.student_id !== id);
-  db.noDueRequests = db.noDueRequests.filter(r => r.student_id !== id);
-  db.certificates = db.certificates.filter(c => c.student_id !== id);
-  db.notifications = db.notifications.filter(n => n.user_id !== userId);
-  db.users = db.users.filter(u => u.id !== userId);
-  db.students.splice(stIndex, 1);
-  deleteRecordFromPostgres('students', id).catch(() => {});
-  if (userId) deleteRecordFromPostgres('users', userId).catch(() => {});
-  db.saveToFile();
-
+  await db.deleteStudent(id);
   db.logAudit(req.user!.id, req.user!.email, 'STUDENT_DELETED', 'STUDENT', id, null, { student: st.full_name, reg_no: st.register_number }, getClientIp(req));
 
   res.json({ message: 'Student and all related records deleted successfully', id });
@@ -3400,20 +3431,12 @@ apiRouter.patch('/admin/staff/:id/status', authMiddleware, requireRole(['ADMIN']
   });
 });
 
-apiRouter.delete('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/staff/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const stIndex = db.staff.findIndex(s => s.id === id);
-  if (stIndex === -1) return res.status(404).json({ detail: 'Clearance officer not found' });
+  const st = db.staff.find(s => s.id === id);
+  if (!st) return res.status(404).json({ detail: 'Clearance officer not found' });
 
-  const st = db.staff[stIndex];
-  const userId = st.user_id;
-
-  db.users = db.users.filter(u => u.id !== userId);
-  db.staff.splice(stIndex, 1);
-  deleteRecordFromPostgres('staff', id).catch(() => {});
-  if (userId) deleteRecordFromPostgres('users', userId).catch(() => {});
-  db.saveToFile();
-
+  await db.deleteStaff(id);
   db.logAudit(req.user!.id, req.user!.email, 'STAFF_DELETED', 'STAFF', id, null, { staff: st.full_name, emp_id: st.employee_id }, getClientIp(req));
 
   res.json({ message: 'Clearance officer deleted successfully', id });
@@ -3654,6 +3677,8 @@ apiRouter.patch('/admin/departments/:id/status', authMiddleware, requireRole(['A
   if (!dept) return res.status(404).json({ detail: 'Department not found' });
 
   dept.is_active = req.body.is_active !== undefined ? req.body.is_active : !dept.is_active;
+  db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'DEPARTMENT_STATUS_TOGGLED', 'DEPARTMENT', dept.id, null, { is_active: dept.is_active }, getClientIp(req));
   res.json({
     id: dept.id,
@@ -3662,16 +3687,12 @@ apiRouter.patch('/admin/departments/:id/status', authMiddleware, requireRole(['A
   });
 });
 
-apiRouter.delete('/admin/departments/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/departments/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const deptIdx = db.departments.findIndex(d => d.id === id);
-  if (deptIdx === -1) return res.status(404).json({ detail: 'Department not found' });
+  const dept = db.departments.find(d => d.id === id);
+  if (!dept) return res.status(404).json({ detail: 'Department not found' });
 
-  const dept = db.departments[deptIdx];
-  db.departments.splice(deptIdx, 1);
-  deleteRecordFromPostgres('departments', id).catch(() => {});
-  db.saveToFile();
-
+  await db.deleteDepartment(id);
   db.logAudit(req.user!.id, req.user!.email, 'DEPARTMENT_DELETED', 'DEPARTMENT', id, null, { department: dept.name, code: dept.code }, getClientIp(req));
   res.json({ message: 'Department deleted successfully', id });
 });
@@ -3724,6 +3745,8 @@ apiRouter.post('/admin/courses', authMiddleware, requireRole(['ADMIN']), (req: A
     created_at: new Date().toISOString()
   };
   db.courses.push(newCourse);
+  db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'COURSE_CREATED', 'COURSE', newCourse.id, null, req.body, getClientIp(req));
 
   res.json({
@@ -3750,6 +3773,8 @@ apiRouter.patch('/admin/courses/:id', authMiddleware, requireRole(['ADMIN']), (r
   if (duration !== undefined) course.duration = Number(duration);
   if (is_active !== undefined) course.is_active = is_active;
 
+  db.saveToFile();
+  db.queueSyncToPostgres();
   const dept = db.departments.find(d => d.id === course.department_id);
 
   db.logAudit(req.user!.id, req.user!.email, 'COURSE_UPDATED', 'COURSE', course.id, null, req.body, getClientIp(req));
@@ -3760,17 +3785,13 @@ apiRouter.patch('/admin/courses/:id', authMiddleware, requireRole(['ADMIN']), (r
   });
 });
 
-apiRouter.delete('/admin/courses/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/courses/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const idx = db.courses.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ detail: 'Course not found' });
+  const course = db.courses.find(c => c.id === id);
+  if (!course) return res.status(404).json({ detail: 'Course not found' });
 
-  const c = db.courses[idx];
-  db.courses.splice(idx, 1);
-  deleteRecordFromPostgres('courses', id).catch(() => {});
-  db.saveToFile();
-
-  db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { course: c.name, code: c.code }, getClientIp(req));
+  await db.deleteCourse(id);
+  db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { course: course.name, code: course.code }, getClientIp(req));
   res.json({ message: 'Course deleted successfully', id });
 });
 
@@ -3823,6 +3844,8 @@ apiRouter.post('/admin/degrees', authMiddleware, requireRole(['ADMIN']), (req: A
     created_at: new Date().toISOString()
   };
   db.courses.push(newCourse);
+  db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_CREATED', 'DEGREE', newCourse.id, null, req.body, getClientIp(req));
 
   res.json({
@@ -3849,6 +3872,8 @@ apiRouter.patch('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), (r
   if (duration !== undefined) course.duration = Number(duration);
   if (is_active !== undefined) course.is_active = is_active;
 
+  db.saveToFile();
+  db.queueSyncToPostgres();
   const dept = db.departments.find(d => d.id === course.department_id);
   db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_UPDATED', 'DEGREE', course.id, null, req.body, getClientIp(req));
 
@@ -3858,17 +3883,13 @@ apiRouter.patch('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), (r
   });
 });
 
-apiRouter.delete('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/degrees/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const idx = db.courses.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ detail: 'Degree/Branch not found' });
+  const course = db.courses.find(c => c.id === id);
+  if (!course) return res.status(404).json({ detail: 'Degree/Branch not found' });
 
-  const c = db.courses[idx];
-  db.courses.splice(idx, 1);
-  deleteRecordFromPostgres('courses', id).catch(() => {});
-  db.saveToFile();
-
-  db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_DELETED', 'DEGREE', id, null, { degree: c.name, code: c.code }, getClientIp(req));
+  await db.deleteCourse(id);
+  db.logAudit(req.user!.id, req.user!.email, 'DEGREE_BRANCH_DELETED', 'DEGREE', id, null, { degree: course.name, code: course.code }, getClientIp(req));
   res.json({ message: 'Degree/Branch deleted successfully', id });
 });
 
@@ -4258,17 +4279,13 @@ apiRouter.patch('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMI
   });
 });
 
-apiRouter.delete('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/subject-courses/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const idx = db.subjectCourses.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ detail: 'Course not found' });
+  const course = db.subjectCourses.find(c => c.id === id);
+  if (!course) return res.status(404).json({ detail: 'Course not found' });
 
-  const deleted = db.subjectCourses[idx];
-  db.subjectCourses.splice(idx, 1);
-  deleteRecordFromPostgres('subject_courses', id).catch(() => {});
-  db.saveToFile();
-
-  db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { title: deleted.title, code: deleted.code }, getClientIp(req));
+  await db.deleteSubjectCourse(id);
+  db.logAudit(req.user!.id, req.user!.email, 'COURSE_DELETED', 'COURSE', id, null, { title: course.title, code: course.code }, getClientIp(req));
   res.json({ message: 'Course deleted successfully', id });
 });
 
@@ -4292,6 +4309,8 @@ apiRouter.post('/admin/due-categories', authMiddleware, requireRole(['ADMIN']), 
     created_at: new Date().toISOString()
   };
   db.dueCategories.push(newCat);
+  db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'DUE_CATEGORY_CREATED', 'DUE_CATEGORY', newCat.id, null, req.body, getClientIp(req));
   res.json(newCat);
 });
@@ -4313,20 +4332,18 @@ apiRouter.patch('/admin/due-categories/:id', authMiddleware, requireRole(['ADMIN
   if (description !== undefined) cat.description = description;
   if (is_active !== undefined) cat.is_active = is_active;
 
+  db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'DUE_CATEGORY_UPDATED', 'DUE_CATEGORY', cat.id, null, req.body, getClientIp(req));
   res.json(cat);
 });
 
-apiRouter.delete('/admin/due-categories/:id', authMiddleware, requireRole(['ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/admin/due-categories/:id', authMiddleware, requireRole(['ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const idx = db.dueCategories.findIndex(c => c.id === id);
-  if (idx === -1) return res.status(404).json({ detail: 'Due category not found' });
+  const cat = db.dueCategories.find(c => c.id === id);
+  if (!cat) return res.status(404).json({ detail: 'Due category not found' });
 
-  const cat = db.dueCategories[idx];
-  db.dueCategories.splice(idx, 1);
-  deleteRecordFromPostgres('due_categories', id).catch(() => {});
-  db.saveToFile();
-
+  await db.deleteDueCategory(id);
   db.logAudit(req.user!.id, req.user!.email, 'DUE_CATEGORY_DELETED', 'DUE_CATEGORY', id, null, { category: cat.name, code: cat.code }, getClientIp(req));
   res.json({ message: 'Due category deleted successfully', id });
 });
@@ -4677,16 +4694,15 @@ apiRouter.put('/hod/clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'A
   res.json(node);
 });
 
-apiRouter.delete('/hod/clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/hod/clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const index = db.subjectCourses.findIndex(c => c.id === id);
-  if (index === -1) {
+  const node = db.subjectCourses.find(c => c.id === id);
+  if (!node) {
     return res.status(404).json({ detail: 'Clearance node not found' });
   }
 
-  const deleted = db.subjectCourses.splice(index, 1)[0];
-  db.saveToFile();
-  db.logAudit(req.user!.id, req.user!.email, 'HOD_CLEARANCE_NODE_DELETED', 'SUBJECT_COURSE', id, deleted, null, getClientIp(req));
+  await db.deleteSubjectCourse(id);
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_CLEARANCE_NODE_DELETED', 'SUBJECT_COURSE', id, node, null, getClientIp(req));
 
   res.json({ message: 'Clearance node removed successfully' });
 });
@@ -4752,97 +4768,7 @@ apiRouter.post('/hod/clearance-nodes/populate-semester', authMiddleware, require
 });
 
 function ensureDefaultCommonNodes(): SubjectCourseRecord[] {
-  let commonNodes = db.subjectCourses.filter(c => c.course_type === 'common');
-  if (commonNodes.length > 0) return commonNodes;
-
-  let nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
-  const now = new Date().toISOString();
-  const standardCommonNodes = [
-    {
-      title: 'Central Library & Book Bank',
-      code: 'LIB-101',
-      slot: 'COM-LIB',
-      faculty_name: 'D. Vinoth (Chief Librarian)',
-      faculty_email: 'vinoth.library@sasurie.edu',
-      requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
-      applies_to: 'all' as const,
-      category_key: 'library'
-    },
-    {
-      title: 'Accounts & College Finance Office',
-      code: 'ACC-101',
-      slot: 'COM-ACC',
-      faculty_name: 'S. Accounts (Finance Officer)',
-      faculty_email: 'accounts@sasurie.edu',
-      requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
-      applies_to: 'all' as const,
-      category_key: 'accounts'
-    },
-    {
-      title: 'College Bus & Transport Section',
-      code: 'TRN-101',
-      slot: 'COM-TRN',
-      faculty_name: 'K. Murugesan (Transport In-Charge)',
-      faculty_email: 'transport@sasurie.edu',
-      requirement_description: 'Bus pass surrender or transport route fee clearance.',
-      applies_to: 'all' as const,
-      category_key: 'transport'
-    },
-    {
-      title: 'Campus Hostel & Mess Section',
-      code: 'HST-101',
-      slot: 'COM-HST',
-      faculty_name: 'Dr. R. Warden (Chief Warden)',
-      faculty_email: 'hostel@sasurie.edu',
-      requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
-      applies_to: 'hostel' as const,
-      category_key: 'hostel'
-    },
-    {
-      title: 'Physical Education & Sports Department',
-      code: 'PED-101',
-      slot: 'COM-PED',
-      faculty_name: 'P. Ravichandran (Physical Director)',
-      faculty_email: 'sports@sasurie.edu',
-      requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
-      applies_to: 'all' as const,
-      category_key: 'sports'
-    },
-    {
-      title: 'Office of Controller of Examinations (CoE)',
-      code: 'COE-101',
-      slot: 'COM-COE',
-      faculty_name: 'Dr. H. Sasipal CoE',
-      faculty_email: 'coe@sasurie.edu',
-      requirement_description: 'Exam registration confirmation & hall ticket verification.',
-      applies_to: 'all' as const,
-      category_key: 'exam_cell'
-    }
-  ];
-
-  for (const item of standardCommonNodes) {
-    const node: SubjectCourseRecord = {
-      id: nextId++,
-      title: item.title,
-      code: item.code,
-      department_id: 0,
-      year: 0,
-      semester: 0,
-      course_type: 'common',
-      slot: item.slot,
-      faculty_name: item.faculty_name,
-      faculty_email: item.faculty_email,
-      is_elective: false,
-      is_active: true,
-      applies_to: item.applies_to,
-      requirement_description: item.requirement_description,
-      category_key: item.category_key,
-      created_at: now
-    };
-    db.subjectCourses.push(node);
-  }
-  db.saveToFile();
-  return db.subjectCourses.filter(c => c.course_type === 'common');
+  return db.ensureDefaultCommonNodes();
 }
 
 // Dedicated endpoints for Common Institutional Clearance Nodes (Universal across all students: Library, Accounts, Transport, Hostel, Sports, Exam Cell)
@@ -4862,11 +4788,42 @@ apiRouter.get('/hod/common-clearance-nodes', authMiddleware, requireRole(['HOD',
   res.json(sorted);
 });
 
+apiRouter.get('/hod/all-officers', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+  const staffList = db.staff.map(s => {
+    const dept = db.departments.find(d => d.id === s.department_id);
+    const userRec = db.users.find(u => u.id === s.user_id || u.email.toLowerCase() === s.email.toLowerCase());
+    return {
+      id: s.id,
+      user_id: s.user_id,
+      employee_id: s.employee_id,
+      full_name: s.full_name,
+      email: s.email,
+      phone: s.phone,
+      department_id: s.department_id,
+      department_name: dept?.name || '',
+      department_code: dept?.code || '',
+      designation: s.designation,
+      is_active: (s.is_active !== false) && (userRec ? userRec.is_active !== false : true)
+    };
+  });
+  res.json(staffList);
+});
+
 apiRouter.post('/hod/common-clearance-nodes', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
-  const { title, code, slot, faculty_name, faculty_email, requirement_description, applies_to, category_key } = req.body;
+  const { title, code, slot, faculty_id, faculty_name, faculty_email, requirement_description, applies_to, category_key } = req.body;
 
   if (!title || !code) {
     return res.status(400).json({ detail: 'Node Title and Code are required (e.g. Central Library, LIB-101).' });
+  }
+
+  // Resolve staff if provided by ID or email
+  let resolvedStaff = null;
+  if (faculty_id) {
+    resolvedStaff = db.staff.find(s => s.id === Number(faculty_id));
+  } else if (faculty_email) {
+    resolvedStaff = db.staff.find(s => s.email.toLowerCase() === faculty_email.trim().toLowerCase());
+  } else if (faculty_name) {
+    resolvedStaff = db.staff.find(s => s.full_name.toLowerCase().includes(faculty_name.trim().toLowerCase()));
   }
 
   const nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
@@ -4879,8 +4836,9 @@ apiRouter.post('/hod/common-clearance-nodes', authMiddleware, requireRole(['HOD'
     semester: 0,
     course_type: 'common',
     slot: slot?.trim() || `COM-${code.trim().substring(0, 3).toUpperCase()}`,
-    faculty_name: faculty_name?.trim() || 'Officer In-Charge',
-    faculty_email: faculty_email?.trim() || undefined,
+    faculty_id: resolvedStaff ? resolvedStaff.id : (faculty_id ? Number(faculty_id) : undefined),
+    faculty_name: resolvedStaff ? resolvedStaff.full_name : (faculty_name?.trim() || 'Officer In-Charge'),
+    faculty_email: resolvedStaff ? resolvedStaff.email : (faculty_email?.trim() || undefined),
     is_elective: false,
     is_active: true,
     applies_to: applies_to || 'all',
@@ -4891,6 +4849,7 @@ apiRouter.post('/hod/common-clearance-nodes', authMiddleware, requireRole(['HOD'
 
   db.subjectCourses.push(newNode);
   db.saveToFile();
+  db.queueSyncToPostgres();
 
   db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_CREATED', 'SUBJECT_COURSE', newNode.id, null, newNode, getClientIp(req));
 
@@ -4904,131 +4863,57 @@ apiRouter.put('/hod/common-clearance-nodes/:id', authMiddleware, requireRole(['H
     return res.status(404).json({ detail: 'Common clearance node not found' });
   }
 
-  const { title, code, slot, faculty_name, faculty_email, requirement_description, applies_to, is_active } = req.body;
+  const { title, code, slot, faculty_id, faculty_name, faculty_email, requirement_description, applies_to, category_key, is_active } = req.body;
+
+  let resolvedStaff = null;
+  if (faculty_id) {
+    resolvedStaff = db.staff.find(s => s.id === Number(faculty_id));
+  } else if (faculty_email) {
+    resolvedStaff = db.staff.find(s => s.email.toLowerCase() === faculty_email.trim().toLowerCase());
+  }
 
   if (title !== undefined) node.title = title.trim();
   if (code !== undefined) node.code = code.trim().toUpperCase();
   if (slot !== undefined) node.slot = slot.trim();
-  if (faculty_name !== undefined) node.faculty_name = faculty_name.trim();
-  if (faculty_email !== undefined) node.faculty_email = faculty_email.trim();
+  if (resolvedStaff) {
+    node.faculty_id = resolvedStaff.id;
+    node.faculty_name = resolvedStaff.full_name;
+    node.faculty_email = resolvedStaff.email;
+  } else {
+    if (faculty_id !== undefined) node.faculty_id = Number(faculty_id);
+    if (faculty_name !== undefined) node.faculty_name = faculty_name.trim();
+    if (faculty_email !== undefined) node.faculty_email = faculty_email.trim();
+  }
   if (requirement_description !== undefined) node.requirement_description = requirement_description.trim();
   if (applies_to !== undefined) node.applies_to = applies_to;
+  if (category_key !== undefined) node.category_key = category_key;
   if (is_active !== undefined) node.is_active = Boolean(is_active);
 
   db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_UPDATED', 'SUBJECT_COURSE', node.id, null, node, getClientIp(req));
 
   res.json(node);
 });
 
-apiRouter.delete('/hod/common-clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/hod/common-clearance-nodes/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), async (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
-  const index = db.subjectCourses.findIndex(c => c.id === id);
-  if (index === -1) {
+  const node = db.subjectCourses.find(c => c.id === id);
+  if (!node) {
     return res.status(404).json({ detail: 'Common clearance node not found' });
   }
 
-  const deleted = db.subjectCourses.splice(index, 1)[0];
-  db.saveToFile();
-  db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_DELETED', 'SUBJECT_COURSE', id, deleted, null, getClientIp(req));
+  await db.deleteSubjectCourse(id);
+  db.queueSyncToPostgres();
+  db.logAudit(req.user!.id, req.user!.email, 'HOD_COMMON_NODE_DELETED', 'SUBJECT_COURSE', id, node, null, getClientIp(req));
 
   res.json({ message: 'Common clearance node removed successfully' });
 });
 
 apiRouter.post('/hod/common-clearance-nodes/populate-defaults', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
-  db.subjectCourses = db.subjectCourses.filter(c => c.course_type !== 'common');
-
-  let nextId = Math.max(0, ...db.subjectCourses.map(c => c.id)) + 1;
-  const now = new Date().toISOString();
-
-  const standardCommonNodes = [
-    {
-      title: 'Central Library & Book Bank',
-      code: 'LIB-101',
-      slot: 'COM-LIB',
-      faculty_name: 'D. Vinoth (Chief Librarian)',
-      faculty_email: 'vinoth.library@sasurie.edu',
-      requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
-      applies_to: 'all' as const,
-      category_key: 'library'
-    },
-    {
-      title: 'Accounts & College Finance Office',
-      code: 'ACC-101',
-      slot: 'COM-ACC',
-      faculty_name: 'S. Accounts (Finance Officer)',
-      faculty_email: 'accounts@sasurie.edu',
-      requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
-      applies_to: 'all' as const,
-      category_key: 'accounts'
-    },
-    {
-      title: 'College Bus & Transport Section',
-      code: 'TRN-101',
-      slot: 'COM-TRN',
-      faculty_name: 'K. Murugesan (Transport In-Charge)',
-      faculty_email: 'transport@sasurie.edu',
-      requirement_description: 'Bus pass surrender or transport route fee clearance.',
-      applies_to: 'all' as const,
-      category_key: 'transport'
-    },
-    {
-      title: 'Campus Hostel & Mess Section',
-      code: 'HST-101',
-      slot: 'COM-HST',
-      faculty_name: 'Dr. R. Warden (Chief Warden)',
-      faculty_email: 'hostel@sasurie.edu',
-      requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
-      applies_to: 'hostel' as const,
-      category_key: 'hostel'
-    },
-    {
-      title: 'Physical Education & Sports Department',
-      code: 'PED-101',
-      slot: 'COM-PED',
-      faculty_name: 'P. Ravichandran (Physical Director)',
-      faculty_email: 'sports@sasurie.edu',
-      requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
-      applies_to: 'all' as const,
-      category_key: 'sports'
-    },
-    {
-      title: 'Office of Controller of Examinations (CoE)',
-      code: 'COE-101',
-      slot: 'COM-COE',
-      faculty_name: 'Dr. H. Sasipal CoE',
-      faculty_email: 'coe@sasurie.edu',
-      requirement_description: 'Exam registration confirmation & hall ticket verification.',
-      applies_to: 'all' as const,
-      category_key: 'exam_cell'
-    }
-  ];
-
-  const created: SubjectCourseRecord[] = [];
-  for (const item of standardCommonNodes) {
-    const node: SubjectCourseRecord = {
-      id: nextId++,
-      title: item.title,
-      code: item.code,
-      department_id: 0,
-      year: 0,
-      semester: 0,
-      course_type: 'common',
-      slot: item.slot,
-      faculty_name: item.faculty_name,
-      faculty_email: item.faculty_email,
-      is_elective: false,
-      is_active: true,
-      applies_to: item.applies_to,
-      requirement_description: item.requirement_description,
-      category_key: item.category_key,
-      created_at: now
-    };
-    db.subjectCourses.push(node);
-    created.push(node);
-  }
-
+  const created = db.ensureDefaultCommonNodes();
   db.saveToFile();
+  db.queueSyncToPostgres();
   db.logAudit(req.user!.id, req.user!.email, 'HOD_POPULATE_DEFAULT_COMMON_NODES', 'SUBJECT_COURSE', 0, null, { count: created.length }, getClientIp(req));
 
   res.json({
@@ -5219,36 +5104,17 @@ apiRouter.patch('/hod/faculty/:id/status', authMiddleware, requireRole(['HOD', '
   });
 });
 
-apiRouter.delete('/hod/faculty/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), (req: AuthRequest, res: Response) => {
+apiRouter.delete('/hod/faculty/:id', authMiddleware, requireRole(['HOD', 'ADMIN']), async (req: AuthRequest, res: Response) => {
   const hodStaff = req.staffProfile || db.staff.find(s => s.user_id === req.user!.id || s.email.toLowerCase() === req.user!.email.toLowerCase());
   const deptId = hodStaff?.department_id || 1;
   const staffId = Number(req.params.id);
 
-  const staffIdx = db.staff.findIndex(s => s.id === staffId && s.department_id === deptId);
-  if (staffIdx === -1) {
+  const staff = db.staff.find(s => s.id === staffId && s.department_id === deptId);
+  if (!staff) {
     return res.status(404).json({ detail: 'Faculty member not found in your department.' });
   }
 
-  const staff = db.staff[staffIdx];
-
-  db.subjectCourses.forEach(c => {
-    if (c.department_id === deptId && (c.faculty_id === staff.id || c.faculty_email?.toLowerCase() === staff.email.toLowerCase())) {
-      c.faculty_id = undefined;
-      c.faculty_name = undefined;
-      c.faculty_email = undefined;
-    }
-  });
-
-  const user = db.users.find(u => u.id === staff.user_id || u.email.toLowerCase() === staff.email.toLowerCase());
-  if (user) {
-    user.is_active = false;
-  }
-
-  db.staff.splice(staffIdx, 1);
-  deleteRecordFromPostgres('staff', staffId).catch(() => {});
-  db.saveToFile();
-  db.queueSyncToPostgres();
-
+  await db.deleteStaff(staffId);
   db.logAudit(req.user!.id, req.user!.email, 'HOD_STAFF_DELETED', 'STAFF', staffId, null, { staff_name: staff.full_name, emp_id: staff.employee_id }, getClientIp(req));
 
   res.json({ message: `Faculty ${staff.full_name} has been removed successfully.` });
@@ -5362,8 +5228,8 @@ function isItemAllocatedToStaff(
       if (staffEmail.includes('hostel') || staffNameLower.includes('manoharan') || staffNameLower.includes('warden') || staffDesignation.includes('warden')) return true;
     }
     // Sports / Physical Education
-    if (catKey === 'sports' || slotLower === 'com-ped' || codeLower.includes('ped') || nameLower.includes('sport') || nameLower.includes('physical education')) {
-      if (staffEmail.includes('sports') || staffDesignation.includes('physical education') || staffDesignation.includes('director of pe')) return true;
+    if (catKey === 'sports' || slotLower === 'com-ped' || codeLower.includes('ped') || nameLower.includes('sport') || nameLower.includes('physical')) {
+      if (staffEmail.includes('sports') || staffNameLower.includes('ravichandran') || staffDesignation.includes('physical') || staffDesignation.includes('director of pe') || staffDesignation.includes('sports')) return true;
     }
     // CoE
     if (catKey === 'exam_cell' || slotLower === 'com-coe' || codeLower.includes('coe') || nameLower.includes('controller of examinations')) {
@@ -5702,6 +5568,10 @@ apiRouter.post(['/hod/requests/:id/clear-subject', '/staff/requests/:id/clear-su
             noDueReq.signatories.transport = { signed: true, name: staffName, date: todayStr, status: 'No Dues' };
           } else if (comKey === 'hostel' || comCode.includes('HST') || com.name?.toLowerCase().includes('hostel')) {
             noDueReq.signatories.hostel = { signed: true, name: staffName, date: todayStr, status: 'No Dues' };
+          } else if (comKey === 'sports' || comCode.includes('PED') || com.name?.toLowerCase().includes('sport') || com.name?.toLowerCase().includes('physical')) {
+            (noDueReq.signatories as any).sports = { signed: true, name: staffName, date: todayStr, status: 'No Dues' };
+          } else if (comKey === 'exam_cell' || comKey === 'coe' || comCode.includes('COE') || com.name?.toLowerCase().includes('controller') || com.name?.toLowerCase().includes('exam')) {
+            (noDueReq.signatories as any).coe = { signed: true, name: staffName, date: todayStr, status: 'approved' };
           }
         }
       }
@@ -5816,6 +5686,10 @@ apiRouter.post([
             noDueReq.signatories.transport = { signed: false, name: '-', date: '-', status: dueText };
           } else if (comKey === 'hostel' || comCode.includes('HST') || com.name?.toLowerCase().includes('hostel')) {
             noDueReq.signatories.hostel = { signed: false, name: '-', date: '-', status: dueText };
+          } else if (comKey === 'sports' || comCode.includes('PED') || com.name?.toLowerCase().includes('sport') || com.name?.toLowerCase().includes('physical')) {
+            (noDueReq.signatories as any).sports = { signed: false, name: '-', date: '-', status: dueText };
+          } else if (comKey === 'exam_cell' || comKey === 'coe' || comCode.includes('COE') || com.name?.toLowerCase().includes('controller') || com.name?.toLowerCase().includes('exam')) {
+            (noDueReq.signatories as any).coe = { signed: false, name: '-', date: '-', status: dueText };
           }
         }
       }

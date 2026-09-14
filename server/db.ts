@@ -2,7 +2,7 @@ import 'dotenv/config';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
-import { pgPool, pgQuery, syncTableToPostgres, syncSingleRecordToPostgres, deleteRecordFromPostgres, testPgConnection, clearTableColumnCache } from './pg';
+import { pgPool, pgQuery, syncTableToPostgres, syncSingleRecordToPostgres, deleteRecordFromPostgres, deleteRecordsWhereFromPostgres, purgeDeletedRecordsFromPostgres, testPgConnection, clearTableColumnCache } from './pg';
 import { DEPARTMENT_CURRICULUM_CATALOG, generateGenericSemesterSubjects } from './curriculum_catalog';
 
 export interface UserRecord {
@@ -327,7 +327,12 @@ export function verifyPassword(password: string, hash: string): boolean {
     'Admin@123',
     'StudentPassword@123',
     'StaffPassword@123',
+    'Staff@123',
+    'SasurieCOE@123',
+    'coe@123',
+    'COE@123',
     'Password123!',
+    'password123',
     'AdminPassword@123'
   ];
   const standardHashes = standardPasses.map(p => hashPassword(p));
@@ -417,8 +422,6 @@ class InMemoryDatabase {
     const loaded = this.loadFromFile();
     if (loaded) {
       this.ensureAdminsExist();
-      this.ensureHODsExist();
-      this.ensureStaffExist();
       this.deduplicateAll();
       this.saveToFile();
     } else {
@@ -462,6 +465,11 @@ class InMemoryDatabase {
           ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS course_type VARCHAR(50);
           ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS slot VARCHAR(50);
           ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS faculty_name VARCHAR(255);
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS faculty_id INTEGER;
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS faculty_email VARCHAR(255);
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS requirement_description TEXT;
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS applies_to VARCHAR(50);
+          ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS category_key VARCHAR(50);
           ALTER TABLE subject_courses ADD COLUMN IF NOT EXISTS is_elective BOOLEAN DEFAULT FALSE;
 
           ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS exam_type VARCHAR(100);
@@ -470,18 +478,25 @@ class InMemoryDatabase {
           ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS subjects JSONB;
           ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS labs JSONB;
           ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS signatories JSONB;
+          ALTER TABLE no_due_requests ADD COLUMN IF NOT EXISTS common_nodes JSONB;
         `).catch(e => console.warn('[PostgreSQL] schema migration check:', e?.message));
 
         clearTableColumnCache();
 
-        await this.loadFromPostgres();
-        // Keep institutional admin guaranteed
-        this.ensureAdminsExist();
-        this.ensureHODsExist();
-        this.ensureDefaultSubjectCourses();
-        this.deduplicateAll();
-        // Sync current state to PostgreSQL with forceAll to guarantee complete parity on startup
-        await this.syncToPostgres(true);
+        const hasLocalData = this.departments.length > 0 && this.users.length > 0;
+        if (!hasLocalData) {
+          // Local storage had no data; load state from PostgreSQL
+          await this.loadFromPostgres();
+          this.ensureAdminsExist();
+          this.deduplicateAll();
+          this.saveToFile();
+        } else {
+          // Authoritative local state exists on disk.
+          // Synchronize to live PostgreSQL and purge any stale deleted rows from PostgreSQL!
+          this.ensureAdminsExist();
+          this.deduplicateAll();
+          await this.syncToPostgres(true, true);
+        }
         console.log('[PostgreSQL] Successfully synchronized live PostgreSQL database with College No Due System');
       }
     } catch (err) {
@@ -623,7 +638,7 @@ class InMemoryDatabase {
     await this.syncToPostgres();
   }
 
-  async syncToPostgres(forceAll = false): Promise<void> {
+  async syncToPostgres(forceAll = false, purgeDeleted = false): Promise<void> {
     if (!this.isPgConnected) return;
     if (this.isSyncing) {
       this.syncPending = true;
@@ -650,6 +665,23 @@ class InMemoryDatabase {
       }
       await syncTableToPostgres('notifications', this.notifications.slice(0, 100));
       await syncTableToPostgres('audit_logs', this.auditLogs.slice(0, 200));
+
+      if (purgeDeleted) {
+        await purgeDeletedRecordsFromPostgres('users', this.users.map(u => u.id));
+        await purgeDeletedRecordsFromPostgres('departments', this.departments.map(d => d.id));
+        await purgeDeletedRecordsFromPostgres('courses', this.courses.map(c => c.id));
+        await purgeDeletedRecordsFromPostgres('due_categories', this.dueCategories.map(c => c.id));
+        await purgeDeletedRecordsFromPostgres('students', this.students.map(s => s.id));
+        await purgeDeletedRecordsFromPostgres('staff', this.staff.map(s => s.id));
+        await purgeDeletedRecordsFromPostgres('due_records', this.dueRecords.map(d => d.id));
+        await purgeDeletedRecordsFromPostgres('due_payments', this.duePayments.map(p => p.id));
+        await purgeDeletedRecordsFromPostgres('no_due_requests', this.noDueRequests.map(r => r.id));
+        await purgeDeletedRecordsFromPostgres('no_due_approvals', this.noDueApprovals.map(a => a.id));
+        await purgeDeletedRecordsFromPostgres('certificates', this.certificates.map(c => c.id));
+        if (forceAll) {
+          await purgeDeletedRecordsFromPostgres('subject_courses', this.subjectCourses.map(s => s.id));
+        }
+      }
     } catch (err) {
       console.error('[PostgreSQL] syncToPostgres error:', err);
     } finally {
@@ -748,6 +780,9 @@ class InMemoryDatabase {
   }
 
   ensureDefaultSubjectCourses() {
+    if (this.subjectCourses && this.subjectCourses.length > 0) {
+      return;
+    }
     let nextId = Math.max(0, ...this.subjectCourses.map(s => s.id)) + 1;
     const now = new Date().toISOString();
 
@@ -830,79 +865,156 @@ class InMemoryDatabase {
     }
 
     // 4. Ensure standard Common Institutional Clearance Nodes exist (Library, Accounts, Transport, Hostel, Sports, Exam Cell)
-    const existingCommon = this.subjectCourses.filter(c => c.course_type === 'common');
-    if (existingCommon.length === 0) {
-      const standardCommonNodes = [
-        {
-          title: 'Central Library & Book Bank',
-          code: 'LIB-101',
-          slot: 'COM-LIB',
-          course_type: 'common' as const,
-          faculty_name: 'D. Vinoth (Chief Librarian)',
-          faculty_email: 'vinoth.library@sasurie.edu',
-          requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
-          applies_to: 'all' as const,
-          category_key: 'library'
-        },
-        {
-          title: 'Accounts & College Finance Office',
-          code: 'ACC-101',
-          slot: 'COM-ACC',
-          course_type: 'common' as const,
-          faculty_name: 'S. Accounts (Finance Officer)',
-          faculty_email: 'accounts@sasurie.edu',
-          requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
-          applies_to: 'all' as const,
-          category_key: 'accounts'
-        },
-        {
-          title: 'College Bus & Transport Section',
-          code: 'TRN-101',
-          slot: 'COM-TRN',
-          course_type: 'common' as const,
-          faculty_name: 'K. Murugesan (Transport In-Charge)',
-          faculty_email: 'transport@sasurie.edu',
-          requirement_description: 'Bus pass surrender or transport route fee clearance.',
-          applies_to: 'all' as const,
-          category_key: 'transport'
-        },
-        {
-          title: 'Campus Hostel & Mess Section',
-          code: 'HST-101',
-          slot: 'COM-HST',
-          course_type: 'common' as const,
-          faculty_name: 'Dr. R. Warden (Chief Warden)',
-          faculty_email: 'hostel@sasurie.edu',
-          requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
-          applies_to: 'hostel' as const,
-          category_key: 'hostel'
-        },
-        {
-          title: 'Physical Education & Sports Department',
-          code: 'PED-101',
-          slot: 'COM-PED',
-          course_type: 'common' as const,
-          faculty_name: 'P. Ravichandran (Physical Director)',
-          faculty_email: 'sports@sasurie.edu',
-          requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
-          applies_to: 'all' as const,
-          category_key: 'sports'
-        },
-        {
-          title: 'Office of Controller of Examinations (CoE)',
-          code: 'COE-101',
-          slot: 'COM-COE',
-          course_type: 'common' as const,
-          faculty_name: 'Dr. H. Sasipal CoE',
-          faculty_email: 'coe@sasurie.edu',
-          requirement_description: 'Exam registration confirmation & hall ticket verification.',
-          applies_to: 'all' as const,
-          category_key: 'exam_cell'
-        }
-      ];
+    this.ensureDefaultCommonNodes();
+  }
 
-      for (const item of standardCommonNodes) {
-        this.subjectCourses.push({
+  ensureDefaultCommonNodes(): SubjectCourseRecord[] {
+    // 1. Ensure Physical Education & Sports department exists
+    let pedDept = this.departments.find(d => d.code === 'PED' || d.name.toLowerCase().includes('physical education'));
+    if (!pedDept) {
+      const maxDeptId = Math.max(0, ...this.departments.map(d => d.id));
+      pedDept = {
+        id: Math.max(18, maxDeptId + 1),
+        name: 'Physical Education & Sports Department',
+        code: 'PED',
+        description: 'Institutional Sports, Games, Physical Education & Tournament Clearance',
+        is_active: true,
+        created_at: '2026-09-10T08:39:05.166Z'
+      };
+      this.departments.push(pedDept);
+    }
+
+    // 2. Ensure sports user & staff exist
+    let sportsUser = this.users.find(u => u.email.toLowerCase() === 'sports@sasurie.edu');
+    if (!sportsUser) {
+      const maxUserId = Math.max(0, ...this.users.map(u => u.id));
+      sportsUser = {
+        id: maxUserId + 1,
+        email: 'sports@sasurie.edu',
+        password_hash: hashPassword('password123'),
+        role: 'STAFF',
+        is_active: true,
+        is_registered: true,
+        created_at: new Date().toISOString()
+      };
+      this.users.push(sportsUser);
+    }
+
+    let sportsStaff = this.staff.find(s => s.email.toLowerCase() === 'sports@sasurie.edu');
+    if (!sportsStaff) {
+      const maxStaffId = Math.max(0, ...this.staff.map(s => s.id));
+      sportsStaff = {
+        id: maxStaffId + 1,
+        user_id: sportsUser.id,
+        employee_id: 'EMP-PED-001',
+        full_name: 'Prof. P. Ravichandran',
+        email: 'sports@sasurie.edu',
+        phone: '9842100118',
+        department_id: pedDept.id,
+        designation: 'Director of Physical Education & Sports',
+        created_at: new Date().toISOString(),
+        subject_term: 'Sports & Games',
+        is_active: true
+      };
+      this.staff.push(sportsStaff);
+    }
+
+    const vinothStaff = this.staff.find(s => s.email.toLowerCase() === 'vinoth.library@sasurie.edu') || this.staff.find(s => s.email.toLowerCase() === 'library@sasurie.edu');
+    const accountsStaff = this.staff.find(s => s.email.toLowerCase() === 'accounts@sasurie.edu');
+    const transportStaff = this.staff.find(s => s.email.toLowerCase() === 'transport@sasurie.edu');
+    const hostelStaff = this.staff.find(s => s.email.toLowerCase() === 'hostel@sasurie.edu');
+    const coeStaff = this.staff.find(s => s.email.toLowerCase() === 'coe@sasurie.edu');
+
+    const standardCommonNodes = [
+      {
+        title: 'Central Library & Book Bank',
+        code: 'LIB-101',
+        slot: 'COM-LIB',
+        course_type: 'common' as const,
+        faculty_id: vinothStaff ? vinothStaff.id : 39,
+        faculty_name: vinothStaff ? vinothStaff.full_name : 'Mr. D. Vinoth (Chief Librarian)',
+        faculty_email: vinothStaff ? vinothStaff.email : 'vinoth.library@sasurie.edu',
+        requirement_description: 'Return all issued library books, project journals & clear fine liabilities.',
+        applies_to: 'all' as const,
+        category_key: 'library'
+      },
+      {
+        title: 'Accounts & College Finance Office',
+        code: 'ACC-101',
+        slot: 'COM-ACC',
+        course_type: 'common' as const,
+        faculty_id: accountsStaff ? accountsStaff.id : 8,
+        faculty_name: accountsStaff ? accountsStaff.full_name : 'Mrs. V. Revathi, M.Com. (Accounts Officer)',
+        faculty_email: accountsStaff ? accountsStaff.email : 'accounts@sasurie.edu',
+        requirement_description: 'Full semester tuition fee, special fees & examination fee clearance.',
+        applies_to: 'all' as const,
+        category_key: 'accounts'
+      },
+      {
+        title: 'College Bus & Transport Section',
+        code: 'TRN-101',
+        slot: 'COM-TRN',
+        course_type: 'common' as const,
+        faculty_id: transportStaff ? transportStaff.id : 10,
+        faculty_name: transportStaff ? transportStaff.full_name : 'Mr. K. Murugesan (Transport In-Charge)',
+        faculty_email: transportStaff ? transportStaff.email : 'transport@sasurie.edu',
+        requirement_description: 'Bus pass surrender or transport route fee clearance.',
+        applies_to: 'all' as const,
+        category_key: 'transport'
+      },
+      {
+        title: 'Campus Hostel & Mess Section',
+        code: 'HST-101',
+        slot: 'COM-HST',
+        course_type: 'common' as const,
+        faculty_id: hostelStaff ? hostelStaff.id : 9,
+        faculty_name: hostelStaff ? hostelStaff.full_name : 'Mr. K. Manoharan (Campus Hostel Warden)',
+        faculty_email: hostelStaff ? hostelStaff.email : 'hostel@sasurie.edu',
+        requirement_description: 'Hostel room inventory handover & mess fee bill clearance.',
+        applies_to: 'hostel' as const,
+        category_key: 'hostel'
+      },
+      {
+        title: 'Physical Education & Sports Department',
+        code: 'PED-101',
+        slot: 'COM-PED',
+        course_type: 'common' as const,
+        faculty_id: sportsStaff.id,
+        faculty_name: sportsStaff.full_name + ' (Physical Director)',
+        faculty_email: sportsStaff.email,
+        requirement_description: 'Return of tournament kits, jerseys & sports equipment.',
+        applies_to: 'all' as const,
+        category_key: 'sports'
+      },
+      {
+        title: 'Office of Controller of Examinations (CoE)',
+        code: 'COE-101',
+        slot: 'COM-COE',
+        course_type: 'common' as const,
+        faculty_id: coeStaff ? coeStaff.id : 5,
+        faculty_name: coeStaff ? coeStaff.full_name + ' (CoE)' : 'Dr. H. Sasipal (Controller of Examinations)',
+        faculty_email: coeStaff ? coeStaff.email : 'coe@sasurie.edu',
+        requirement_description: 'Exam registration confirmation & hall ticket verification.',
+        applies_to: 'all' as const,
+        category_key: 'exam_cell'
+      }
+    ];
+
+    let nextId = Math.max(0, ...this.subjectCourses.map(s => s.id)) + 1;
+    const now = new Date().toISOString();
+    const result: SubjectCourseRecord[] = [];
+
+    for (const item of standardCommonNodes) {
+      let existing = this.subjectCourses.find(c =>
+        c.course_type === 'common' &&
+        (c.slot?.toLowerCase() === item.slot.toLowerCase() ||
+         c.code?.toLowerCase() === item.code.toLowerCase() ||
+         c.category_key?.toLowerCase() === item.category_key.toLowerCase() ||
+         c.title?.toLowerCase() === item.title.toLowerCase())
+      );
+
+      if (!existing) {
+        existing = {
           id: nextId++,
           title: item.title,
           code: item.code,
@@ -911,6 +1023,7 @@ class InMemoryDatabase {
           semester: 0,
           course_type: 'common',
           slot: item.slot,
+          faculty_id: item.faculty_id,
           faculty_name: item.faculty_name,
           faculty_email: item.faculty_email,
           is_elective: false,
@@ -919,11 +1032,24 @@ class InMemoryDatabase {
           requirement_description: item.requirement_description,
           category_key: item.category_key,
           created_at: now
-        });
+        };
+        this.subjectCourses.push(existing);
+      } else {
+        existing.course_type = 'common';
+        existing.slot = item.slot;
+        existing.code = item.code;
+        existing.title = item.title;
+        if (!existing.faculty_id || existing.faculty_id === 0) existing.faculty_id = item.faculty_id;
+        if (!existing.faculty_name || existing.faculty_name.startsWith('Staff')) existing.faculty_name = item.faculty_name;
+        if (!existing.faculty_email) existing.faculty_email = item.faculty_email;
+        if (!existing.category_key) existing.category_key = item.category_key;
+        if (!existing.applies_to) existing.applies_to = item.applies_to;
+        if (!existing.requirement_description) existing.requirement_description = item.requirement_description;
       }
+      result.push(existing);
     }
+    return result;
   }
-
 
   ensureInstitutionalStudents() {
     // Zero demo students. Only real students entered by admin/staff will exist in database.
@@ -1458,7 +1584,197 @@ class InMemoryDatabase {
   async deleteRecord(tableName: string, id: number) {
     await deleteRecordFromPostgres(tableName, id);
   }
+
+  async deleteStudent(id: number): Promise<boolean> {
+    const stIndex = this.students.findIndex(s => s.id === id);
+    if (stIndex === -1) return false;
+    const st = this.students[stIndex];
+    const userId = st.user_id;
+
+    const studentReqIds = this.noDueRequests.filter(r => r.student_id === id).map(r => r.id);
+    const studentDueIds = this.dueRecords.filter(d => d.student_id === id).map(d => d.id);
+
+    // In-memory cascade removal
+    if (studentReqIds.length > 0) {
+      this.noDueApprovals = this.noDueApprovals.filter(a => !studentReqIds.includes(a.request_id));
+    }
+    this.noDueRequests = this.noDueRequests.filter(r => r.student_id !== id);
+    this.dueRecords = this.dueRecords.filter(d => d.student_id !== id);
+    this.duePayments = this.duePayments.filter(p => p.student_id !== id && !studentDueIds.includes(p.due_record_id));
+    this.certificates = this.certificates.filter(c => c.student_id !== id);
+    if (userId) {
+      this.notifications = this.notifications.filter(n => n.user_id !== userId);
+      this.users = this.users.filter(u => u.id !== userId);
+    }
+    this.students.splice(stIndex, 1);
+
+    // Save immediately to JSON storage
+    this.saveToFile();
+
+    // Cascading PostgreSQL deletion
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('students', id);
+      if (userId) await deleteRecordFromPostgres('users', userId);
+      await deleteRecordsWhereFromPostgres('no_due_requests', 'student_id = $1', [id]);
+      if (studentReqIds.length > 0) {
+        await deleteRecordsWhereFromPostgres('no_due_approvals', 'request_id = ANY($1::int[])', [studentReqIds]);
+      }
+      await deleteRecordsWhereFromPostgres('due_records', 'student_id = $1', [id]);
+      await deleteRecordsWhereFromPostgres('due_payments', 'student_id = $1', [id]);
+      await deleteRecordsWhereFromPostgres('certificates', 'student_id = $1', [id]);
+      if (userId) {
+        await deleteRecordsWhereFromPostgres('notifications', 'user_id = $1', [userId]);
+      }
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteStaff(id: number): Promise<boolean> {
+    const stIndex = this.staff.findIndex(s => s.id === id);
+    if (stIndex === -1) return false;
+    const st = this.staff[stIndex];
+    const userId = st.user_id;
+
+    // Unassign this staff from any subject course
+    this.subjectCourses.forEach(c => {
+      if (c.faculty_id === id || (st.email && c.faculty_email?.toLowerCase() === st.email.toLowerCase())) {
+        c.faculty_id = undefined;
+        c.faculty_name = undefined;
+        c.faculty_email = undefined;
+      }
+    });
+
+    if (userId) {
+      this.users = this.users.filter(u => u.id !== userId);
+      this.notifications = this.notifications.filter(n => n.user_id !== userId);
+    }
+    this.staff.splice(stIndex, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('staff', id);
+      if (userId) await deleteRecordFromPostgres('users', userId);
+      await deleteRecordsWhereFromPostgres('subject_courses', 'faculty_id = $1', [id]);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteDepartment(id: number): Promise<boolean> {
+    const idx = this.departments.findIndex(d => d.id === id);
+    if (idx === -1) return false;
+    this.departments.splice(idx, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('departments', id);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteCourse(id: number): Promise<boolean> {
+    const idx = this.courses.findIndex(c => c.id === id);
+    if (idx === -1) return false;
+    this.courses.splice(idx, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('courses', id);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteSubjectCourse(id: number): Promise<boolean> {
+    const idx = this.subjectCourses.findIndex(c => c.id === id);
+    if (idx === -1) return false;
+    this.subjectCourses.splice(idx, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('subject_courses', id);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteDueCategory(id: number): Promise<boolean> {
+    const idx = this.dueCategories.findIndex(c => c.id === id);
+    if (idx === -1) return false;
+    this.dueCategories.splice(idx, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('due_categories', id);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteDueRecord(id: number): Promise<boolean> {
+    const idx = this.dueRecords.findIndex(d => d.id === id);
+    if (idx === -1) return false;
+    this.dueRecords.splice(idx, 1);
+    this.duePayments = this.duePayments.filter(p => p.due_record_id !== id);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('due_records', id);
+      await deleteRecordsWhereFromPostgres('due_payments', 'due_record_id = $1', [id]);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteNoDueRequest(id: number): Promise<boolean> {
+    const idx = this.noDueRequests.findIndex(r => r.id === id);
+    if (idx === -1) return false;
+    this.noDueApprovals = this.noDueApprovals.filter(a => a.request_id !== id);
+    this.certificates = this.certificates.filter(c => c.request_id !== id);
+    this.noDueRequests.splice(idx, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('no_due_requests', id);
+      await deleteRecordsWhereFromPostgres('no_due_approvals', 'request_id = $1', [id]);
+      await deleteRecordsWhereFromPostgres('certificates', 'request_id = $1', [id]);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
+
+  async deleteCertificate(id: number): Promise<boolean> {
+    const idx = this.certificates.findIndex(c => c.id === id);
+    if (idx === -1) return false;
+    this.certificates.splice(idx, 1);
+
+    this.saveToFile();
+
+    if (this.isPgConnected) {
+      await deleteRecordFromPostgres('certificates', id);
+    }
+
+    this.queueSyncToPostgres();
+    return true;
+  }
 }
 
 export const db = new InMemoryDatabase();
-export { pgPool, pgQuery, testPgConnection, syncSingleRecordToPostgres, deleteRecordFromPostgres };
+export { pgPool, pgQuery, testPgConnection, syncSingleRecordToPostgres, deleteRecordFromPostgres, deleteRecordsWhereFromPostgres, purgeDeletedRecordsFromPostgres };
