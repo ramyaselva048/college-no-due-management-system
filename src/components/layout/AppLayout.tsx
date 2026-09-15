@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { NotificationsDropdown } from './NotificationsDropdown';
+import { ThemeToggle } from '../common/ThemeToggle';
 
 interface AppLayoutProps {
   children?: React.ReactNode;
@@ -207,6 +208,7 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle variant="compact" />
           <NotificationsDropdown />
           <button
             onClick={handleLogout}
@@ -297,6 +299,8 @@ export const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
             </Link>
 
             <div className="h-4 w-px bg-slate-200"></div>
+
+            <ThemeToggle variant="compact" />
 
             <NotificationsDropdown />
           </div>

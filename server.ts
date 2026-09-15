@@ -21,8 +21,27 @@ async function startServer() {
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 
+  // CORS and preflight handling for cloud container and reverse proxy environments
+  app.use((req, res, next) => {
+    res.header('Access-Control-Allow-Origin', '*');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, PATCH, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Authorization');
+    if (req.method === 'OPTIONS') {
+      return res.sendStatus(204);
+    }
+    next();
+  });
+
   // API Routes mounted before Vite middleware
   app.use('/api', apiRouter);
+
+  // Fallback API error handler
+  app.use('/api', (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('Unhandled API exception:', err);
+    if (!res.headersSent) {
+      res.status(err.status || 500).json({ detail: err.message || 'Internal Server Error' });
+    }
+  });
 
   // Vite middleware in dev or static files in production
   if (process.env.NODE_ENV !== 'production') {

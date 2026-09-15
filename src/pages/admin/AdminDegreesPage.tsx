@@ -84,24 +84,48 @@ export const AdminDegreesPage: React.FC = () => {
     try {
       const res = await api.get('/student/departments');
       const depts = Array.isArray(res.data) ? res.data : [];
-      setDepartments(depts);
-      if (depts.length > 0 && departmentId === 0) {
-        setDepartmentId(depts[0].id);
+      if (depts.length > 0) {
+        setDepartments(depts);
+        try { localStorage.setItem('cache_student_depts', JSON.stringify(depts)); } catch {}
+        if (departmentId === 0) setDepartmentId(depts[0].id);
       }
     } catch (err) {
-      console.error('Failed to load departments', err);
+      console.warn('Network issue loading departments, checking cache:', err);
+      try {
+        const cached = localStorage.getItem('cache_student_depts');
+        if (cached) {
+          const depts = JSON.parse(cached);
+          setDepartments(depts);
+          if (depts.length > 0 && departmentId === 0) setDepartmentId(depts[0].id);
+        }
+      } catch {}
     }
   };
 
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const res = await api.get('/admin/courses');
-      const data = Array.isArray(res.data) ? res.data : [];
-      setCourses(data);
+      let data: Course[] = [];
+      try {
+        const res = await api.get('/admin/courses');
+        data = Array.isArray(res.data) ? res.data : [];
+      } catch {
+        const fallback = await api.get('/courses');
+        data = Array.isArray(fallback.data) ? fallback.data : [];
+      }
+      if (data.length > 0) {
+        setCourses(data);
+        try { localStorage.setItem('cache_admin_degrees', JSON.stringify(data)); } catch {}
+      } else {
+        const cached = localStorage.getItem('cache_admin_degrees');
+        if (cached) setCourses(JSON.parse(cached));
+      }
     } catch (err) {
-      console.error('Failed to fetch courses', err);
-      setCourses([]);
+      console.warn('Using offline cached degree courses:', err);
+      try {
+        const cached = localStorage.getItem('cache_admin_degrees');
+        if (cached) setCourses(JSON.parse(cached));
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -514,20 +538,15 @@ export const AdminDegreesPage: React.FC = () => {
                   <label className="block text-xs font-semibold text-slate-700">Type Degree *</label>
                   <span className="text-[10px] text-slate-400">Select or type custom</span>
                 </div>
-                <input
-                  type="text"
-                  required
-                  list="degree-type-suggestions"
-                  placeholder="e.g. B.E., B.Tech, M.E., MBA, MCA, Diploma..."
+                <SearchableSelect
                   value={degreeType}
-                  onChange={(e) => handleDegreeChange(e.target.value)}
+                  onChange={(e) => handleDegreeChange(String(e.target.value))}
+                  placeholder="Select or type degree..."
+                  searchPlaceholder="e.g. B.E., B.Tech, M.E., MBA..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                  options={DEGREE_SUGGESTIONS.map((d) => ({ value: d, label: d }))}
                 />
-                <datalist id="degree-type-suggestions">
-                  {DEGREE_SUGGESTIONS.map((d) => (
-                    <option key={d} value={d} />
-                  ))}
-                </datalist>
 
                 {/* Quick Selection Chips */}
                 <div className="flex flex-wrap gap-1.5 mt-2">
@@ -551,22 +570,19 @@ export const AdminDegreesPage: React.FC = () => {
               {/* Field 2: Type Branch */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Type Branch *</label>
-                <input
-                  type="text"
-                  required
-                  list="branch-name-suggestions"
-                  placeholder="e.g. Computer Science and Engineering, Mechanical Engineering..."
+                <SearchableSelect
                   value={branchName}
-                  onChange={(e) => handleBranchChange(e.target.value)}
+                  onChange={(e) => handleBranchChange(String(e.target.value))}
+                  placeholder="Select or type branch..."
+                  searchPlaceholder="e.g. Computer Science and Engineering..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2.5 border border-slate-200 rounded-lg bg-white text-slate-800 focus:outline-none focus:ring-1 focus:ring-indigo-500 font-medium"
+                  options={COMMON_BRANCH_PRESETS.map((p) => ({
+                    value: p.branch,
+                    label: p.branch,
+                    subLabel: `${p.degree} (${p.code})`
+                  }))}
                 />
-                <datalist id="branch-name-suggestions">
-                  {COMMON_BRANCH_PRESETS.map((p, idx) => (
-                    <option key={idx} value={p.branch}>
-                      {p.degree} - {p.code}
-                    </option>
-                  ))}
-                </datalist>
                 <p className="text-[11px] text-slate-400 mt-1">
                   Type any engineering or academic branch/specialization name freely.
                 </p>
@@ -684,32 +700,32 @@ export const AdminDegreesPage: React.FC = () => {
               {/* Field 1: Type Degree */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Type Degree *</label>
-                <input
-                  type="text"
-                  required
-                  list="edit-degree-type-suggestions"
-                  placeholder="e.g. B.E., B.Tech, M.E., MBA..."
+                <SearchableSelect
                   value={degreeType}
-                  onChange={(e) => setDegreeType(e.target.value)}
+                  onChange={(e) => setDegreeType(String(e.target.value))}
+                  placeholder="Select or type degree..."
+                  searchPlaceholder="e.g. B.E., B.Tech, M.E., MBA..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
+                  options={DEGREE_SUGGESTIONS.map((d) => ({ value: d, label: d }))}
                 />
-                <datalist id="edit-degree-type-suggestions">
-                  {DEGREE_SUGGESTIONS.map((d) => (
-                    <option key={d} value={d} />
-                  ))}
-                </datalist>
               </div>
 
               {/* Field 2: Type Branch */}
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Type Branch *</label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Computer Science and Engineering"
+                <SearchableSelect
                   value={branchName}
-                  onChange={(e) => setBranchName(e.target.value)}
+                  onChange={(e) => setBranchName(String(e.target.value))}
+                  placeholder="Select or type branch..."
+                  searchPlaceholder="e.g. Computer Science and Engineering..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-medium"
+                  options={COMMON_BRANCH_PRESETS.map((p) => ({
+                    value: p.branch,
+                    label: p.branch,
+                    subLabel: `${p.degree} (${p.code})`
+                  }))}
                 />
               </div>
 

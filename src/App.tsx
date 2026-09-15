@@ -2,6 +2,7 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { NotificationProvider } from './context/NotificationContext';
+import { ThemeProvider } from './context/ThemeContext';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { AppLayout } from './components/layout/AppLayout';
 
@@ -9,6 +10,7 @@ import { AppLayout } from './components/layout/AppLayout';
 import { LandingPage } from './pages/public/LandingPage';
 import { LoginPage } from './pages/auth/LoginPage';
 import { VerifyCertificatePage } from './pages/public/VerifyCertificatePage';
+import { PrintCertificatePage } from './pages/public/PrintCertificatePage';
 
 // Student Pages
 import { StudentDashboard } from './pages/student/StudentDashboard';
@@ -46,9 +48,10 @@ import { AdminProfilePage } from './pages/admin/AdminProfilePage';
 export default function App() {
   return (
     <Router>
-      <AuthProvider>
-        <NotificationProvider>
-          <Routes>
+      <ThemeProvider>
+        <AuthProvider>
+          <NotificationProvider>
+            <Routes>
             {/* Public Routes */}
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<LoginPage />} />
@@ -56,6 +59,8 @@ export default function App() {
             <Route path="/signup" element={<Navigate to="/login" replace />} />
             <Route path="/verify" element={<VerifyCertificatePage />} />
             <Route path="/verify/:code" element={<VerifyCertificatePage />} />
+            <Route path="/certificate/print/:id" element={<PrintCertificatePage />} />
+            <Route path="/print/certificate/:id" element={<PrintCertificatePage />} />
 
             {/* Student Protected Routes */}
             <Route
@@ -136,6 +141,7 @@ export default function App() {
           </Routes>
         </NotificationProvider>
       </AuthProvider>
-    </Router>
+    </ThemeProvider>
+  </Router>
   );
 }

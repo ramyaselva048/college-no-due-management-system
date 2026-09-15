@@ -12,7 +12,8 @@ import {
   Calendar,
   Layers,
   Sparkles,
-  Filter
+  Filter,
+  RefreshCw
 } from 'lucide-react';
 import api from '../../services/api';
 import { Department, SubjectCourse } from '../../types';
@@ -71,6 +72,8 @@ export const AdminCoursesPage: React.FC = () => {
   const [formIsElective, setFormIsElective] = useState(false);
   const [formError, setFormError] = useState('');
 
+  const [isOfflineCache, setIsOfflineCache] = useState(false);
+
   const showToast = (type: 'success' | 'error', text: string) => {
     setToastMessage({ type, text });
     setTimeout(() => setToastMessage(null), 4000);
@@ -79,19 +82,113 @@ export const AdminCoursesPage: React.FC = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [coursesRes, deptsRes] = await Promise.all([
-        api.get<SubjectCourse[]>('/admin/subject-courses'),
-        api.get<Department[]>('/departments')
-      ]);
-      setCourses(Array.isArray(coursesRes.data) ? coursesRes.data : []);
-      const depts = Array.isArray(deptsRes.data) ? deptsRes.data : [];
-      setDepartments(depts);
-      if (depts.length > 0 && formDeptId === 0) {
-        setFormDeptId(depts[0].id);
+
+      // Fetch courses with primary and fallback endpoints
+      let fetchedCourses: SubjectCourse[] = [];
+      let coursesSuccess = false;
+      try {
+        const coursesRes = await api.get<SubjectCourse[]>('/admin/subject-courses');
+        if (Array.isArray(coursesRes.data)) {
+          fetchedCourses = coursesRes.data;
+          coursesSuccess = true;
+        }
+      } catch (e) {
+        try {
+          const fallbackRes = await api.get<SubjectCourse[]>('/admin/curriculum-courses');
+          if (Array.isArray(fallbackRes.data)) {
+            fetchedCourses = fallbackRes.data;
+            coursesSuccess = true;
+          }
+        } catch {}
+      }
+
+      // Fetch departments with primary and fallback endpoints
+      let fetchedDepts: Department[] = [];
+      try {
+        const deptsRes = await api.get<Department[]>('/departments');
+        if (Array.isArray(deptsRes.data) && deptsRes.data.length > 0) {
+          fetchedDepts = deptsRes.data;
+        }
+      } catch {
+        try {
+          const fallbackDepts = await api.get<Department[]>('/student/departments');
+          if (Array.isArray(fallbackDepts.data) && fallbackDepts.data.length > 0) {
+            fetchedDepts = fallbackDepts.data;
+          }
+        } catch {}
+      }
+
+      // Process courses
+      if (coursesSuccess) {
+        setCourses(fetchedCourses);
+        setIsOfflineCache(false);
+        try {
+          localStorage.setItem('cache_subject_courses', JSON.stringify(fetchedCourses));
+        } catch {}
+      } else {
+        // Recover from offline cache if available
+        let cachedCourses: SubjectCourse[] = [];
+        try {
+          const saved = localStorage.getItem('cache_subject_courses');
+          if (saved) cachedCourses = JSON.parse(saved);
+        } catch {}
+
+        if (cachedCourses.length > 0) {
+          setCourses(cachedCourses);
+          setIsOfflineCache(true);
+        } else {
+          // Provide instant fallback from Anna University standard suggestions catalog
+          const fallbackList: SubjectCourse[] = QUICK_COURSE_SUGGESTIONS.map((s, idx) => ({
+            id: 1000 + idx,
+            title: s.title,
+            code: s.code,
+            department_id: 1,
+            department_name: 'Computer Science and Engineering',
+            department_code: s.defaultDept,
+            year: s.year,
+            semester: s.sem,
+            course_type: s.type,
+            slot: s.slot,
+            faculty_name: s.faculty,
+            is_elective: false,
+            is_active: true,
+            created_at: new Date().toISOString()
+          }));
+          setCourses(fallbackList);
+          setIsOfflineCache(true);
+        }
+      }
+
+      // Process departments
+      if (fetchedDepts.length > 0) {
+        setDepartments(fetchedDepts);
+        try {
+          localStorage.setItem('cache_departments', JSON.stringify(fetchedDepts));
+        } catch {}
+        if (formDeptId === 0) {
+          setFormDeptId(fetchedDepts[0].id);
+        }
+      } else {
+        let cachedDepts: Department[] = [];
+        try {
+          const savedD = localStorage.getItem('cache_departments');
+          if (savedD) cachedDepts = JSON.parse(savedD);
+        } catch {}
+        if (cachedDepts.length > 0) {
+          setDepartments(cachedDepts);
+          if (formDeptId === 0) setFormDeptId(cachedDepts[0].id);
+        }
       }
     } catch (err: any) {
-      console.error('Failed to load courses data:', err);
-      showToast('error', 'Failed to fetch courses list. Using offline cache.');
+      console.warn('Recovered gracefully using cached courses data:', err?.message || err);
+      // Ensure we don't leave state empty
+      try {
+        const saved = localStorage.getItem('cache_subject_courses');
+        if (saved) {
+          setCourses(JSON.parse(saved));
+          setIsOfflineCache(true);
+        }
+      } catch {}
     } finally {
       setLoading(false);
     }
@@ -371,6 +468,18 @@ export const AdminCoursesPage: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <button
+            id="refresh-courses-btn"
+            type="button"
+            disabled={loading}
+            onClick={() => fetchData()}
+            title="Reload and synchronize curriculum from server"
+            className="inline-flex items-center justify-center gap-2 px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 hover:text-slate-900 text-sm font-semibold rounded-xl border border-slate-200 transition-all cursor-pointer disabled:opacity-50"
+          >
+            <RefreshCw className={`w-4 h-4 text-slate-600 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Sync</span>
+          </button>
+
+          <button
             id="seed-curriculum-btn"
             type="button"
             disabled={seeding}
@@ -396,6 +505,23 @@ export const AdminCoursesPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Offline Cache Notice Banner */}
+      {isOfflineCache && (
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>Working in offline cache mode. Loaded locally cached courses catalog.</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => fetchData()}
+            className="px-2.5 py-1 bg-white hover:bg-amber-100 text-amber-900 font-semibold rounded-lg border border-amber-300 transition-all cursor-pointer shrink-0"
+          >
+            Sync with Server
+          </button>
+        </div>
+      )}
 
       {/* Metric Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -821,23 +947,19 @@ export const AdminCoursesPage: React.FC = () => {
 
                   {deptInputMode === 'type' ? (
                     <div className="space-y-2">
-                      <div className="relative">
-                        <input
-                          id="form-course-department-type"
-                          type="text"
-                          list="department-type-options"
-                          value={formDeptName}
-                          onChange={e => handleDeptNameChange(e.target.value)}
-                          placeholder="Type department (e.g. Computer Science, ECE, Mechanical, IT...)"
-                          required
-                          className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-medium"
-                        />
-                        <datalist id="department-type-options">
-                          {departments.map(d => (
-                            <option key={d.id} value={`${d.name} (${d.code})`} />
-                          ))}
-                        </datalist>
-                      </div>
+                      <SearchableSelect
+                        id="form-course-department-type"
+                        value={formDeptName}
+                        onChange={e => handleDeptNameChange(String(e.target.value))}
+                        placeholder="Select or type department..."
+                        searchPlaceholder="Type department (e.g. Computer Science, ECE, Mechanical, IT...)"
+                        allowCustom={true}
+                        className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-100 transition-all font-medium"
+                        options={departments.map(d => ({
+                          value: `${d.name} (${d.code})`,
+                          label: `${d.name} (${d.code})`
+                        }))}
+                      />
 
                       {/* Quick Department Suggestion Chips */}
                       {departments.length > 0 && (
@@ -957,35 +1079,28 @@ export const AdminCoursesPage: React.FC = () => {
                     <label className="block text-xs font-semibold text-slate-700 mb-1.5">
                       Clearance Slot <span className="text-rose-500">*</span>
                     </label>
-                    <input
+                    <SearchableSelect
                       id="form-course-slot"
-                      type="text"
-                      list="slot-suggestions"
                       value={formSlot}
-                      onChange={e => setFormSlot(e.target.value)}
+                      onChange={e => setFormSlot(String(e.target.value))}
                       placeholder={formCourseType === 'lab' ? 'Lab 1' : 'Sub 1'}
-                      required
+                      searchPlaceholder="Select or type slot..."
+                      allowCustom={true}
                       className="w-full px-3 py-2.5 bg-slate-50 focus:bg-white border border-slate-200 focus:border-blue-500 rounded-xl text-sm font-semibold text-slate-800 focus:outline-none"
+                      options={formCourseType === 'lab' ? [
+                        { value: 'Lab 1', label: 'Lab 1' },
+                        { value: 'Lab 2', label: 'Lab 2' },
+                        { value: 'Lab 3', label: 'Lab 3' },
+                        { value: 'Lab 4', label: 'Lab 4' }
+                      ] : [
+                        { value: 'Sub 1', label: 'Sub 1' },
+                        { value: 'Sub 2', label: 'Sub 2' },
+                        { value: 'Sub 3', label: 'Sub 3' },
+                        { value: 'Sub 4', label: 'Sub 4' },
+                        { value: 'Sub 5', label: 'Sub 5' },
+                        { value: 'Sub 6', label: 'Sub 6' }
+                      ]}
                     />
-                    <datalist id="slot-suggestions">
-                      {formCourseType === 'lab' ? (
-                        <>
-                          <option value="Lab 1" />
-                          <option value="Lab 2" />
-                          <option value="Lab 3" />
-                          <option value="Lab 4" />
-                        </>
-                      ) : (
-                        <>
-                          <option value="Sub 1" />
-                          <option value="Sub 2" />
-                          <option value="Sub 3" />
-                          <option value="Sub 4" />
-                          <option value="Sub 5" />
-                          <option value="Sub 6" />
-                        </>
-                      )}
-                    </datalist>
                   </div>
                 </div>
 

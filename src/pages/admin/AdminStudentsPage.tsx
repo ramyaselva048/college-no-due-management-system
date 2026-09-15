@@ -71,14 +71,38 @@ export const AdminStudentsPage: React.FC = () => {
 
   const fetchDependencies = async () => {
     try {
-      const [deptRes, courseRes] = await Promise.all([
-        api.get('/student/departments'),
-        api.get('/student/courses')
-      ]);
-      const depts = Array.isArray(deptRes.data) ? deptRes.data : [];
-      const crss = Array.isArray(courseRes.data) ? courseRes.data : [];
-      setDepartments(depts);
-      setCourses(crss);
+      let depts: Department[] = [];
+      let crss: Course[] = [];
+
+      try {
+        const deptRes = await api.get('/student/departments');
+        if (Array.isArray(deptRes.data) && deptRes.data.length > 0) {
+          depts = deptRes.data;
+          try { localStorage.setItem('cache_student_depts', JSON.stringify(depts)); } catch {}
+        }
+      } catch {
+        try {
+          const cached = localStorage.getItem('cache_student_depts');
+          if (cached) depts = JSON.parse(cached);
+        } catch {}
+      }
+
+      try {
+        const courseRes = await api.get('/student/courses');
+        if (Array.isArray(courseRes.data) && courseRes.data.length > 0) {
+          crss = courseRes.data;
+          try { localStorage.setItem('cache_student_courses', JSON.stringify(crss)); } catch {}
+        }
+      } catch {
+        try {
+          const cached = localStorage.getItem('cache_student_courses');
+          if (cached) crss = JSON.parse(cached);
+        } catch {}
+      }
+
+      if (depts.length > 0) setDepartments(depts);
+      if (crss.length > 0) setCourses(crss);
+
       if (depts.length > 0 && crss.length > 0) {
         setFormData((prev) => ({
           ...prev,
@@ -87,7 +111,7 @@ export const AdminStudentsPage: React.FC = () => {
         }));
       }
     } catch (err) {
-      console.error('Failed to load departments/courses', err);
+      console.warn('Recovered gracefully for departments/courses:', err);
     }
   };
 
@@ -102,9 +126,19 @@ export const AdminStudentsPage: React.FC = () => {
         ? res.data
         : (Array.isArray(res.data?.students) ? res.data.students : []);
       setStudents(list);
+      try { localStorage.setItem('cache_admin_students', JSON.stringify(list)); } catch {}
     } catch (err: any) {
-      console.error('Failed to load students', err);
-      setLoadError(err.response?.data?.detail || 'Failed to refresh students list from server.');
+      console.warn('Network issue fetching students, checking offline cache:', err);
+      try {
+        const cached = localStorage.getItem('cache_admin_students');
+        if (cached) {
+          setStudents(JSON.parse(cached));
+        } else {
+          setLoadError(err.response?.data?.detail || 'Failed to refresh students list from server.');
+        }
+      } catch {
+        setLoadError(err.response?.data?.detail || 'Failed to refresh students list from server.');
+      }
     } finally {
       setLoading(false);
     }
@@ -805,33 +839,31 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Parent Department *</label>
-                  <input
-                    type="text"
-                    list="student-departments-datalist"
-                    placeholder="Type department..."
-                    value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                  <SearchableSelect
+                    value={formData.department_id ? String(formData.department_id) : ''}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      const matched = departments.find(
-                        (d) =>
-                          d.name.toLowerCase() === val.toLowerCase() ||
-                          d.code.toLowerCase() === val.toLowerCase() ||
-                          String(d.id) === val
-                      );
-                      if (matched) {
-                        setFormData({ ...formData, department_id: matched.id });
+                      const val = String(e.target.value);
+                      const num = Number(val);
+                      if (!isNaN(num) && num > 0) {
+                        setFormData({ ...formData, department_id: num });
+                      } else {
+                        const matched = departments.find(
+                          (d) =>
+                            d.name.toLowerCase() === val.toLowerCase() ||
+                            d.code.toLowerCase() === val.toLowerCase()
+                        );
+                        if (matched) setFormData({ ...formData, department_id: matched.id });
                       }
                     }}
+                    placeholder="Select or add department..."
+                    searchPlaceholder="Type department name..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                    required
+                    options={departments.map((d) => ({
+                      value: String(d.id),
+                      label: `${d.name} (${d.code || 'DEPT'})`
+                    }))}
                   />
-                  <datalist id="student-departments-datalist">
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.name}>
-                        {d.code}
-                      </option>
-                    ))}
-                  </datalist>
                 </div>
 
                 <div>
@@ -840,63 +872,66 @@ export const AdminStudentsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsCustomCourse(!isCustomCourse)}
-                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
                     >
                       {isCustomCourse ? '← Pick Existing List' : '✏️ Type Custom Degree'}
                     </button>
                   </div>
 
                   {!isCustomCourse ? (
-                    <div>
-                      <input
-                        type="text"
-                        list="student-courses-datalist"
-                        placeholder="Type degree course..."
-                        value={courses.find((c) => c.id === formData.course_id)?.name || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
+                    <SearchableSelect
+                      value={formData.course_id ? String(formData.course_id) : ''}
+                      onChange={(e) => {
+                        const val = String(e.target.value);
+                        const num = Number(val);
+                        if (!isNaN(num) && num > 0) {
+                          setFormData({ ...formData, course_id: num });
+                        } else {
                           const matched = courses.find(
                             (c) =>
                               c.name.toLowerCase() === val.toLowerCase() ||
-                              c.code.toLowerCase() === val.toLowerCase() ||
-                              String(c.id) === val
+                              c.code.toLowerCase() === val.toLowerCase()
                           );
                           if (matched) {
                             setFormData({ ...formData, course_id: matched.id });
+                          } else if (val.trim()) {
+                            setIsCustomCourse(true);
+                            handleCustomTitleChange('B.E.', val.trim());
                           }
-                        }}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                      />
-                      <datalist id="student-courses-datalist">
-                        {courses.map((c) => (
-                          <option key={c.id} value={c.name}>
-                            {c.code}
-                          </option>
-                        ))}
-                      </datalist>
-                    </div>
+                        }
+                      }}
+                      placeholder="Select or add degree course..."
+                      searchPlaceholder="Type degree course..."
+                      allowCustom={true}
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                      options={courses.map((c) => ({
+                        value: String(c.id),
+                        label: c.name,
+                        subLabel: c.code
+                      }))}
+                    />
                   ) : (
                     <div className="p-3 bg-slate-50 border border-indigo-200 rounded-xl space-y-2">
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Prefix</label>
-                          <input
-                            type="text"
-                            list="student-degree-prefixes-datalist"
-                            placeholder="e.g. B.E."
+                          <SearchableSelect
                             value={customDegreePrefix}
-                            onChange={(e) => handleCustomTitleChange(e.target.value, customCourseTitle)}
+                            onChange={(e) => handleCustomTitleChange(String(e.target.value), customCourseTitle)}
+                            placeholder="Prefix..."
+                            searchPlaceholder="e.g. B.E."
+                            allowCustom={true}
                             className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
+                            options={[
+                              { value: 'B.E.', label: 'B.E.' },
+                              { value: 'B.Tech', label: 'B.Tech' },
+                              { value: 'M.E.', label: 'M.E.' },
+                              { value: 'M.Tech', label: 'M.Tech' },
+                              { value: 'MBA', label: 'MBA' },
+                              { value: 'MCA', label: 'MCA' },
+                              { value: 'None', label: 'None' }
+                            ]}
                           />
-                          <datalist id="student-degree-prefixes-datalist">
-                            <option value="B.E." />
-                            <option value="B.Tech" />
-                            <option value="M.E." />
-                            <option value="M.Tech" />
-                            <option value="MBA" />
-                            <option value="MCA" />
-                            <option value="None" />
-                          </datalist>
                         </div>
                         <div className="col-span-2">
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Type Course Name *</label>
@@ -1098,32 +1133,31 @@ export const AdminStudentsPage: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-                  <input
-                    type="text"
-                    list="student-edit-departments-datalist"
-                    placeholder="Type department..."
-                    value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                  <SearchableSelect
+                    value={formData.department_id ? String(formData.department_id) : ''}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      const matched = departments.find(
-                        (d) =>
-                          d.name.toLowerCase() === val.toLowerCase() ||
-                          d.code.toLowerCase() === val.toLowerCase() ||
-                          String(d.id) === val
-                      );
-                      if (matched) {
-                        setFormData({ ...formData, department_id: matched.id });
+                      const val = String(e.target.value);
+                      const num = Number(val);
+                      if (!isNaN(num) && num > 0) {
+                        setFormData({ ...formData, department_id: num });
+                      } else {
+                        const matched = departments.find(
+                          (d) =>
+                            d.name.toLowerCase() === val.toLowerCase() ||
+                            d.code.toLowerCase() === val.toLowerCase()
+                        );
+                        if (matched) setFormData({ ...formData, department_id: matched.id });
                       }
                     }}
+                    placeholder="Select or add department..."
+                    searchPlaceholder="Type department name..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                    options={departments.map((d) => ({
+                      value: String(d.id),
+                      label: `${d.name} (${d.code || 'DEPT'})`
+                    }))}
                   />
-                  <datalist id="student-edit-departments-datalist">
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.name}>
-                        {d.code}
-                      </option>
-                    ))}
-                  </datalist>
                 </div>
 
                 <div>
@@ -1132,63 +1166,66 @@ export const AdminStudentsPage: React.FC = () => {
                     <button
                       type="button"
                       onClick={() => setIsCustomCourse(!isCustomCourse)}
-                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold"
+                      className="text-[11px] text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer"
                     >
                       {isCustomCourse ? '← Choose Existing' : '✏️ Type Custom Course'}
                     </button>
                   </div>
 
                   {!isCustomCourse ? (
-                    <div>
-                      <input
-                        type="text"
-                        list="student-edit-courses-datalist"
-                        placeholder="Type degree course..."
-                        value={courses.find((c) => c.id === formData.course_id)?.name || ''}
-                        onChange={(e) => {
-                          const val = e.target.value;
+                    <SearchableSelect
+                      value={formData.course_id ? String(formData.course_id) : ''}
+                      onChange={(e) => {
+                        const val = String(e.target.value);
+                        const num = Number(val);
+                        if (!isNaN(num) && num > 0) {
+                          setFormData({ ...formData, course_id: num });
+                        } else {
                           const matched = courses.find(
                             (c) =>
                               c.name.toLowerCase() === val.toLowerCase() ||
-                              c.code.toLowerCase() === val.toLowerCase() ||
-                              String(c.id) === val
+                              c.code.toLowerCase() === val.toLowerCase()
                           );
                           if (matched) {
                             setFormData({ ...formData, course_id: matched.id });
+                          } else if (val.trim()) {
+                            setIsCustomCourse(true);
+                            handleCustomTitleChange('B.E.', val.trim());
                           }
-                        }}
-                        className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                      />
-                      <datalist id="student-edit-courses-datalist">
-                        {courses.map((c) => (
-                          <option key={c.id} value={c.name}>
-                            {c.code}
-                          </option>
-                        ))}
-                      </datalist>
-                    </div>
+                        }
+                      }}
+                      placeholder="Select or add degree course..."
+                      searchPlaceholder="Type degree course..."
+                      allowCustom={true}
+                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
+                      options={courses.map((c) => ({
+                        value: String(c.id),
+                        label: c.name,
+                        subLabel: c.code
+                      }))}
+                    />
                   ) : (
                     <div className="p-3 bg-slate-50 border border-indigo-200 rounded-xl space-y-2">
                       <div className="grid grid-cols-3 gap-2">
                         <div>
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Prefix</label>
-                          <input
-                            type="text"
-                            list="student-edit-prefixes-datalist"
-                            placeholder="e.g. B.E."
+                          <SearchableSelect
                             value={customDegreePrefix}
-                            onChange={(e) => handleCustomTitleChange(e.target.value, customCourseTitle)}
+                            onChange={(e) => handleCustomTitleChange(String(e.target.value), customCourseTitle)}
+                            placeholder="Prefix..."
+                            searchPlaceholder="e.g. B.E."
+                            allowCustom={true}
                             className="w-full text-xs px-2 py-1.5 border border-slate-200 rounded-lg bg-white text-slate-800"
+                            options={[
+                              { value: 'B.E.', label: 'B.E.' },
+                              { value: 'B.Tech', label: 'B.Tech' },
+                              { value: 'M.E.', label: 'M.E.' },
+                              { value: 'M.Tech', label: 'M.Tech' },
+                              { value: 'MBA', label: 'MBA' },
+                              { value: 'MCA', label: 'MCA' },
+                              { value: 'None', label: 'None' }
+                            ]}
                           />
-                          <datalist id="student-edit-prefixes-datalist">
-                            <option value="B.E." />
-                            <option value="B.Tech" />
-                            <option value="M.E." />
-                            <option value="M.Tech" />
-                            <option value="MBA" />
-                            <option value="MCA" />
-                            <option value="None" />
-                          </datalist>
                         </div>
                         <div className="col-span-2">
                           <label className="block text-[10px] font-semibold text-slate-600 mb-0.5">Type Course Name</label>

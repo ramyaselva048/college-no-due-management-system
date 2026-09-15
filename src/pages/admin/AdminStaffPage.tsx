@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { StaffProfile, Department } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 const DESIGNATION_PRESETS = [
   'HOD & Clearance Incharge',
@@ -287,39 +288,26 @@ export const AdminStaffPage: React.FC = () => {
             <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
           </div>
 
-          <input
-            type="text"
-            list="admin-staff-dept-filter-list"
-            placeholder="Filter department..."
-            value={
-              selectedDeptFilter === 'ALL'
-                ? ''
-                : departments.find((d) => String(d.id) === selectedDeptFilter)?.name || selectedDeptFilter
-            }
-            onChange={(e) => {
-              const val = e.target.value;
-              if (!val || val.toLowerCase() === 'all' || val.toLowerCase() === 'all departments') {
-                setSelectedDeptFilter('ALL');
-              } else {
-                const matched = departments.find(
-                  (d) =>
-                    d.name.toLowerCase() === val.toLowerCase() ||
-                    d.code.toLowerCase() === val.toLowerCase() ||
-                    String(d.id) === val
-                );
-                setSelectedDeptFilter(matched ? String(matched.id) : val);
-              }
-            }}
-            className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
-          />
-          <datalist id="admin-staff-dept-filter-list">
-            <option value="All Departments" />
-            {departments.map((d) => (
-              <option key={d.id} value={d.name}>
-                {d.code}
-              </option>
-            ))}
-          </datalist>
+          <div className="w-52">
+            <SearchableSelect
+              value={selectedDeptFilter}
+              onChange={(e) => {
+                const val = String(e.target.value);
+                setSelectedDeptFilter(val);
+              }}
+              placeholder="All Departments"
+              searchPlaceholder="Filter department..."
+              allowCustom={true}
+              className="text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-700 focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+              options={[
+                { value: 'ALL', label: 'All Departments' },
+                ...departments.map((d) => ({
+                  value: String(d.id),
+                  label: `${d.name} (${d.code || 'DEPT'})`
+                }))
+              ]}
+            />
+          </div>
 
           <div className="bg-slate-100 p-0.5 rounded-xl border border-slate-200 flex items-center">
             <button
@@ -630,34 +618,39 @@ export const AdminStaffPage: React.FC = () => {
 
                 {!formData.is_custom_dept ? (
                   <div>
-                    <input
-                      type="text"
-                      list="admin-staff-add-dept-list"
-                      placeholder="Type department..."
-                      value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                    <SearchableSelect
+                      value={formData.department_id ? String(formData.department_id) : ''}
                       onChange={(e) => {
-                        const val = e.target.value;
+                        const val = String(e.target.value);
                         const matched = departments.find(
                           (d) =>
+                            String(d.id) === val ||
                             d.name.toLowerCase() === val.toLowerCase() ||
-                            d.code.toLowerCase() === val.toLowerCase() ||
-                            String(d.id) === val
+                            d.code.toLowerCase() === val.toLowerCase()
                         );
                         if (matched) {
                           setFormData({ ...formData, department_id: matched.id });
+                        } else if (val.trim()) {
+                          setFormData({
+                            ...formData,
+                            department_id: 0,
+                            is_custom_dept: true,
+                            custom_department_name: val,
+                            custom_department_code: val.replace(/[^a-zA-Z0-9]/g, '').substring(0, 5).toUpperCase()
+                          });
                         }
                       }}
+                      placeholder="Select or add department..."
+                      searchPlaceholder="Type to search or add department..."
+                      allowCustom={true}
                       className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      options={departments.map((d) => ({
+                        value: String(d.id),
+                        label: `${d.name} (${d.code || 'DEPT'})`
+                      }))}
                     />
-                    <datalist id="admin-staff-add-dept-list">
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.name}>
-                          {d.code}
-                        </option>
-                      ))}
-                    </datalist>
                     <p className="text-[11px] text-slate-500 mt-1">
-                      Choose from any engineering college department or institutional clearance node.
+                      Choose from any engineering college department or type to add a new one.
                     </p>
                   </div>
                 ) : (
@@ -707,19 +700,15 @@ export const AdminStaffPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Designation</label>
-                  <input
-                    type="text"
-                    list="admin-staff-designation-list"
-                    placeholder="Type designation..."
+                  <SearchableSelect
                     value={formData.designation}
-                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, designation: String(e.target.value) })}
+                    placeholder="Select or add designation..."
+                    searchPlaceholder="Type to search or add designation..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    options={DESIGNATION_PRESETS.map((p) => ({ value: p, label: p }))}
                   />
-                  <datalist id="admin-staff-designation-list">
-                    {DESIGNATION_PRESETS.map((p) => (
-                      <option key={p} value={p} />
-                    ))}
-                  </datalist>
                 </div>
 
                 <div>
@@ -848,32 +837,37 @@ export const AdminStaffPage: React.FC = () => {
 
                 {!formData.is_custom_dept ? (
                   <div>
-                    <input
-                      type="text"
-                      list="admin-staff-edit-dept-list"
-                      placeholder="Type department..."
-                      value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                    <SearchableSelect
+                      value={formData.department_id ? String(formData.department_id) : ''}
                       onChange={(e) => {
-                        const val = e.target.value;
+                        const val = String(e.target.value);
                         const matched = departments.find(
                           (d) =>
+                            String(d.id) === val ||
                             d.name.toLowerCase() === val.toLowerCase() ||
-                            d.code.toLowerCase() === val.toLowerCase() ||
-                            String(d.id) === val
+                            d.code.toLowerCase() === val.toLowerCase()
                         );
                         if (matched) {
                           setFormData({ ...formData, department_id: matched.id });
+                        } else if (val.trim()) {
+                          setFormData({
+                            ...formData,
+                            department_id: 0,
+                            is_custom_dept: true,
+                            custom_department_name: val,
+                            custom_department_code: val.replace(/[^a-zA-Z0-9]/g, '').substring(0, 5).toUpperCase()
+                          });
                         }
                       }}
+                      placeholder="Select or add department..."
+                      searchPlaceholder="Type to search or add department..."
+                      allowCustom={true}
                       className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      options={departments.map((d) => ({
+                        value: String(d.id),
+                        label: `${d.name} (${d.code || 'DEPT'})`
+                      }))}
                     />
-                    <datalist id="admin-staff-edit-dept-list">
-                      {departments.map((d) => (
-                        <option key={d.id} value={d.name}>
-                          {d.code}
-                        </option>
-                      ))}
-                    </datalist>
                   </div>
                 ) : (
                   <div className="space-y-2 bg-indigo-50/60 p-3 rounded-lg border border-indigo-100">
@@ -915,11 +909,14 @@ export const AdminStaffPage: React.FC = () => {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Designation</label>
-                  <input
-                    type="text"
+                  <SearchableSelect
                     value={formData.designation}
-                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, designation: String(e.target.value) })}
+                    placeholder="Select or add designation..."
+                    searchPlaceholder="Type or add designation..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                    options={DESIGNATION_PRESETS.map((p) => ({ value: p, label: p }))}
                   />
                 </div>
 

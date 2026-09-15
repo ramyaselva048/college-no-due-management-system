@@ -247,6 +247,15 @@ export interface Certificate {
   revocation_reason?: string;
   created_at: string;
   updated_at?: string;
+  year?: number;
+  semester?: number;
+  academic_year?: string;
+  exam_type?: string;
+  subjects?: SasurieSubjectEntry[];
+  labs?: SasurieSubjectEntry[];
+  common_nodes?: SasurieSubjectEntry[];
+  signatories?: SasurieSignatories;
+  request?: NoDueRequest;
 }
 
 export interface PublicVerificationResult {
@@ -264,6 +273,13 @@ export interface PublicVerificationResult {
   revocation_reason?: string;
   college_name: string;
   status_message: string;
+  year?: number;
+  semester?: number;
+  exam_type?: string;
+  subjects?: SasurieSubjectEntry[];
+  labs?: SasurieSubjectEntry[];
+  common_nodes?: SasurieSubjectEntry[];
+  signatories?: SasurieSignatories;
 }
 
 export interface Notification {

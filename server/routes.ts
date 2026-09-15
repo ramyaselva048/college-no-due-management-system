@@ -2480,6 +2480,43 @@ apiRouter.get('/certificates/verify/:verification_code', (req: Request, res: Res
   });
 });
 
+apiRouter.get('/certificates/:id', authMiddleware, (req: AuthRequest, res: Response) => {
+  const idOrCode = req.params.id;
+  const numId = Number(idOrCode);
+  const cert = !isNaN(numId) 
+    ? db.certificates.find(c => c.id === numId)
+    : db.certificates.find(c => c.certificate_number === idOrCode || c.verification_code === idOrCode);
+  if (!cert) return res.status(404).json({ detail: 'Certificate not found' });
+
+  if (req.user!.role === 'STUDENT' && req.studentProfile && cert.student_id !== req.studentProfile.id) {
+    return res.status(403).json({ detail: 'You are not authorized to access this certificate' });
+  }
+
+  const st = db.students.find(s => s.id === cert.student_id);
+  const dept = st ? db.departments.find(d => d.id === st.department_id) : null;
+  const course = st ? db.courses.find(c => c.id === st.course_id) : null;
+  const reqRecord = db.noDueRequests.find(r => r.id === cert.request_id) || null;
+
+  res.json({
+    id: cert.id,
+    request_id: cert.request_id,
+    student_id: cert.student_id,
+    student_name: st ? st.full_name : 'Student',
+    register_number: st ? st.register_number : 'N/A',
+    department_name: dept ? dept.name : 'Engineering',
+    course_name: course ? course.name : 'Bachelor of Engineering',
+    certificate_number: cert.certificate_number,
+    verification_code: cert.verification_code,
+    issued_at: cert.issued_at,
+    is_valid: cert.is_valid,
+    issued_by: cert.issued_by,
+    issued_by_name: cert.issued_by_name || 'Institutional Administrator',
+    revoked_at: cert.revoked_at,
+    revocation_reason: cert.revocation_reason,
+    request: reqRecord
+  });
+});
+
 apiRouter.get('/certificates/:id/download', authMiddleware, (req: AuthRequest, res: Response) => {
   const id = Number(req.params.id);
   const cert = db.certificates.find(c => c.id === id);

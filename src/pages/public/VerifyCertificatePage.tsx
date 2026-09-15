@@ -154,12 +154,17 @@ export const VerifyCertificatePage: React.FC = () => {
                 </div>
               </div>
 
-              <button
-                onClick={() => window.print()}
-                className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
-              >
-                <Printer className="w-3.5 h-3.5" /> Print Verification
-              </button>
+              <div className="flex items-center gap-2">
+                <Link
+                  to={`/certificate/print/${result.verification_code}?autoprint=true`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition-colors shadow-2xs"
+                  title="Print official certificate document"
+                >
+                  <Printer className="w-3.5 h-3.5 text-indigo-600" /> Print Document
+                </Link>
+              </div>
             </div>
 
             {/* Certificate Details */}

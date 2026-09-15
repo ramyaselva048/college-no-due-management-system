@@ -22,6 +22,7 @@ import {
 import api from '../../services/api';
 import { useAuth } from '../../context/AuthContext';
 import { SasurieSubjectEntry, StudentDuesSummary } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 interface ClearanceNodesResponse {
   student: {
@@ -298,8 +299,14 @@ export const StudentRequestPage: React.FC = () => {
                 <Award className="w-4 h-4" /> View Verified Certificate
               </Link>
               <button
-                onClick={() => window.print()}
-                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5"
+                onClick={() => {
+                  try {
+                    window.print();
+                  } catch (e) {
+                    alert('Print command was restricted in this frame. Please press Ctrl+P or open the Certificate page to print.');
+                  }
+                }}
+                className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-semibold transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Printer className="w-3.5 h-3.5" /> Print Clearance Summary
               </button>
@@ -632,17 +639,23 @@ export const StudentRequestPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Examination / Clearance Type
                 </label>
-                <select
+                <SearchableSelect
                   value={examType}
                   onChange={(e) => setExamType(e.target.value)}
                   disabled={hasUnpaidLedgerDues}
+                  placeholder="Select Clearance Type..."
+                  searchPlaceholder="Type or add clearance type..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  <option value="CIAT - I">CIAT - I</option>
-                  <option value="CIAT - II">CIAT - II</option>
-                  <option value="CIAT - III">CIAT - III</option>
-                  <option value="End Semester Examinations">End Semester Examinations</option>
-                </select>
+                  options={[
+                    { value: 'CIAT - I', label: 'CIAT - I' },
+                    { value: 'CIAT - II', label: 'CIAT - II' },
+                    { value: 'CIAT - III', label: 'CIAT - III' },
+                    { value: 'End Semester Examinations', label: 'End Semester Examinations' },
+                    { value: 'Model Examination', label: 'Model Examination' },
+                    { value: 'Transfer / Course Completion', label: 'Transfer / Course Completion' }
+                  ]}
+                />
               </div>
 
               <div>
@@ -662,15 +675,19 @@ export const StudentRequestPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Student Category
                 </label>
-                <select
+                <SearchableSelect
                   value={studentType}
                   onChange={(e) => setStudentType(e.target.value as any)}
                   disabled={hasUnpaidLedgerDues}
+                  placeholder="Select Student Category..."
+                  searchPlaceholder="Type or add student category..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 disabled:opacity-50"
-                >
-                  <option value="day_scholar">Day Scholar</option>
-                  <option value="hosteller">Hosteller</option>
-                </select>
+                  options={[
+                    { value: 'day_scholar', label: 'Day Scholar' },
+                    { value: 'hosteller', label: 'Hosteller' }
+                  ]}
+                />
               </div>
             </div>
 

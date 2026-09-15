@@ -31,6 +31,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { Certificate, Department } from '../../types';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 interface CertificateAuditLog {
   id: number;
@@ -606,38 +607,27 @@ export const AdminCertificatesPage: React.FC = () => {
                 ))}
               </div>
 
-              {/* Department Filter (Type Option) */}
-              <div className="relative">
-                <input
-                  id="filter-department-input"
-                  type="text"
-                  list="filter-departments-datalist"
-                  placeholder="Type department..."
-                  value={selectedDeptId === 'ALL' ? '' : (departments.find((d) => String(d.id) === selectedDeptId)?.name || selectedDeptId)}
+              {/* Department Filter (Type and Add Option) */}
+              <div className="w-48">
+                <SearchableSelect
+                  id="filter-department-select"
+                  value={selectedDeptId}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    if (!val || val.toLowerCase() === 'all' || val.toLowerCase() === 'all departments') {
-                      setSelectedDeptId('ALL');
-                    } else {
-                      const matched = departments.find(
-                        (d) =>
-                          d.name.toLowerCase().includes(val.toLowerCase()) ||
-                          (d.code && d.code.toLowerCase().includes(val.toLowerCase())) ||
-                          String(d.id) === val
-                      );
-                      setSelectedDeptId(matched ? String(matched.id) : val);
-                    }
+                    const val = String(e.target.value);
+                    setSelectedDeptId(val);
                   }}
-                  className="text-xs px-3 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 w-40"
+                  placeholder="All Departments"
+                  searchPlaceholder="Filter department..."
+                  allowCustom={true}
+                  className="text-xs px-3 py-1.5 border border-slate-200 rounded-xl bg-white text-slate-700 font-medium focus:outline-none focus:ring-1 focus:ring-indigo-500 shadow-2xs"
+                  options={[
+                    { value: 'ALL', label: 'All Departments' },
+                    ...departments.map((d) => ({
+                      value: String(d.id),
+                      label: `${d.name} (${d.code || 'DEPT'})`
+                    }))
+                  ]}
                 />
-                <datalist id="filter-departments-datalist">
-                  <option value="All Departments" />
-                  {departments.map((d) => (
-                    <option key={d.id} value={d.name}>
-                      {d.code}
-                    </option>
-                  ))}
-                </datalist>
               </div>
 
               {/* Issue Date Filter */}
@@ -1282,6 +1272,15 @@ export const AdminCertificatesPage: React.FC = () => {
               </div>
 
               <div className="flex items-center gap-2">
+                <Link
+                  to={`/certificate/print/${viewingCert.id}?autoprint=true`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-3.5 py-2 text-xs font-bold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl transition-colors inline-flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                  title="Print Certificate in New Tab"
+                >
+                  <Printer className="w-3.5 h-3.5 text-indigo-600" /> Print
+                </Link>
                 <button
                   onClick={() => handleDownloadPdf(viewingCert)}
                   disabled={downloadingId === viewingCert.id}

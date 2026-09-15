@@ -18,6 +18,7 @@ import {
 import api from '../../services/api';
 import { DueRecord } from '../../types';
 import { useAuth } from '../../context/AuthContext';
+import { SearchableSelect } from '../../components/common/SearchableSelect';
 
 export const StaffDuesPage: React.FC = () => {
   const { staffProfile } = useAuth();
@@ -510,40 +511,32 @@ export const StaffDuesPage: React.FC = () => {
                     No students currently enrolled in the college. Please contact the Administrator to enroll students first.
                   </div>
                 ) : (
-                  <>
-                    <input
-                      type="text"
-                      list="staff-add-students-datalist"
-                      placeholder="Type student name or reg no..."
-                      value={
-                        students.find((s) => s.id === addForm.student_id)
-                          ? `${students.find((s) => s.id === addForm.student_id)?.full_name} (${students.find((s) => s.id === addForm.student_id)?.register_number})`
-                          : ''
-                      }
-                      onChange={(e) => {
-                        const val = e.target.value;
+                  <SearchableSelect
+                    value={addForm.student_id ? String(addForm.student_id) : ''}
+                    onChange={(e) => {
+                      const val = String(e.target.value);
+                      const num = Number(val);
+                      if (!isNaN(num) && num > 0) {
+                        setAddForm({ ...addForm, student_id: num });
+                      } else {
                         const matched = students.find(
                           (s) =>
-                            `${s.full_name} (${s.register_number})`.toLowerCase() === val.toLowerCase() ||
                             s.full_name.toLowerCase() === val.toLowerCase() ||
-                            s.register_number.toLowerCase() === val.toLowerCase() ||
-                            String(s.id) === val
+                            s.register_number.toLowerCase() === val.toLowerCase()
                         );
-                        if (matched) {
-                          setAddForm({ ...addForm, student_id: matched.id });
-                        }
-                      }}
-                      className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
-                      required
-                    />
-                    <datalist id="staff-add-students-datalist">
-                      {students.map((s) => (
-                        <option key={s.id} value={`${s.full_name} (${s.register_number})`}>
-                          {s.course_name || `Year ${s.year || 1}`}
-                        </option>
-                      ))}
-                    </datalist>
-                  </>
+                        if (matched) setAddForm({ ...addForm, student_id: matched.id });
+                      }
+                    }}
+                    placeholder="Select or search student..."
+                    searchPlaceholder="Type name or register number..."
+                    allowCustom={true}
+                    className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
+                    options={students.map((s) => ({
+                      value: String(s.id),
+                      label: `${s.full_name} (${s.register_number})`,
+                      subLabel: s.course_name || `Year ${s.year || 1}`
+                    }))}
+                  />
                 )}
               </div>
 
@@ -552,33 +545,30 @@ export const StaffDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Due Category <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  list="staff-add-categories-datalist"
-                  placeholder="Type due category..."
-                  value={categories.find((c) => c.id === addForm.category_id)?.name || ''}
+                <SearchableSelect
+                  value={addForm.category_id ? String(addForm.category_id) : ''}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    const matched = categories.find(
-                      (c) =>
-                        c.name.toLowerCase() === val.toLowerCase() ||
-                        c.code.toLowerCase() === val.toLowerCase() ||
-                        String(c.id) === val
-                    );
-                    if (matched) {
-                      setAddForm({ ...addForm, category_id: matched.id });
+                    const val = String(e.target.value);
+                    const num = Number(val);
+                    if (!isNaN(num) && num > 0) {
+                      setAddForm({ ...addForm, category_id: num });
+                    } else {
+                      const matched = categories.find(
+                        (c) => c.name.toLowerCase() === val.toLowerCase() || (c.code && c.code.toLowerCase() === val.toLowerCase())
+                      );
+                      if (matched) setAddForm({ ...addForm, category_id: matched.id });
                     }
                   }}
+                  placeholder="Select or add due category..."
+                  searchPlaceholder="Type to search or add category..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
-                  required
+                  options={categories.map((c) => ({
+                    value: String(c.id),
+                    label: c.name,
+                    subLabel: c.code
+                  }))}
                 />
-                <datalist id="staff-add-categories-datalist">
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.code}
-                    </option>
-                  ))}
-                </datalist>
               </div>
 
               {/* Amount */}
@@ -691,33 +681,30 @@ export const StaffDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Due Category <span className="text-rose-500">*</span>
                 </label>
-                <input
-                  type="text"
-                  list="staff-edit-categories-datalist"
-                  placeholder="Type due category..."
-                  value={categories.find((c) => c.id === editForm.category_id)?.name || ''}
+                <SearchableSelect
+                  value={editForm.category_id ? String(editForm.category_id) : ''}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    const matched = categories.find(
-                      (c) =>
-                        c.name.toLowerCase() === val.toLowerCase() ||
-                        c.code.toLowerCase() === val.toLowerCase() ||
-                        String(c.id) === val
-                    );
-                    if (matched) {
-                      setEditForm({ ...editForm, category_id: matched.id });
+                    const val = String(e.target.value);
+                    const num = Number(val);
+                    if (!isNaN(num) && num > 0) {
+                      setEditForm({ ...editForm, category_id: num });
+                    } else {
+                      const matched = categories.find(
+                        (c) => c.name.toLowerCase() === val.toLowerCase() || (c.code && c.code.toLowerCase() === val.toLowerCase())
+                      );
+                      if (matched) setEditForm({ ...editForm, category_id: matched.id });
                     }
                   }}
+                  placeholder="Select or add due category..."
+                  searchPlaceholder="Type to search or add category..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500"
-                  required
+                  options={categories.map((c) => ({
+                    value: String(c.id),
+                    label: c.name,
+                    subLabel: c.code
+                  }))}
                 />
-                <datalist id="staff-edit-categories-datalist">
-                  {categories.map((c) => (
-                    <option key={c.id} value={c.name}>
-                      {c.code}
-                    </option>
-                  ))}
-                </datalist>
               </div>
 
               {/* Amount */}
@@ -768,19 +755,19 @@ export const StaffDuesPage: React.FC = () => {
                 <label className="block text-xs font-semibold text-slate-700 mb-1">
                   Due Status
                 </label>
-                <input
-                  type="text"
-                  list="staff-edit-status-datalist"
-                  placeholder="Type status (pending / cleared / waived)..."
+                <SearchableSelect
                   value={editForm.status}
-                  onChange={(e) => setEditForm({ ...editForm, status: e.target.value.toLowerCase() })}
+                  onChange={(e) => setEditForm({ ...editForm, status: String(e.target.value).toLowerCase() as any })}
+                  placeholder="Select status..."
+                  searchPlaceholder="Type status..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-xl bg-white text-slate-800 focus:ring-1 focus:ring-indigo-500 font-semibold"
+                  options={[
+                    { value: 'pending', label: 'Pending (Unpaid)' },
+                    { value: 'cleared', label: 'Cleared (Paid)' },
+                    { value: 'waived', label: 'Waived (Discharged)' }
+                  ]}
                 />
-                <datalist id="staff-edit-status-datalist">
-                  <option value="pending">Pending (Unpaid)</option>
-                  <option value="cleared">Cleared (Paid)</option>
-                  <option value="waived">Waived (Discharged)</option>
-                </datalist>
               </div>
 
               {/* Actions */}

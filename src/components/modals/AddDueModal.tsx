@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { X, PlusCircle, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
 import { DueCategory, Department } from '../../types';
+import { SearchableSelect } from '../common/SearchableSelect';
 
 interface AddDueModalProps {
   studentId: number;
@@ -149,61 +150,59 @@ export const AddDueModal: React.FC<AddDueModalProps> = ({
           {!defaultDepartmentId && (
             <div>
               <label className="block text-xs font-semibold text-slate-700 mb-1">Department</label>
-              <input
-                type="text"
-                list="add-due-departments-list"
-                placeholder="Type department name or code..."
-                value={deptText}
+              <SearchableSelect
+                value={departmentId || deptText}
                 onChange={(e) => {
                   const val = e.target.value;
-                  setDeptText(val);
-                  const matched = departments.find(
-                    (d) =>
-                      d.name.toLowerCase() === val.toLowerCase() ||
-                      d.code.toLowerCase() === val.toLowerCase() ||
-                      String(d.id) === val
-                  );
-                  if (matched) setDepartmentId(matched.id);
+                  const num = Number(val);
+                  if (!isNaN(num) && num > 0) {
+                    setDepartmentId(num);
+                    const d = departments.find((item) => item.id === num);
+                    if (d) setDeptText(d.name);
+                  } else {
+                    setDeptText(String(val));
+                    const matched = departments.find((d) => d.name.toLowerCase() === String(val).toLowerCase());
+                    if (matched) setDepartmentId(matched.id);
+                  }
                 }}
+                placeholder="Select or add department..."
+                searchPlaceholder="Type to search or add department..."
+                allowCustom={true}
                 className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                required
+                options={departments.map((d) => ({
+                  value: d.id,
+                  label: `${d.name} (${d.code || 'DEPT'})`
+                }))}
               />
-              <datalist id="add-due-departments-list">
-                {departments.map((d) => (
-                  <option key={d.id} value={d.name}>
-                    {d.code}
-                  </option>
-                ))}
-              </datalist>
             </div>
           )}
 
           <div>
             <label className="block text-xs font-semibold text-slate-700 mb-1">Due Category</label>
-            <input
-              type="text"
-              list="add-due-categories-list"
-              placeholder="Type due category..."
-              value={catText}
+            <SearchableSelect
+              value={categoryId || catText}
               onChange={(e) => {
                 const val = e.target.value;
-                setCatText(val);
-                const matched = categories.find(
-                  (c) =>
-                    c.name.toLowerCase() === val.toLowerCase() ||
-                    (c.code && c.code.toLowerCase() === val.toLowerCase()) ||
-                    String(c.id) === val
-                );
-                if (matched) setCategoryId(matched.id);
+                const num = Number(val);
+                if (!isNaN(num) && num > 0) {
+                  setCategoryId(num);
+                  const c = categories.find((item) => item.id === num);
+                  if (c) setCatText(c.name);
+                } else {
+                  setCatText(String(val));
+                  const matched = categories.find((c) => c.name.toLowerCase() === String(val).toLowerCase());
+                  if (matched) setCategoryId(matched.id);
+                }
               }}
+              placeholder="Select or add due category..."
+              searchPlaceholder="Type to search or add category..."
+              allowCustom={true}
               className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-              required
+              options={categories.map((c) => ({
+                value: c.id,
+                label: c.name
+              }))}
             />
-            <datalist id="add-due-categories-list">
-              {categories.map((c) => (
-                <option key={c.id} value={c.name} />
-              ))}
-            </datalist>
           </div>
 
           <div>

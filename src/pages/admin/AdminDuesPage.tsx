@@ -582,99 +582,92 @@ export const AdminDuesPage: React.FC = () => {
 
               <div>
                 <label className="block text-xs font-semibold text-slate-700 mb-1">Target Student *</label>
-                <input
-                  type="text"
-                  list="admin-dues-students-list"
-                  placeholder="Type student name or reg no..."
-                  value={
-                    students.find((s) => s.id === formData.student_id)
-                      ? `${students.find((s) => s.id === formData.student_id)?.full_name} (${students.find((s) => s.id === formData.student_id)?.register_number})`
-                      : ''
-                  }
+                <SearchableSelect
+                  value={formData.student_id ? String(formData.student_id) : ''}
                   onChange={(e) => {
-                    const val = e.target.value;
-                    const matched = students.find(
-                      (s) =>
-                        `${s.full_name} (${s.register_number})`.toLowerCase() === val.toLowerCase() ||
-                        s.full_name.toLowerCase() === val.toLowerCase() ||
-                        s.register_number.toLowerCase() === val.toLowerCase() ||
-                        String(s.id) === val
-                    );
-                    if (matched) {
-                      setFormData({ ...formData, student_id: matched.id });
+                    const val = String(e.target.value);
+                    const num = Number(val);
+                    if (!isNaN(num) && num > 0) {
+                      setFormData({ ...formData, student_id: num });
+                    } else {
+                      const matched = students.find(
+                        (s) =>
+                          s.full_name.toLowerCase() === val.toLowerCase() ||
+                          s.register_number.toLowerCase() === val.toLowerCase()
+                      );
+                      if (matched) setFormData({ ...formData, student_id: matched.id });
                     }
                   }}
+                  placeholder="Select or search student..."
+                  searchPlaceholder="Type name or register number..."
+                  allowCustom={true}
                   className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                  required
+                  options={students.map((s) => ({
+                    value: String(s.id),
+                    label: `${s.full_name} (${s.register_number})`,
+                    subLabel: s.course_name || 'Student'
+                  }))}
                 />
-                <datalist id="admin-dues-students-list">
-                  {students.map((s) => (
-                    <option key={s.id} value={`${s.full_name} (${s.register_number})`}>
-                      {s.course_name || 'Student'}
-                    </option>
-                  ))}
-                </datalist>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Department *</label>
-                  <input
-                    type="text"
-                    list="admin-dues-depts-list"
-                    placeholder="Type department..."
-                    value={departments.find((d) => d.id === formData.department_id)?.name || ''}
+                  <SearchableSelect
+                    value={formData.department_id ? String(formData.department_id) : ''}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      const matched = departments.find(
-                        (d) =>
-                          d.name.toLowerCase() === val.toLowerCase() ||
-                          d.code.toLowerCase() === val.toLowerCase() ||
-                          String(d.id) === val
-                      );
-                      if (matched) {
-                        setFormData({ ...formData, department_id: matched.id });
+                      const val = String(e.target.value);
+                      const num = Number(val);
+                      if (!isNaN(num) && num > 0) {
+                        setFormData({ ...formData, department_id: num });
+                      } else {
+                        const matched = departments.find(
+                          (d) =>
+                            d.name.toLowerCase() === val.toLowerCase() ||
+                            d.code.toLowerCase() === val.toLowerCase()
+                        );
+                        if (matched) setFormData({ ...formData, department_id: matched.id });
                       }
                     }}
+                    placeholder="Select or add department..."
+                    searchPlaceholder="Type department name..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                    required
+                    options={departments.map((d) => ({
+                      value: String(d.id),
+                      label: `${d.name} (${d.code || 'DEPT'})`
+                    }))}
                   />
-                  <datalist id="admin-dues-depts-list">
-                    {departments.map((d) => (
-                      <option key={d.id} value={d.name}>
-                        {d.code}
-                      </option>
-                    ))}
-                  </datalist>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Category *</label>
-                  <input
-                    type="text"
-                    list="admin-dues-cats-list"
-                    placeholder="Type category..."
-                    value={categories.find((c) => c.id === formData.category_id)?.name || ''}
+                  <SearchableSelect
+                    value={formData.category_id ? String(formData.category_id) : ''}
                     onChange={(e) => {
-                      const val = e.target.value;
-                      const matched = categories.find(
-                        (c) =>
-                          c.name.toLowerCase() === val.toLowerCase() ||
-                          (c.code && c.code.toLowerCase() === val.toLowerCase()) ||
-                          String(c.id) === val
-                      );
-                      if (matched) {
-                        setFormData({ ...formData, category_id: matched.id });
+                      const val = String(e.target.value);
+                      const num = Number(val);
+                      if (!isNaN(num) && num > 0) {
+                        setFormData({ ...formData, category_id: num });
+                      } else {
+                        const matched = categories.find(
+                          (c) =>
+                            c.name.toLowerCase() === val.toLowerCase() ||
+                            (c.code && c.code.toLowerCase() === val.toLowerCase())
+                        );
+                        if (matched) setFormData({ ...formData, category_id: matched.id });
                       }
                     }}
+                    placeholder="Select or add category..."
+                    searchPlaceholder="Type category..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800"
-                    required
+                    options={categories.map((c) => ({
+                      value: String(c.id),
+                      label: c.name,
+                      subLabel: c.code
+                    }))}
                   />
-                  <datalist id="admin-dues-cats-list">
-                    {categories.map((c) => (
-                      <option key={c.id} value={c.name} />
-                    ))}
-                  </datalist>
                 </div>
               </div>
 
@@ -775,19 +768,19 @@ export const AdminDuesPage: React.FC = () => {
 
                 <div>
                   <label className="block text-xs font-semibold text-slate-700 mb-1">Clearance Status *</label>
-                  <input
-                    type="text"
-                    list="admin-dues-status-list"
-                    placeholder="Type status (pending / cleared / waived)..."
+                  <SearchableSelect
                     value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value.toLowerCase() })}
+                    onChange={(e) => setFormData({ ...formData, status: String(e.target.value).toLowerCase() })}
+                    placeholder="Select status..."
+                    searchPlaceholder="Type status..."
+                    allowCustom={true}
                     className="w-full text-xs px-3 py-2 border border-slate-200 rounded-lg bg-white text-slate-800 font-bold"
+                    options={[
+                      { value: 'pending', label: 'PENDING' },
+                      { value: 'cleared', label: 'CLEARED (Paid)' },
+                      { value: 'waived', label: 'WAIVED (Exempted)' }
+                    ]}
                   />
-                  <datalist id="admin-dues-status-list">
-                    <option value="pending">PENDING</option>
-                    <option value="cleared">CLEARED (Paid)</option>
-                    <option value="waived">WAIVED (Exempted)</option>
-                  </datalist>
                 </div>
               </div>
 

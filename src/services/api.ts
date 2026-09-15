@@ -121,6 +121,18 @@ api.interceptors.response.use(
       }
     }
 
+    // Auto-retry once on transient network errors for idempotent GET requests
+    if (
+      (!error.response || error.code === 'ERR_NETWORK' || error.message === 'Network Error') &&
+      originalRequest &&
+      originalRequest.method?.toLowerCase() === 'get' &&
+      !originalRequest._networkRetry
+    ) {
+      originalRequest._networkRetry = true;
+      await new Promise((resolve) => setTimeout(resolve, 350));
+      return api(originalRequest);
+    }
+
     return Promise.reject(error);
   }
 );
