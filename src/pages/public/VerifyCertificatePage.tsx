@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/api';
 import { PublicVerificationResult } from '../../types';
+import { CertificateDocument } from '../../components/certificate/CertificateDocument';
 
 export const VerifyCertificatePage: React.FC = () => {
   const { code } = useParams<{ code?: string }>();
@@ -275,6 +276,26 @@ export const VerifyCertificatePage: React.FC = () => {
                     Secured Digital Signature
                   </span>
                 </div>
+              </div>
+            </div>
+
+            {/* Official Complete Certificate Document View */}
+            <div className="border-t border-slate-200 p-6 sm:p-8 bg-slate-50/50">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="font-display font-bold text-sm text-slate-900">
+                  Institutional Certificate Clearance Records
+                </h3>
+                <Link
+                  to={`/certificate/print/${result.verification_code}?autoprint=true`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs font-bold text-indigo-600 hover:text-indigo-800 inline-flex items-center gap-1"
+                >
+                  <Printer className="w-3.5 h-3.5" /> Open Printable View
+                </Link>
+              </div>
+              <div className="flex justify-center">
+                <CertificateDocument cert={result} isPublicVerification={true} />
               </div>
             </div>
           </div>

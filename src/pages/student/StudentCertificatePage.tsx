@@ -24,6 +24,7 @@ import {
   downloadCertificatePdfFile,
   buildCertificatePrintHtml
 } from '../../utils/printCertificate';
+import { CertificateDocument } from '../../components/certificate/CertificateDocument';
 
 export const StudentCertificatePage: React.FC = () => {
   const { studentProfile } = useAuth();
@@ -330,127 +331,8 @@ export const StudentCertificatePage: React.FC = () => {
         </div>
       ) : (
         /* Digital Verifiable Certificate View */
-        <div
-          id="certificate-print-sheet"
-          className="printable-certificate bg-white rounded-3xl p-8 sm:p-12 border-2 border-indigo-900/20 shadow-xl print:shadow-none print:border-none relative overflow-hidden text-slate-900"
-        >
-          {/* Subtle Watermark BG */}
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-[0.035] select-none">
-            <GraduationCap className="w-96 h-96 text-indigo-900" />
-          </div>
-
-          {/* Certificate Inner Content */}
-          <div className="relative z-10 text-center space-y-6">
-            {/* Header / Crest */}
-            <div className="border-b-2 border-slate-900/10 pb-6">
-              <div className="w-14 h-14 rounded-2xl bg-indigo-900 text-white flex items-center justify-center mx-auto mb-3 shadow-md">
-                <GraduationCap className="w-8 h-8" />
-              </div>
-              <h1 className="font-display font-extrabold text-2xl sm:text-3xl text-indigo-950 uppercase tracking-tight">
-                College of Engineering
-              </h1>
-              <p className="text-xs font-bold text-slate-600 tracking-wider uppercase mt-1">
-                Autonomous Institution • Approved by AICTE & Affiliated to Anna University • NAAC 'A+'
-              </p>
-              <p className="text-[11px] text-slate-400 font-medium">
-                Office of Academic Affairs & Institutional Clearances (CIAT - I / II / End Sem)
-              </p>
-            </div>
-
-            {/* Title */}
-            <div>
-              <span className="inline-block px-4 py-1 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 font-display font-bold text-xs uppercase tracking-widest">
-                Official Institutional Clearance
-              </span>
-              <h2 className="font-display font-black text-xl sm:text-2xl text-slate-900 uppercase tracking-tight mt-3">
-                No Due Certificate
-              </h2>
-            </div>
-
-            {/* Metadata Bar */}
-            <div className="flex flex-wrap items-center justify-center gap-6 py-2 px-4 bg-slate-50 rounded-xl border border-slate-200 text-xs font-mono text-slate-600 max-w-xl mx-auto">
-              <div>
-                <span className="text-slate-400">Cert No: </span>
-                <span className="font-bold text-slate-900">{activeCert.certificate_number}</span>
-              </div>
-              <div className="h-3 w-px bg-slate-200"></div>
-              <div>
-                <span className="text-slate-400">Verification: </span>
-                <span className="font-bold text-indigo-700">{activeCert.verification_code}</span>
-              </div>
-            </div>
-
-            {/* Body Certification Statement */}
-            <div className="max-w-2xl mx-auto text-xs sm:text-sm text-slate-700 leading-relaxed space-y-4 text-justify pt-2">
-              <p>
-                This is to officially certify that <span className="font-bold text-slate-900">{activeCert.student_name}</span>, holding Registration Number <span className="font-mono font-bold text-indigo-900 bg-slate-100 px-1.5 py-0.5 rounded">{activeCert.register_number}</span>, enrolled in the academic program <span className="font-bold text-slate-900">{activeCert.course_name}</span> within the Department of <span className="font-bold text-slate-900">{activeCert.department_name}</span>, has successfully completed all institutional clearance protocols.
-              </p>
-              <p>
-                As of <span className="font-semibold text-slate-900">{new Date(activeCert.issued_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>, the aforementioned student has settled all dues, library liabilities, laboratory equipments, accounts charges, and campus residential obligations. There are <span className="font-bold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 uppercase">NO OUTSTANDING DUES</span> recorded against this student across any college department.
-              </p>
-            </div>
-
-            {/* Footer with QR Code and Signatures */}
-            <div className="pt-8 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-6">
-              {/* QR Verification Seal */}
-              <div className="flex items-center gap-4 text-left">
-                <div className="p-2 bg-white rounded-xl border border-slate-200 shadow-2xs">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=90x90&data=${encodeURIComponent(
-                      `${window.location.origin}/verify/${activeCert.verification_code}`
-                    )}`}
-                    alt="Certificate QR Verification"
-                    className="w-18 h-18"
-                  />
-                </div>
-                <div>
-                  <p className="text-[11px] font-bold text-slate-900 flex items-center gap-1">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" /> Tamper-Proof QR
-                  </p>
-                  <p className="text-[10px] text-slate-500 max-w-[150px] mt-0.5 leading-tight">
-                    Scan using any camera to verify validity on official institutional registry
-                  </p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <Link
-                      to={`/verify/${activeCert.verification_code}`}
-                      target="_blank"
-                      className="text-[10px] text-indigo-600 hover:text-indigo-800 font-bold inline-flex items-center gap-1"
-                    >
-                      Open Verifier <ExternalLink className="w-2.5 h-2.5" />
-                    </Link>
-                    <button
-                      type="button"
-                      onClick={() => handleCopyLink(activeCert.verification_code)}
-                      className="text-[10px] text-slate-500 hover:text-slate-800 font-medium inline-flex items-center gap-1 cursor-pointer"
-                      title="Copy public verification link"
-                    >
-                      {copied ? <Check className="w-2.5 h-2.5 text-emerald-600" /> : <Copy className="w-2.5 h-2.5" />}
-                      {copied ? 'Copied' : 'Copy link'}
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Authorized Signatories */}
-              <div className="flex items-center gap-8 text-center text-xs">
-                <div>
-                  <div className="h-10 flex items-end justify-center font-display italic text-indigo-900 font-semibold text-sm">
-                    Dean of Academics
-                  </div>
-                  <div className="w-28 border-t border-slate-400 mt-1"></div>
-                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5">Dean (Academics)</p>
-                </div>
-
-                <div>
-                  <div className="h-10 flex items-end justify-center font-display italic text-indigo-900 font-semibold text-sm">
-                    Dr. T. Senthilvel
-                  </div>
-                  <div className="w-28 border-t border-slate-400 mt-1"></div>
-                  <p className="text-[10px] text-slate-500 font-semibold mt-0.5 uppercase">PRINCIPAL</p>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div className="flex justify-center">
+          <CertificateDocument cert={activeCert} />
         </div>
       )}
     </div>
